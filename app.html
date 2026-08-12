@@ -3,42 +3,19 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>LicenseFlow · Your licensing journey</title>
-<link rel="stylesheet" href="styles.css?v=2"/>
+<title>LicenseFlow</title>
+<link rel="stylesheet" href="styles.css?v=3"/>
 <script src="config.js"></script>
 </head>
 <body>
-<div class="samplebar" style="position:sticky;top:0;z-index:70">Demonstration build · sample licensing data — verify all requirements with your state Department of Insurance / NIPR.</div>
-<div class="overlay" id="overlay"></div>
-<div class="shell">
-  <aside class="side" id="side">
-    <a class="brand" href="index.html"><span class="logo">L</span> LicenseFlow</a>
-    <nav id="nav">
-      <button class="nav-item" data-route="#/dashboard"><span class="i">🏠</span> Dashboard</button>
-      <button class="nav-item" data-route="#/journey"><span class="i">🗺️</span> Licensing Journey</button>
-      <button class="nav-item" data-route="#/learn"><span class="i">📚</span> Education</button>
-      <button class="nav-item" data-route="#/readiness"><span class="i">🎯</span> Exam Readiness</button>
-      <button class="nav-item" data-route="#/documents"><span class="i">📂</span> Documents <span class="tag" id="docTag" style="display:none"></span></button>
-      <button class="nav-item" data-route="#/status"><span class="i">📋</span> Licensing Status</button>
-      <button class="nav-item" data-route="#/concierge"><span class="i">💬</span> AI Concierge</button>
-    </nav>
-    <div class="spacer"></div>
-    <div class="who">
-      <div id="whoName">—</div>
-      <button class="nav-item" id="logout" style="padding-left:0;margin-top:6px"><span class="i">↩︎</span> Log out</button>
-    </div>
-  </aside>
-  <main class="main">
-    <div class="topbar">
-      <div style="display:flex;align-items:center;gap:12px">
-        <button class="btn btn-ghost btn-sm mob-menu" id="menu">☰</button>
-        <div><h1 id="ttl">Dashboard</h1><div class="greet" id="greet"></div></div>
-      </div>
-      <a href="#/concierge" class="btn btn-ghost btn-sm">💬 Ask the concierge</a>
-    </div>
-    <div id="content"><div class="panel">Loading your journey…</div></div>
-  </main>
+<div class="container top">
+  <a class="brand" href="app.html"><span class="mark">L</span> LicenseFlow</a>
+  <div style="display:flex;gap:10px;align-items:center">
+    <span class="muted" id="who" style="font-size:.9rem"></span>
+    <button class="btn btn-quiet btn-sm" id="logout">Log out</button>
+  </div>
 </div>
-<script type="module" src="app.js"></script>
+<div id="root"><div class="wt"><p class="muted">Loading…</p></div></div>
+<script type="module" src="app.js?v=3"></script>
 </body>
 </html>

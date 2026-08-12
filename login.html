@@ -3,35 +3,33 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Log in · LicenseFlow</title>
-<link rel="stylesheet" href="styles.css?v=2"/>
+<title>Sign in — LicenseFlow</title>
+<link rel="stylesheet" href="styles.css?v=3"/>
 <script src="config.js"></script>
 </head>
 <body>
-<div class="auth-wrap">
-  <div class="auth-box">
-    <a class="brand" href="index.html" style="justify-content:center;margin-bottom:18px"><span class="logo">L</span> LicenseFlow</a>
+<div class="screen">
+  <div class="screen-inner">
+    <a class="brand" href="index.html" style="justify-content:center;margin-bottom:20px"><span class="mark">L</span> LicenseFlow</a>
     <div class="card pad">
-      <h2 id="title" style="text-align:center;margin-bottom:2px">Welcome back</h2>
-      <p class="muted center" id="sub" style="margin-top:0">Log in to your licensing dashboard</p>
+      <h2 id="title" style="text-align:center;font-size:1.5rem">Create your account</h2>
+      <p class="muted center" id="sub" style="margin-top:0">Register to start your licensing walkthrough</p>
       <div class="tabs">
-        <button id="tabLogin" class="active" type="button">Log in</button>
-        <button id="tabSignup" type="button">Create account</button>
+        <button id="tabSignup" class="on" type="button">Create account</button>
+        <button id="tabLogin" type="button">Log in</button>
       </div>
       <div id="alert" class="alert"></div>
       <form id="form">
-        <div id="nameField" style="display:none"><label for="fullName">Full name</label><input id="fullName" name="full_name"/></div>
         <label for="email">Email</label>
         <input id="email" name="email" type="email" required autocomplete="email"/>
         <label for="password">Password</label>
-        <input id="password" name="password" type="password" required minlength="6" autocomplete="current-password"/>
-        <button id="submit" class="btn btn-primary btn-block" type="submit" style="margin-top:16px">Log in</button>
+        <input id="password" name="password" type="password" required minlength="6" autocomplete="new-password"/>
+        <button id="submit" class="btn btn-primary btn-block" type="submit" style="margin-top:18px">Create account</button>
       </form>
-      <p class="note center" id="hint" style="margin-top:14px"></p>
+      <p class="hint center" id="hint" style="margin-top:14px"></p>
     </div>
-    <p class="note center" style="margin-top:16px">🔒 Protected with per-user database security.</p>
   </div>
 </div>
-<script type="module" src="auth.js?v=2"></script>
+<script type="module" src="auth.js?v=3"></script>
 </body>
 </html>

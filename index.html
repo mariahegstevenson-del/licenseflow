@@ -3,175 +3,41 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>LicenseFlow — Get licensed. Know exactly what comes next.</title>
-<meta name="description" content="Your entire insurance licensing journey, guided from first step to active license. Built for people who have never done this before."/>
+<title>LicenseFlow — Get licensed, step by step</title>
+<meta name="description" content="Agent registration and a simple, state-by-state walkthrough to get your insurance license."/>
 <link rel="preconnect" href="https://esm.sh"/>
-<link rel="stylesheet" href="styles.css?v=2"/>
+<link rel="stylesheet" href="styles.css?v=3"/>
 <script src="config.js"></script>
 </head>
 <body>
-
-<nav class="nav">
-  <div class="container">
-    <a class="brand" href="index.html"><span class="logo">L</span> LicenseFlow</a>
-    <div class="nav-links">
-      <a href="#how" class="hide-sm">How it works</a>
-      <a href="#journey" class="hide-sm">The journey</a>
-      <a href="#faq" class="hide-sm">FAQ</a>
-      <a href="login.html">Log in</a>
-      <a href="app.html" class="btn btn-primary btn-sm">Start my journey</a>
-    </div>
+<div class="container top">
+  <a class="brand" href="index.html"><span class="mark">L</span> LicenseFlow</a>
+  <div style="display:flex;gap:8px;align-items:center">
+    <a class="btn btn-quiet btn-sm" href="login.html">Log in</a>
+    <a class="btn btn-primary btn-sm" href="app.html">Get started</a>
   </div>
-</nav>
+</div>
 
-<header class="hero">
-  <div class="container hero-grid">
-    <div>
-      <div class="eyebrow" style="color:#7fe6dc">The insurance licensing operating system</div>
-      <h1>Get licensed. Know exactly what comes next.</h1>
-      <p class="lead">Your entire insurance licensing journey — guided from your first step to an active license. No guesswork, no spreadsheets, no wondering what to do next.</p>
-      <div class="hero-cta">
-        <a href="app.html" class="btn btn-primary btn-lg">Start my licensing journey</a>
-        <a href="#how" class="btn btn-white btn-lg">See how it works</a>
-      </div>
-      <div class="hero-steps">
-        <span>1 · Choose your state</span>
-        <span>2 · Complete education</span>
-        <span>3 · Pass your exam</span>
-        <span>4 · Submit application</span>
-        <span>5 · Get licensed</span>
-      </div>
-    </div>
-    <div class="jcard">
-      <h4>Life Insurance License</h4>
-      <div class="sub">Texas · 68% complete</div>
-      <div class="jbar"><i style="width:68%"></i></div>
-      <div class="jstep done"><span class="jdot">✓</span> Create profile</div>
-      <div class="jstep done"><span class="jdot">✓</span> Confirm eligibility</div>
-      <div class="jstep done"><span class="jdot">✓</span> Required education</div>
-      <div class="jstep cur"><span class="jdot">→</span> Exam preparation</div>
-      <div class="jstep"><span class="jdot">○</span> State examination</div>
-      <div class="jstep"><span class="jdot">○</span> Application &amp; review</div>
-      <div class="jstep"><span class="jdot">○</span> Licensed</div>
-    </div>
+<main class="container hero">
+  <h1>Get licensed, step by step.</h1>
+  <p class="lead">Register once, and we walk you through every step to get your insurance license — tailored to your state, in the right order, one step at a time.</p>
+  <div class="hero-cta">
+    <a class="btn btn-primary btn-lg" href="app.html">Create your account</a>
+    <a class="btn btn-ghost btn-lg" href="login.html">I already have an account</a>
   </div>
-</header>
 
-<div class="samplebar container" style="width:100%;border-radius:0">Demonstration build · sample licensing data shown for illustration — always verify requirements with your state Department of Insurance.</div>
-
-<section class="sec">
-  <div class="container">
-    <div class="sec-head">
-      <div class="eyebrow">Built for people who have never done this before</div>
-      <h2>One journey. One next step. One clear path to licensed.</h2>
-      <p class="muted">The licensing system underneath is complex. What you see is not. LicenseFlow always tells you where you are, what to do next, and why.</p>
-    </div>
-    <div class="grid g3">
-      <div class="card feature"><div class="ic">🧭</div><h3>Always know your next step</h3><p>A single, clear primary action at every moment — Continue, Schedule Exam, Upload Document — never a wall of competing tasks.</p></div>
-      <div class="card feature"><div class="ic">🗺️</div><h3>A journey, not a course</h3><p>We model your real licensing path — education, exam, fingerprints, application, state review — and adapt it to your state and license type.</p></div>
-      <div class="card feature"><div class="ic">📈</div><h3>Three kinds of progress</h3><p>Learning, licensing, and exam readiness are tracked separately — because finishing the coursework isn't the same as being licensed.</p></div>
-      <div class="card feature"><div class="ic">🎯</div><h3>Exam readiness engine</h3><p>We measure how prepared you actually are — topic by topic — and point you at the exact areas to review before you schedule.</p></div>
-      <div class="card feature"><div class="ic">📂</div><h3>Documents, handled</h3><p>Every required document, why it's needed, and its status — nothing slips through the cracks.</p></div>
-      <div class="card feature"><div class="ic">💬</div><h3>An AI concierge that knows you</h3><p>Ask anything. It knows your state, your license, and exactly where you are — and it won't invent requirements.</p></div>
-    </div>
+  <div class="steps-strip">
+    <div class="s"><div class="k">Step 1</div><div class="t">Study material</div></div>
+    <div class="s"><div class="k">Step 2</div><div class="t">Exam registration</div></div>
+    <div class="s"><div class="k">Step 3</div><div class="t">Fingerprints</div></div>
+    <div class="s"><div class="k">Step 4</div><div class="t">State application</div></div>
+    <div class="s"><div class="k">Step 5</div><div class="t">Contracting &amp; E&amp;O</div></div>
   </div>
-</section>
+</main>
 
-<section class="sec" id="how" style="background:#fff;border-top:1px solid var(--line);border-bottom:1px solid var(--line)">
-  <div class="container grid g2" style="align-items:center;gap:52px">
-    <div>
-      <div class="eyebrow">How it works</div>
-      <h2>From your first step to an active license</h2>
-      <ul class="tl" style="margin-top:24px">
-        <li><div class="n">1</div><div><strong>Tell us your state &amp; license</strong><div class="muted">We build your exact licensing path in seconds.</div></div></li>
-        <li><div class="n">2</div><div><strong>Complete your required education</strong><div class="muted">Short, focused modules — learn, practice, prove, advance.</div></div></li>
-        <li><div class="n">3</div><div><strong>Get exam-ready</strong><div class="muted">Practice exams and targeted review until your readiness is strong.</div></div></li>
-        <li><div class="n">4</div><div><strong>Handle fingerprints &amp; application</strong><div class="muted">We tell you exactly what to submit and when.</div></div></li>
-        <li><div class="n">5</div><div><strong>Get licensed</strong><div class="muted">Track state review and know the moment you're official.</div></div></li>
-      </ul>
-    </div>
-    <div class="card pad">
-      <div class="eyebrow">Talk to us</div>
-      <h3 style="margin-top:.3rem">Questions about getting licensed?</h3>
-      <p class="muted" style="margin-top:0">Leave your info and we'll reach out.</p>
-      <form id="leadForm">
-        <div class="row2">
-          <div><label for="ln">Name</label><input id="ln" name="name" required/></div>
-          <div><label for="ls">State</label><select id="ls" name="state"></select></div>
-        </div>
-        <div class="row2">
-          <div><label for="le">Email</label><input id="le" name="email" type="email" required/></div>
-          <div><label for="lp">Phone</label><input id="lp" name="phone" type="tel"/></div>
-        </div>
-        <label for="lm">How can we help?</label>
-        <textarea id="lm" name="message" placeholder="I'm getting my life license in…"></textarea>
-        <div id="leadAlert" class="alert"></div>
-        <button class="btn btn-primary btn-block" type="submit" style="margin-top:12px">Request info</button>
-      </form>
-    </div>
-  </div>
-</section>
-
-<section class="sec" id="journey">
-  <div class="container">
-    <div class="sec-head"><div class="eyebrow">The difference</div><h2>Learning ≠ Licensing</h2>
-      <p class="muted">You can finish 100% of the coursework and still not be licensed. LicenseFlow makes the distinction obvious, so you always know what actually stands between you and your license.</p></div>
-    <div class="grid g3">
-      <div class="card pad"><div class="badge b-blue">Learning progress</div><div style="font-size:2.4rem;font-weight:800;margin:.4rem 0">82%</div><p class="muted" style="margin:0">How much of the education you've completed.</p></div>
-      <div class="card pad"><div class="badge b-teal">Licensing progress</div><div style="font-size:2.4rem;font-weight:800;margin:.4rem 0">68%</div><p class="muted" style="margin:0">How many real licensing requirements are satisfied.</p></div>
-      <div class="card pad"><div class="badge b-violet">Exam readiness</div><div style="font-size:2.4rem;font-weight:800;margin:.4rem 0">92%</div><p class="muted" style="margin:0">How prepared you actually are to pass — not a promise.</p></div>
-    </div>
-  </div>
-</section>
-
-<section class="sec" id="faq" style="background:#fff;border-top:1px solid var(--line)">
-  <div class="container" style="max-width:820px">
-    <div class="sec-head"><div class="eyebrow">FAQ</div><h2>Questions, answered</h2></div>
-    <details class="panel"><summary style="cursor:pointer;font-weight:700">Does LicenseFlow tell me my state's exact requirements?</summary><p class="muted" style="margin-top:10px">LicenseFlow models your licensing path and guides you through it. This build shows sample requirements for demonstration — always confirm exact hours, fees, and steps with your state Department of Insurance or NIPR. Verified state data can be loaded into the platform's rules layer.</p></details>
-    <details class="panel"><summary style="cursor:pointer;font-weight:700">Is this an online course?</summary><p class="muted" style="margin-top:10px">No. It's a licensing operating system. Education is one stage — the platform also guides exam prep, fingerprints, application, and state review from start to license.</p></details>
-    <details class="panel"><summary style="cursor:pointer;font-weight:700">Is my information secure?</summary><p class="muted" style="margin-top:10px">Yes. Every account is protected by per-user database security, so only you can see your own progress, documents, and results.</p></details>
-  </div>
-</section>
-
-<section class="sec">
-  <div class="container"><div class="cta-band">
-    <h2>Ready to get licensed?</h2>
-    <p style="font-size:1.1rem;opacity:.95">Start your journey and always know exactly what comes next.</p>
-    <a href="app.html" class="btn btn-white btn-lg" style="margin-top:8px">Start my licensing journey</a>
-  </div></div>
-</section>
-
-<footer class="footer">
-  <div class="container">
-    <div class="cols">
-      <div><a class="brand" href="index.html" style="color:#fff"><span class="logo">L</span> LicenseFlow</a>
-        <p style="max-width:320px;margin-top:12px">The insurance licensing operating system — from first step to active license.</p></div>
-      <div><h4>Product</h4><a href="#how">How it works</a><br/><a href="#journey">The journey</a><br/><a href="app.html">Start</a></div>
-      <div><h4>Account</h4><a href="login.html">Log in</a><br/><a href="app.html">Sign up</a></div>
-      <div><h4>Company</h4><a href="#">About</a><br/><a href="#">Privacy</a><br/><a href="#">Terms</a></div>
-    </div>
-    <div class="fine">© <span id="yr"></span> LicenseFlow. Founder: Mariah Stevenson. Not affiliated with any state Department of Insurance or NIPR. Sample licensing data shown is for demonstration only — verify all requirements with the applicable regulator.</div>
-  </div>
-</footer>
-
-<script type="module">
-  import { SUPPORTED_STATES } from "./engine.js";
-  document.getElementById("yr").textContent = new Date().getFullYear();
-  const sel = document.getElementById("ls");
-  sel.innerHTML = '<option value="">Select…</option>' + SUPPORTED_STATES.map(s=>`<option value="${s.code}">${s.name}</option>`).join("") + '<option value="Other">Other</option>';
-  import { supabase, isConfigured } from "./supabase.js";
-  const form=document.getElementById("leadForm"), a=document.getElementById("leadAlert");
-  const show=(m,ok)=>{a.textContent=m;a.className="alert show "+(ok?"alert-ok":"alert-error")};
-  form.addEventListener("submit", async e=>{
-    e.preventDefault();
-    const p=Object.fromEntries(new FormData(form).entries());
-    if(!isConfigured){show("Thanks! (Demo mode.)",true);form.reset();return;}
-    const b=form.querySelector("button[type=submit]");b.disabled=true;b.textContent="Sending…";
-    const {error}=await supabase.from("leads").insert([p]);
-    b.disabled=false;b.textContent="Request info";
-    if(error) show("Something went wrong — please try again.",false);
-    else {show("Thanks! We'll be in touch soon. ✅",true);form.reset();}
-  });
-</script>
+<div class="footer" style="margin-top:70px">
+  <div class="container">© <span id="yr"></span> LicenseFlow — Pacific Ridgeway. Steps and links are tailored by state.</div>
+</div>
+<script>document.getElementById("yr").textContent=new Date().getFullYear();</script>
 </body>
 </html>
