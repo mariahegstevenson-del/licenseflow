@@ -252,3 +252,14 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--accent);
 table.tbl{width:100%;border-collapse:collapse}
 table.tbl th{text-align:left;font-size:.72rem;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);padding:10px 12px;border-bottom:1px solid var(--line)}
 table.tbl td{padding:11px 12px;border-bottom:1px solid var(--line-2);font-size:.92rem}
+
+/* ============================================================
+   UPDATE v5: system data cards, section headers, CE certificates
+   ============================================================ */
+.section-k{font-size:.74rem;letter-spacing:.06em;text-transform:uppercase;color:var(--faint);font-weight:640;margin-bottom:8px}
+.syscard{display:flex;align-items:center;justify-content:space-between;gap:12px;border:1px solid var(--line);background:var(--soft);border-radius:12px;padding:14px 16px;margin-bottom:14px}
+.syscard strong{font-size:1.05rem}
+.sys-k{font-size:.72rem;text-transform:uppercase;letter-spacing:.05em;color:var(--faint);font-weight:640}
+.ce-list{display:grid;gap:10px;margin-bottom:6px}
+.ce-item{border:1px solid var(--line);border-radius:12px;padding:14px 16px}
+.ce-row{display:flex;align-items:center;justify-content:space-between;gap:10px}

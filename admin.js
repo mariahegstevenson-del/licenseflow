@@ -1,6 +1,6 @@
 import { supabase, isConfigured, requireSession } from "./supabase.js";
-import { STATES } from "./states.js";
-import { STATUS_LABEL, STATUS_CLASS, REQ_BY_KEY } from "./flow.js";
+import { STATES } from "./states.js?v=5";
+import { STATUS_LABEL, STATUS_CLASS, REQ_BY_KEY } from "./flow.js?v=5";
 
 const el = (id) => document.getElementById(id);
 const root = el("root");
@@ -72,7 +72,9 @@ function queueView(queue) {
   return `<table class="tbl"><thead><tr><th>Agent</th><th>State</th><th>Requirement</th><th>Details</th><th>Status</th><th>Action</th></tr></thead><tbody>
     ${queue.map(i => {
       const meta = i.meta || {};
-      const det = Object.entries(meta).filter(([k])=>!k.startsWith("_")).slice(0,3).map(([k,v])=>`${esc(k)}: ${esc(v)}`).join(", ");
+      const det = i.requirement_key === "continuing_education"
+        ? `${(meta.certs||[]).length} certificate(s)`
+        : Object.entries(meta).filter(([k])=>!k.startsWith("_")&&k!=="certs").slice(0,3).map(([k,v])=>`${esc(k)}: ${esc(v)}`).join(", ");
       return `<tr>
         <td><strong>${esc(pname(i.user_id))}</strong></td>
         <td>${esc(stateName(pstate(i.user_id)))}</td>
@@ -144,6 +146,9 @@ async function act(id, status, note) {
   const row = A.instances.find(i => i.id === id); if (!row) return;
   const meta = { ...(row.meta||{}) };
   if (note) meta._reject = note;
+  if (row.requirement_key === "continuing_education" && status === "admin_verified" && Array.isArray(meta.certs)) {
+    meta.certs = meta.certs.map(c => ({ ...c, status:"admin_verified" }));
+  }
   await supabase.from("requirement_instances").update({ status, meta, completed_at: status==="admin_verified"?new Date().toISOString():null, updated_at:new Date().toISOString() }).eq("id", id);
   await load();
 }
