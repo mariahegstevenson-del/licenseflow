@@ -1,51 +1,37 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>Log in · LicenseFlow</title>
-<link rel="stylesheet" href="styles.css" />
+<link rel="stylesheet" href="styles.css"/>
 <script src="config.js"></script>
-<script src="data.js"></script>
 </head>
 <body>
-<nav class="nav">
-  <div class="container">
-    <a class="brand" href="index.html"><span class="logo">L</span> LicenseFlow</a>
-    <div class="nav-links"><a href="index.html">← Back to home</a></div>
-  </div>
-</nav>
-
 <div class="auth-wrap">
   <div class="auth-box">
-    <div class="form-card">
-      <h2 id="authTitle" style="text-align:center">Welcome back</h2>
-      <p class="muted center" id="authSub" style="margin-top:0">Log in to your agent dashboard</p>
-
+    <a class="brand" href="index.html" style="justify-content:center;margin-bottom:18px"><span class="logo">L</span> LicenseFlow</a>
+    <div class="card pad">
+      <h2 id="title" style="text-align:center;margin-bottom:2px">Welcome back</h2>
+      <p class="muted center" id="sub" style="margin-top:0">Log in to your licensing dashboard</p>
       <div class="tabs">
         <button id="tabLogin" class="active" type="button">Log in</button>
-        <button id="tabSignup" type="button">Sign up</button>
+        <button id="tabSignup" type="button">Create account</button>
       </div>
-
-      <div id="authAlert" class="alert"></div>
-
-      <form id="authForm">
-        <div id="nameField" style="display:none">
-          <label for="fullName">Full name</label>
-          <input id="fullName" name="full_name" />
-        </div>
+      <div id="alert" class="alert"></div>
+      <form id="form">
+        <div id="nameField" style="display:none"><label for="fullName">Full name</label><input id="fullName" name="full_name"/></div>
         <label for="email">Email</label>
-        <input id="email" name="email" type="email" required autocomplete="email" />
+        <input id="email" name="email" type="email" required autocomplete="email"/>
         <label for="password">Password</label>
-        <input id="password" name="password" type="password" required minlength="6" autocomplete="current-password" />
-        <button id="authSubmit" class="btn btn-primary btn-block" type="submit" style="margin-top:16px">Log in</button>
+        <input id="password" name="password" type="password" required minlength="6" autocomplete="current-password"/>
+        <button id="submit" class="btn btn-primary btn-block" type="submit" style="margin-top:16px">Log in</button>
       </form>
-      <p class="note center" style="margin-top:14px" id="switchHint"></p>
+      <p class="note center" id="hint" style="margin-top:14px"></p>
     </div>
-    <p class="note center" style="margin-top:16px">🔒 Your data is protected with per-user security.</p>
+    <p class="note center" style="margin-top:16px">🔒 Protected with per-user database security.</p>
   </div>
 </div>
-
 <script type="module" src="auth.js"></script>
 </body>
 </html>

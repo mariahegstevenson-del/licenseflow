@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>LicenseFlow · Command Center</title>
+<link rel="stylesheet" href="styles.css"/>
+<script src="config.js"></script>
+</head>
+<body>
+<div class="samplebar" style="position:sticky;top:0;z-index:70">Command Center — demonstration data. Cross-agent metrics use sample data (per-agent database access is restricted by design).</div>
+<div class="overlay" id="overlay"></div>
+<div class="shell">
+  <aside class="side" id="side">
+    <a class="brand" href="index.html"><span class="logo">L</span> LicenseFlow</a>
+    <div class="pill" style="margin:0 4px 12px;background:rgba(255,255,255,.1);color:#cfe0ff">Command Center</div>
+    <nav>
+      <button class="nav-item" data-route="#/pipeline"><span class="i">📊</span> Pipeline</button>
+      <button class="nav-item" data-route="#/atrisk"><span class="i">⚠️</span> At-Risk <span class="tag" id="riskTag"></span></button>
+      <button class="nav-item" data-route="#/agents"><span class="i">👥</span> Agents</button>
+      <button class="nav-item" data-route="#/requirements"><span class="i">📜</span> State Requirements</button>
+    </nav>
+    <div class="spacer"></div>
+    <div class="who"><a class="nav-item" href="app.html" style="padding-left:0"><span class="i">←</span> Agent view</a></div>
+  </aside>
+  <main class="main">
+    <div class="topbar">
+      <div style="display:flex;align-items:center;gap:12px">
+        <button class="btn btn-ghost btn-sm mob-menu" id="menu">☰</button>
+        <div><h1 id="ttl">Pipeline</h1><div class="greet">Licensing operations · ~100 agents/month</div></div>
+      </div>
+    </div>
+    <div id="content"></div>
+  </main>
+</div>
+<script type="module" src="admin.js"></script>
+</body>
+</html>
