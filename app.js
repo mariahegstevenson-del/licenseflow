@@ -52,6 +52,7 @@ function route() {
   if (!p.welcome_completed) return renderWelcome();
   const h = (location.hash || "#/dashboard").replace("#/", "");
   const [base, arg] = h.split("/");
+  if (base === "welcome") return renderWelcome();
   if (base === "step") return renderStep(arg);
   return renderDashboard();
 }
@@ -213,17 +214,20 @@ function renderWelcome() {
     </div>
     <div class="card pad launch">
       <div class="eyebrow2">Ready?</div>
-      <h2 style="margin:.2rem 0 .4rem">Let's get your license started.</h2>
-      <p class="muted">We'll take you straight to your first step — no guessing where to go.</p>
-      <button class="btn btn-primary btn-lg" id="launch">Launch my licensing journey</button>
+      <h2 style="margin:.2rem 0 .4rem">${p.welcome_completed ? "Your licensing journey" : "Let's get your license started."}</h2>
+      <p class="muted">${p.welcome_completed ? "You've already started — jump back into your journey anytime." : "We'll take you straight to your first step — no guessing where to go."}</p>
+      <button class="btn btn-primary btn-lg" id="launch">${p.welcome_completed ? "Back to my journey" : "Launch my licensing journey"}</button>
     </div>
   </div>`;
   el("launch").onclick = async () => {
-    await supabase.from("licensing_profiles").update({ welcome_completed:true, onboarding_start:new Date().toISOString(), updated_at:new Date().toISOString() }).eq("user_id",S.user.id);
-    await audit("welcome_completed", null, "complete", {});
-    S.profile.welcome_completed = true;
-    const ns = F.nextStep(S.journey, S.sm);
-    if (ns.type === "do") goto("#/step/"+ns.req.key); else goto("#/dashboard");
+    if (!S.profile.welcome_completed) {
+      await supabase.from("licensing_profiles").update({ welcome_completed:true, onboarding_start:new Date().toISOString(), updated_at:new Date().toISOString() }).eq("user_id",S.user.id);
+      await audit("welcome_completed", null, "complete", {});
+      S.profile.welcome_completed = true;
+      const ns = F.nextStep(S.journey, S.sm);
+      if (ns.type === "do") { goto("#/step/"+ns.req.key); return; }
+    }
+    goto("#/dashboard");
   };
 }
 function confBadge(c){ if(!c) return ""; const m={high:["conf-high","High confidence — pathway identified"],medium:["conf-medium","Medium confidence"],low:["conf-low","Under review"]}[c]||["conf-high",c]; return `<div style="margin:10px 0"><span class="conf ${m[0]}">${esc(m[1])}</span></div>`; }
