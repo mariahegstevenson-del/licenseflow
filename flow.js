@@ -33,7 +33,7 @@ export const isDone = (s) => DONE.has(s);
    linkKey: which per-state URL (from states.js) to open.
 ------------------------------------------------------------------ */
 export const REQS = [
-  { key:"study_material", label:"Study Material", short:"Study Material", verify:"auto",
+  { key:"study_material", label:"Study Materials", short:"Study Materials", verify:"auto",
     render:"action", linkKey:"study_material", providerLabel:"Xcel Solutions",
     heading:"Purchase your pre-licensing study material",
     lead:"Purchase and begin your state-approved Life & Health course.",
@@ -45,27 +45,35 @@ export const REQS = [
     heading:"Schedule your exam",
     dependsOn:["study_material"] },
 
-  { key:"nipr_application", label:"Application", short:"Application", verify:"auto",
+  { key:"nipr_application", label:"NIPR Application", short:"NIPR Application", verify:"auto",
     render:"action", linkKey:"state_app", providerLabel:"NIPR",
     heading:"Submit your license application",
     lead:"Apply for your license through NIPR.",
     fields:[{name:"application_date",label:"NIPR application date",type:"date",required:true}],
     dependsOn:["exam"] },
 
-  { key:"license", label:"License Information", short:"License", verify:"admin",
+  { key:"license_number", label:"License Number", short:"License Number", verify:"admin",
     render:"generic",
-    heading:"Record your license information",
-    lead:"Once the state issues your license, enter your details below. We'll verify them.",
-    fields:[
-      {name:"license_number",label:"License number",type:"text",required:true},
-      {name:"npn",label:"National Producer Number (NPN)",type:"text",required:true},
-    ], dependsOn:["nipr_application"] },
+    heading:"Enter your license number",
+    lead:"Once the state issues your license, enter your license number below. We'll verify it.",
+    help:{ title:"How to find your license number", body:"Your license number is typically provided by your state's insurance department — through email, official correspondence, your license documentation, or the state's official license lookup system." },
+    fields:[{name:"license_number",label:"License number",type:"text",required:true}],
+    dependsOn:["nipr_application"] },
+
+  { key:"npn", label:"NPN", short:"NPN", verify:"admin",
+    render:"generic",
+    heading:"Enter your National Producer Number",
+    lead:"Your NPN is assigned when your license is processed. Enter it below and we'll verify it.",
+    help:{ title:"How to find your NPN", body:"Your National Producer Number (NPN) is assigned by the NAIC. You can look it up on the official NIPR site using your name and state." },
+    lookupUrl:"https://nipr.com/licensing-center/look-up-a-national-producer-number", lookupLabel:"Look up my NPN",
+    fields:[{name:"npn",label:"NPN",type:"text",required:true}],
+    dependsOn:["license_number"] },
 
   { key:"continuing_education", label:"Continuing Education", short:"Continuing Education", verify:"admin",
     render:"ce", linkKey:"success_ce",
     heading:"Complete your continuing education",
     lead:"Add each continuing-education certificate. You can add as many as you need.",
-    dependsOn:["license"] },
+    dependsOn:["npn"] },
 
   { key:"eo", label:"Errors & Omissions", short:"E&O", verify:"admin",
     render:"eo", linkKey:"eo",

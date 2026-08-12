@@ -8,7 +8,7 @@ const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&":"&amp;","<"
 const stateName = (c) => STATES[c]?.name || c || "";
 const linkify = (t) => esc(t).replace(/(https?:\/\/[^\s]+)/g, (u) => `<a href="${u}" target="_blank" rel="noopener">${u}</a>`);
 
-const S = { user:null, profile:null, instances:[], docs:[], sm:{}, journey:null };
+const S = { user:null, profile:null, instances:[], docs:[], sm:{}, journey:null, videos:{} };
 let ceRows = []; // transient new-certificate rows for the CE view
 
 /* ---------------- boot ---------------- */
@@ -23,12 +23,14 @@ let ceRows = []; // transient new-certificate rows for the CE view
 
 async function load() {
   const uid = S.user.id;
-  const [p, inst, docs] = await Promise.all([
+  const [p, inst, docs, vids] = await Promise.all([
     supabase.from("licensing_profiles").select("*").eq("user_id", uid).maybeSingle(),
     supabase.from("requirement_instances").select("*").eq("user_id", uid),
     supabase.from("documents").select("*").eq("user_id", uid),
+    supabase.from("step_videos").select("*"),
   ]);
   S.profile = p.data; S.instances = inst.data || []; S.docs = docs.data || [];
+  S.videos = {}; (vids.data||[]).forEach(v => S.videos[v.step_key] = v);
   S.sm = F.statusMap(S.instances);
   el("who").textContent = S.profile?.full_name || S.user.email;
   if (S.profile?.designated_state) S.journey = F.buildJourney(S.profile.designated_state);
@@ -38,6 +40,14 @@ function firstName(){ return (S.profile?.answers?.first_name) || (S.profile?.ful
 function docFor(key){ return S.docs.find(d => d.doc_key === key); }
 function sysLine(){ return `Licensing state: <strong>${esc(stateName(S.profile.designated_state))}</strong> &nbsp;·&nbsp; License: <strong>${esc(S.profile.license_type)}</strong>`; }
 async function audit(event, before, after, meta={}) { await supabase.from("audit_events").insert({ user_id:S.user.id, event, status_before:before||null, status_after:after||null, source:"agent", meta }); }
+function stepIndex(key){ return S.journey ? S.journey.reqs.findIndex(r=>r.key===key) : -1; }
+function videoBlock(key, fallbackTitle){
+  const v = S.videos?.[key];
+  if (!v || !v.active || !v.url) return "";
+  return `<div class="section-k">${esc(v.title||fallbackTitle||"Watch")}</div>
+    <div class="video">${videoEmbed(v.url)}</div>
+    ${v.description?`<p class="link-note" style="margin-top:-12px">${esc(v.description)}</p>`:""}`;
+}
 
 /* ---------------- router ---------------- */
 function route() {
@@ -294,8 +304,9 @@ function renderStep(key) {
   const g = F.gate(r, S.sm);
   if (g.blocked && !F.isDone(st)) return renderGate(r, g);
 
+  const idx = stepIndex(r.key), total = S.journey.reqs.length;
   const head = `
-    <div class="wt-head"><div class="wt-meta"><span><a href="#/dashboard" style="color:inherit">← Your journey</a></span><span>${sysLine()}</span></div></div>`;
+    <div class="wt-head"><div class="wt-meta"><span><a href="#/dashboard" style="color:inherit">← Your journey</a></span><span>Step ${idx+1} of ${total}</span></div><div class="wt-state">${sysLine()}</div></div>`;
 
   if (r.render === "exam") return renderExam(r, st, head);
   if (r.render === "ce") return renderCE(r, st, head);
@@ -309,8 +320,11 @@ function renderStep(key) {
       <h2 style="margin-top:.4rem">${esc(r.heading)}</h2>
       <p class="step-desc">${esc(r.lead||"")}</p>
       ${st==="rejected"||st==="action_required" ? `<div class="callout callout-warn"><span class="lab">Action required</span>${esc(meta._reject || "This was sent back for correction. Please review and resubmit.")}</div>` : ""}
+      ${r.help ? `<div class="callout"><span class="lab">${esc(r.help.title)}</span>${esc(r.help.body)}</div>` : ""}
+      ${videoBlock(r.key, r.help?r.help.title:"Watch")}
       ${r.render==="action" && r.providerLabel ? `<div class="syscard"><span class="sys-k">Your provider</span><strong>${esc(r.providerLabel)}</strong></div>` : ""}
       ${r.link ? `<div class="link-row"><a class="btn btn-accent btn-lg" href="${esc(r.link)}" target="_blank" rel="noopener">${esc(openLabel(r,""))}</a></div><div class="link-note">Opens in a new tab. Complete it, then record the details below.</div>` : ""}
+      ${r.lookupUrl ? `<div class="link-row"><a class="btn btn-accent btn-lg" href="${esc(r.lookupUrl)}" target="_blank" rel="noopener">${esc(r.lookupLabel||"Look it up")}</a></div><div class="link-note">Opens the official lookup in a new tab.</div>` : ""}
       ${r.instructions ? `<details class="inst" style="margin-top:16px"><summary>Step-by-step instructions</summary><ol>${r.instructions.map(i=>`<li>${linkify(i)}</li>`).join("")}</ol></details>` : ""}
       <div class="form-block">
         <h3 style="margin:22px 0 6px;font-size:1.02rem">${r.render==="eo"?"Upload your certificate":"Enter your details"}</h3>
@@ -358,7 +372,7 @@ async function submitGeneric(r) {
   const df = el("docInput"); const newFile = df && df.files[0];
   const hasDoc = !!docFor(r.key) || !!newFile;
   if (r.doc?.required && !hasDoc) missing.push(r.doc.label);
-  if (r.key==="license" && meta.npn && !/^\d{5,10}$/.test(String(meta.npn).trim())) missing.push("a valid NPN (5–10 digits)");
+  if (r.key==="npn" && meta.npn && !/^\d{5,10}$/.test(String(meta.npn).trim())) missing.push("a valid NPN (5–10 digits)");
   if (missing.length) { A.className="alert show alert-error"; A.textContent="Please provide: "+missing.join(", ")+"."; return; }
   el("submitStep").disabled=true; el("submitStep").textContent="Saving…";
   try {
@@ -391,9 +405,7 @@ function renderExam(r, st, head) {
       <h2 style="margin-top:.4rem">Schedule your exam</h2>
       <p class="step-desc">${esc(info.examTitle)}. We've prepared the correct examination information for you.</p>
 
-      <div class="section-k">Watch before you schedule</div>
-      <div class="video">${videoEmbed(r.video)}</div>
-      <p class="link-note" style="margin-top:-12px">Learn how to schedule your licensing examination.</p>
+      ${videoBlock("exam","Watch before you schedule") || `<div class="section-k">Watch before you schedule</div><div class="video">${videoEmbed(null)}</div><p class="link-note" style="margin-top:-12px">Learn how to schedule your licensing examination.</p>`}
 
       <div class="section-k" style="margin-top:22px">Your examination platform</div>
       <div class="syscard"><span class="sys-k">Scheduled through</span><strong>${esc(info.providerLabel)}</strong></div>
@@ -440,6 +452,7 @@ function renderCE(r, st, head) {
       <h2 style="margin-top:.4rem">Continuing education</h2>
       <p class="step-desc">${esc(r.lead)}</p>
       ${st==="action_required"||st==="rejected" ? `<div class="callout callout-warn"><span class="lab">Action required</span>${esc(meta._reject||"One certificate needs attention. Replace the flagged certificate below.")}</div>` : ""}
+      ${videoBlock("continuing_education","How to complete your continuing education")}
       ${r.link ? `<div class="link-row"><a class="btn btn-accent btn-lg" href="${esc(r.link)}" target="_blank" rel="noopener">Open Success CE</a></div><div class="link-note">Review your state's continuing-education requirements.</div>` : ""}
 
       ${certs.length ? `<div class="section-k" style="margin-top:22px">Your certificates</div>

@@ -263,3 +263,8 @@ table.tbl td{padding:11px 12px;border-bottom:1px solid var(--line-2);font-size:.
 .ce-list{display:grid;gap:10px;margin-bottom:6px}
 .ce-item{border:1px solid var(--line);border-radius:12px;padding:14px 16px}
 .ce-row{display:flex;align-items:center;justify-content:space-between;gap:10px}
+
+/* admin definition rows */
+.hl{display:flex;justify-content:space-between;gap:12px;padding:.55rem 0;border-bottom:1px solid var(--line-2)}
+.hl:last-child{border-bottom:none}
+@media(max-width:700px){.adm .grid{grid-template-columns:1fr!important}}
