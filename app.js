@@ -18,6 +18,7 @@ let ceRows = []; // transient new-certificate rows for the CE view
   S.user = session.user;
   el("logout").onclick = async () => { await supabase.auth.signOut(); location.href = "index.html"; };
   window.addEventListener("hashchange", route);
+  supabase.from("admins").select("user_id").eq("user_id", S.user.id).maybeSingle().then(({ data }) => { if (data) { const a = el("adminLink"); if (a) a.style.display = ""; } });
   await load();
 })();
 
