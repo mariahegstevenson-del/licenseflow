@@ -80,6 +80,12 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--accent);
 .tabs button{flex:1;padding:.55rem;border:none;background:transparent;border-radius:8px;font-weight:560;color:var(--muted);cursor:pointer;font-family:inherit}
 .tabs button.on{background:#fff;color:var(--ink);box-shadow:var(--shadow)}
 
+/* Google sign-in + "or" divider */
+.btn-google{gap:.65rem;font-weight:560}
+.btn-google .g-icon{flex:0 0 auto;display:block}
+.or{display:flex;align-items:center;gap:.75rem;margin:18px 0 2px;color:var(--faint);font-size:.82rem}
+.or::before,.or::after{content:"";flex:1;height:1px;background:var(--line)}
+
 /* landing */
 .hero{padding:96px 0 40px}
 .hero h1{max-width:16ch}
