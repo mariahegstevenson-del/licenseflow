@@ -107,6 +107,21 @@ function succeed() {
     fail("This sign-in link is missing information. Please start again.");
   } catch (e) {
     const msg = e?.message || "Something went wrong finishing sign-in.";
+
+    // A one-time code can only be exchanged once. If this page ran twice --
+    // a double-click on the provider's Continue button, a refresh, or the
+    // back button -- the second attempt throws even though the first one
+    // already signed the person in. Check for a session before crying wolf.
+    try {
+      const { data } = await supabase.auth.getSession();
+      if (data.session) {
+        succeed();
+        return;
+      }
+    } catch (_) {
+      /* fall through to the error below */
+    }
+
     // The PKCE verifier lives in this browser's local storage. If the link
     // was opened somewhere else (a different browser, or an email client's
     // in-app browser) there is nothing to exchange the code against.
