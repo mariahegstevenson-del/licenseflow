@@ -274,3 +274,9 @@ table.tbl td{padding:11px 12px;border-bottom:1px solid var(--line-2);font-size:.
 .hl{display:flex;justify-content:space-between;gap:12px;padding:.55rem 0;border-bottom:1px solid var(--line-2)}
 .hl:last-child{border-bottom:none}
 @media(max-width:700px){.adm .grid{grid-template-columns:1fr!important}}
+
+/* label with a trailing action link ("Forgot your password?") */
+.lbl-row{display:flex;align-items:baseline;justify-content:space-between;gap:12px}
+.lbl-row label{margin-bottom:6px}
+.lnk-quiet{font-size:.82rem;color:var(--muted);text-decoration:none}
+.lnk-quiet:hover{color:var(--accent);text-decoration:underline}

@@ -62,7 +62,7 @@ fillSelect($("#profState"), D.states);
   user = session.user;
 
   await Promise.all([loadProfile(), loadCE(), loadStudy(), loadTickets()]);
-  $("#supEmail")?.setAttribute("href", "mailto:" + (window.LF_CONFIG.SUPPORT_EMAIL || "support@licenseflow.app"));
+  $("#supEmail")?.setAttribute("href", "mailto:" + (window.LF_CONFIG.SUPPORT_EMAIL || "support@lifelicenseflow.com"));
   renderAll();
 })();
 

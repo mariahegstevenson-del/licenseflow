@@ -21,20 +21,51 @@ function friendly(err) {
   return msg;
 }
 
+/* Three states share this one form: signup, login, and "email me a reset
+   link". Reset hides the password field entirely -- asking for a password
+   you've just said you can't remember is the classic version of this screen
+   done badly. */
+const COPY = {
+  signup: { title: "Create your account", sub: "Register to start your licensing walkthrough",
+            submit: "Create account", pw: "new-password",
+            hint: 'Already registered? <a href="#" data-go="login">Log in</a>' },
+  login:  { title: "Welcome back", sub: "Log in to continue your walkthrough",
+            submit: "Log in", pw: "current-password",
+            hint: 'New here? <a href="#" data-go="signup">Create an account</a>' },
+  reset:  { title: "Reset your password", sub: "We'll email you a link to set a new one",
+            submit: "Send reset link", pw: "current-password",
+            hint: 'Remembered it? <a href="#" data-go="login">Back to log in</a>' },
+};
+
 function render(keepAlert) {
-  const s = mode === "signup";
-  el("tabSignup").classList.toggle("on", s);
-  el("tabLogin").classList.toggle("on", !s);
-  el("title").textContent = s ? "Create your account" : "Welcome back";
-  el("sub").textContent = s ? "Register to start your licensing walkthrough" : "Log in to continue your walkthrough";
-  el("submit").textContent = s ? "Create account" : "Log in";
-  el("password").setAttribute("autocomplete", s ? "new-password" : "current-password");
-  el("hint").innerHTML = s ? 'Already registered? <a href="#" id="sw">Log in</a>' : 'New here? <a href="#" id="sw">Create an account</a>';
-  const sw = el("sw"); if (sw) sw.onclick = (e) => { e.preventDefault(); mode = s ? "login" : "signup"; render(); };
+  const c = COPY[mode];
+  const resetting = mode === "reset";
+  el("tabSignup").classList.toggle("on", mode === "signup");
+  el("tabLogin").classList.toggle("on", mode !== "signup");
+  el("title").textContent = c.title;
+  el("sub").textContent = c.sub;
+  el("submit").textContent = c.submit;
+
+  // Hiding an input isn't enough -- a hidden `required` field blocks submit
+  // silently. Disabling it takes it out of validation as well as out of view.
+  el("pwWrap").style.display = resetting ? "none" : "";
+  el("password").disabled = resetting;
+  el("password").setAttribute("autocomplete", c.pw);
+  // Nothing to have forgotten yet on the sign-up tab.
+  el("forgot").style.display = mode === "login" ? "" : "none";
+
+  const g = el("google"), or = document.querySelector(".or");
+  if (g) g.style.display = resetting ? "none" : "";
+  if (or) or.style.display = resetting ? "none" : "";
+
+  el("hint").innerHTML = c.hint;
+  const sw = el("hint").querySelector("[data-go]");
+  if (sw) sw.onclick = (e) => { e.preventDefault(); mode = sw.dataset.go; render(); };
   if (!keepAlert) clear();
 }
 el("tabSignup").onclick = () => { mode = "signup"; render(); };
 el("tabLogin").onclick = () => { mode = "login"; render(); };
+el("forgot").onclick = (e) => { e.preventDefault(); mode = "reset"; render(); el("email").focus(); };
 
 /* ---------- boot ---------- */
 (async () => {
@@ -67,6 +98,18 @@ el("form").addEventListener("submit", async (e) => {
   el("submit").disabled = true; el("submit").textContent = "Please wait…";
 
   try {
+    if (mode === "reset") {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: callbackUrl("reset-password.html"),
+      });
+      if (error) throw error;
+      // Always the same message whether or not the address is on file --
+      // a different reply here would let anyone test which emails have
+      // accounts.
+      show("If that email has an account, a reset link is on its way. It expires in an hour.", true);
+      return;
+    }
+
     if (mode === "signup") {
       const { data, error } = await supabase.auth.signUp({
         email,
@@ -101,7 +144,7 @@ el("form").addEventListener("submit", async (e) => {
     show(friendly(err), false);
   } finally {
     el("submit").disabled = false;
-    el("submit").textContent = mode === "signup" ? "Create account" : "Log in";
+    el("submit").textContent = COPY[mode].submit;
   }
 });
 

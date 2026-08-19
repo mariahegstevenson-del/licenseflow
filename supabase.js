@@ -26,7 +26,7 @@ export const supabase = configured
   : null;
 
 /* Absolute URL of the page that finishes a sign-in redirect.
-   Works on any host (Railway URL, licenseflow.app, localhost) because it is
+   Works on any host (Railway URL, lifelicenseflow.com, localhost) because it is
    derived from wherever the page is currently being served. Every host you
    use must also be listed in Supabase → Authentication → URL Configuration. */
 export function callbackUrl(next) {

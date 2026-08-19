@@ -10,5 +10,5 @@ window.LF_CONFIG = {
   SUPABASE_URL:      "https://imseosupzubiwdruahfi.supabase.co",
   SUPABASE_ANON_KEY: "sb_publishable_IRewraeXAdKDEXvza_5b6A_Cx8iT0Ty",
   BRAND: "LicenseFlow",
-  SUPPORT_EMAIL: "support@licenseflow.app"
+  SUPPORT_EMAIL: "support@lifelicenseflow.com"
 };
