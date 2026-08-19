@@ -246,7 +246,11 @@ function renderRail(){
     {k:"Enrolled → licensed", now:cur.convRate, prior:prev.convRate, good:"up",
      fmt:v=>v==null?"—":v+"%", tr:null,
      foot:cur.enrolled ? `${cur.cohortLicensed} of the ${cur.enrolled} who enrolled` : null,
-     caveat:W.d<=90},
+     // The caveat exists to explain why a short window reads low: the cohort
+     // hasn't had time to finish. It only applies if somebody actually IS
+     // unfinished -- on a 100% window it would be plainly false.
+     caveat:W.d<=90 && cur.cohortLicensed < cur.enrolled
+              ? cur.enrolled - cur.cohortLicensed : 0},
     {k:"Typical time to license", now:cur.medDays, prior:prev.medDays, good:"down",
      fmt:v=>v==null?"—":v+(v===1?" day":" days"), tr:null},
     {k:"Handled automatically", now:cur.autoRate, prior:prev.autoRate, good:"up",
@@ -280,7 +284,9 @@ function renderRail(){
     ${metrics.map(m=>{
       const d = deltaChip(m.now, m.prior, m.good);
       const foot = m.foot
-        ? esc(m.foot) + (m.caveat ? " · many are still working through it" : "")
+        ? esc(m.foot) + (m.caveat
+            ? ` · ${m.caveat === 1 ? "1 is" : m.caveat + " are"} still working through it`
+            : "")
         : (m.prior==null ? "no prior data"
            : esc(m.fmt(m.prior))+" in the prior "+esc(W.unit));
       return `<div class="cc-kpi">
