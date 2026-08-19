@@ -45,7 +45,7 @@ export const PROVIDER_STEPS = {
     'Register for the "Life & Health Exam".',
     "Choose a test-center location, date, and time (in person preferred).",
     "Proceed to checkout.",
-    "Text Pacific Ridgeway Operations with your name, state, test date and time.",
+    "Send your agency your name, state, test date and time.",
   ],
   psi: [
     "Click your state-specific link.",
@@ -56,7 +56,7 @@ export const PROVIDER_STEPS = {
     'Register for the "Life & Health Exam" (in person preferred).',
     "Choose a test-center location, date, and time.",
     "Proceed to checkout.",
-    "Text Pacific Ridgeway Operations with your name, state, test date and time.",
+    "Send your agency your name, state, test date and time.",
   ],
   prometric: [
     "Click your state-specific link.",

@@ -1,6 +1,6 @@
 import { supabase, isConfigured, requireSession } from "./supabase.js";
-import { STATES } from "./states.js?v=5";
-import * as F from "./flow.js?v=5";
+import { STATES } from "./states.js?v=6";
+import * as F from "./flow.js?v=6";
 
 const el = (id) => document.getElementById(id);
 const root = el("root"), navEl = el("nav"), railEl = el("rail");
