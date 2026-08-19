@@ -252,7 +252,8 @@ function renderRail(){
      caveat:W.d<=90 && cur.cohortLicensed < cur.enrolled
               ? cur.enrolled - cur.cohortLicensed : 0},
     {k:"Typical time to license", now:cur.medDays, prior:prev.medDays, good:"down",
-     fmt:v=>v==null?"—":v+(v===1?" day":" days"), tr:null},
+     // "0 days" reads like a missing value rather than a fast result.
+     fmt:v=>v==null?"—":v===0?"Same day":v+(v===1?" day":" days"), tr:null},
     {k:"Handled automatically", now:cur.autoRate, prior:prev.autoRate, good:"up",
      fmt:v=>v==null?"—":v+"%", tr:null},
   ];
