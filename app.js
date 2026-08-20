@@ -24,12 +24,23 @@ let ceRows = []; // transient new-certificate rows for the CE view
 
 async function load() {
   const uid = S.user.id;
+  /* A rejected query would take Promise.all down with it and leave the page
+     sitting on "Loading…" forever, so each one resolves to a result shape
+     whether it succeeds or throws. */
+  const settle = (q) => Promise.resolve(q).then(
+    (r) => r, (e) => ({ data: null, error: e || new Error("Request failed") }));
+
   const [p, inst, docs, vids] = await Promise.all([
-    supabase.from("licensing_profiles").select("*").eq("user_id", uid).maybeSingle(),
-    supabase.from("requirement_instances").select("*").eq("user_id", uid),
-    supabase.from("documents").select("*").eq("user_id", uid),
-    supabase.from("step_videos").select("*"),
+    settle(supabase.from("licensing_profiles").select("*").eq("user_id", uid).maybeSingle()),
+    settle(supabase.from("requirement_instances").select("*").eq("user_id", uid)),
+    settle(supabase.from("documents").select("*").eq("user_id", uid)),
+    settle(supabase.from("step_videos").select("*")),
   ]);
+  /* A failed profile read and a genuinely new agent both arrive here as
+     null. Treating them the same is dangerous: an existing agent would be
+     shown the registration form, and finishing it overwrites the profile
+     they already have. Record the failure so route() can tell them apart. */
+  S.profileError = p.error || null;
   S.profile = p.data; S.instances = inst.data || []; S.docs = docs.data || [];
   S.videos = {}; (vids.data||[]).forEach(v => S.videos[v.step_key] = v);
   S.sm = F.statusMap(S.instances);
@@ -53,6 +64,9 @@ function videoBlock(key, fallbackTitle){
 /* ---------------- router ---------------- */
 function route() {
   const p = S.profile;
+  // Couldn't reach the profile at all -- say so and offer a retry. Never
+  // fall through to registration on an error; see load().
+  if (S.profileError) return renderLoadError();
   if (!p || !p.registered) return renderRegistration();
   if (!p.designated_state) {
     const path = F.determinePathway(p);
@@ -73,6 +87,24 @@ function goto(hash){ if (location.hash === hash) route(); else location.hash = h
    REGISTRATION (with military branch) — unchanged behavior
    ============================================================ */
 function stateOptions(sel){ return `<option value="">Select…</option>` + STATE_LIST.map(s=>`<option value="${s.code}" ${s.code===sel?"selected":""}>${esc(s.name)}</option>`).join(""); }
+/* Shown when the profile lookup itself failed. Deliberately offers a retry
+   and nothing else -- no form an existing agent could fill in and clobber
+   their own record with. */
+function renderLoadError() {
+  root.innerHTML = `
+    <div class="card pad" style="max-width:520px;margin:40px auto">
+      <h2 style="margin-top:0">We couldn't load your account</h2>
+      <p class="muted">Your progress is safe — we just couldn't reach it right now.
+        This is usually a dropped connection.</p>
+      <div class="alert show alert-error" style="margin-top:4px">${esc(S.profileError?.message || "Connection problem.")}</div>
+      <button class="btn btn-primary" id="retryLoad" style="margin-top:6px">Try again</button>
+      <p class="hint" style="margin-top:14px">Still stuck? Email
+        <a href="mailto:${esc((window.LF_CONFIG||{}).SUPPORT_EMAIL || "support@lifelicenseflow.com")}">support</a>.</p>
+    </div>`;
+  const b = el("retryLoad");
+  if (b) b.onclick = async () => { b.disabled = true; b.textContent = "Retrying…"; await load(); };
+}
+
 function renderRegistration() {
   const a = S.profile?.answers || {};
   root.innerHTML = `
