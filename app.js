@@ -322,7 +322,8 @@ function renderDashboard() {
    what the step actually asks for. */
 function needsFor(r){
   const out = [];
-  if (r.doc && r.doc.required) out.push(`Your ${r.doc.label.toLowerCase()} as a PDF or photo`);
+  // Don't case-fold the label -- it turns "E&O certificate" into "e&o certificate".
+  if (r.doc && r.doc.required) out.push(`Your ${r.doc.label} as a PDF or photo`);
   (r.fields || []).filter(f => f.required).forEach(f => out.push(f.label));
   return out;
 }
