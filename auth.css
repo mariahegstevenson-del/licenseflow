@@ -1,0 +1,112 @@
+/* ============================================================
+   LicenseFlow — auth screens (login, password reset, callback).
+   Same Navy & Azure identity as the landing page, so a returning
+   agent never feels handed off to a different product.
+
+   Kept separate from styles.css on purpose: that sheet still
+   dresses the signed-in app and Command Center, and editing it
+   would restyle those by accident.
+   ============================================================ */
+:root{
+  --bg:#FFFFFF; --sub:#F4F7FA; --surf:#FFFFFF;
+  --ink:#061223; --ink2:#132741; --mut:#51637A; --faint:#8293A8;
+  --pri:#0C3D82; --pri6:#082C5F; --pri05:#EAF0F8; --pri-on:#FFFFFF;
+  --line:#DCE3EC; --line2:#EDF1F6;
+  --ok:#0F6F40; --ok-bg:#ECF7F0; --ok-line:#C2E4CE;
+  --bad:#A32019; --bad-bg:#FDEEEC; --bad-line:#F5CFCB;
+  --r:12px;
+  --sh-1:0 1px 2px rgba(6,18,35,.05);
+  --sh-2:0 2px 6px rgba(6,18,35,.05), 0 14px 34px rgba(6,18,35,.07);
+}
+
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0;background:var(--sub);color:var(--ink);
+  font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  line-height:1.6;-webkit-font-smoothing:antialiased;letter-spacing:-.008em;
+}
+a{color:var(--pri);text-decoration:none}
+a:hover{text-decoration:underline}
+:focus-visible{outline:2px solid var(--pri);outline-offset:2px;border-radius:5px}
+.muted{color:var(--mut)}
+.center{text-align:center}
+
+/* ---------- shell ----------
+   A soft navy wash at the top keeps these screens related to the
+   landing page without competing with the card for attention. */
+.screen{
+  min-height:100vh;display:grid;place-items:center;padding:44px 18px;
+  background:
+    radial-gradient(760px 340px at 50% -8%, rgba(12,61,130,.07), transparent 70%),
+    var(--sub);
+}
+.screen-inner{width:100%;max-width:430px}
+
+/* ---------- brand ---------- */
+.brand{
+  display:inline-flex;align-items:center;gap:10px;
+  font-family:"Libre Franklin",Inter,sans-serif;font-weight:800;font-size:1.1rem;
+  letter-spacing:-.024em;color:var(--ink);
+}
+.brand:hover{text-decoration:none}
+.mark{
+  width:30px;height:30px;border-radius:8px;background:var(--pri);color:var(--pri-on);
+  display:grid;place-items:center;font-weight:800;font-size:.86rem;font-family:Inter,sans-serif;
+}
+
+/* ---------- card ---------- */
+.card{background:var(--surf);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--sh-2)}
+.pad{padding:30px 28px}
+h2{
+  font-family:"Libre Franklin",Inter,sans-serif;font-weight:800;letter-spacing:-.032em;
+  line-height:1.14;margin:0 0 6px;color:var(--ink);
+}
+.card > .muted{margin:0 0 4px;font-size:.96rem}
+
+/* ---------- fields ---------- */
+label{display:block;font-weight:600;color:var(--ink2);margin:18px 0 6px;font-size:.9rem}
+input{
+  width:100%;padding:.78rem .9rem;border:1px solid var(--line);border-radius:9px;
+  font-family:inherit;font-size:1rem;color:var(--ink);background:#fff;
+  transition:border-color .13s, box-shadow .13s;
+}
+input::placeholder{color:var(--faint)}
+input:focus{outline:none;border-color:var(--pri);box-shadow:0 0 0 3px var(--pri05)}
+.lbl-row{display:flex;align-items:baseline;justify-content:space-between;gap:12px}
+.lbl-row label{margin-bottom:6px}
+.lnk-quiet{font-size:.83rem;color:var(--mut);font-weight:500}
+.lnk-quiet:hover{color:var(--pri);text-decoration:underline}
+.hint{font-size:.86rem;color:var(--mut);margin-top:8px}
+.hint a{font-weight:600}
+
+/* ---------- buttons ---------- */
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:.55rem;
+  padding:.8rem 1.3rem;border-radius:9px;font-family:inherit;font-weight:600;
+  font-size:.97rem;letter-spacing:-.008em;cursor:pointer;border:1px solid transparent;
+  transition:background .15s, border-color .15s, box-shadow .15s;
+}
+.btn:hover{text-decoration:none}
+.btn-primary{background:var(--pri);color:var(--pri-on);box-shadow:var(--sh-1)}
+.btn-primary:hover{background:var(--pri6)}
+.btn-ghost{background:#fff;color:var(--ink);border-color:var(--line)}
+.btn-ghost:hover{border-color:var(--mut);background:var(--sub)}
+.btn-block{width:100%}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+
+/* Google keeps its own mark; the button stays neutral by design —
+   Google's brand guidance doesn't allow recolouring it to match ours. */
+.btn-google{gap:.65rem;font-weight:600}
+.btn-google .g-icon{flex:0 0 auto;display:block}
+
+.or{display:flex;align-items:center;gap:.8rem;margin:20px 0 2px;color:var(--faint);font-size:.8rem}
+.or::before,.or::after{content:"";flex:1;height:1px;background:var(--line)}
+
+/* ---------- alerts ---------- */
+.alert{padding:.8rem .95rem;border-radius:9px;font-size:.92rem;margin:16px 0;display:none;line-height:1.5}
+.alert.show{display:block}
+.alert-error{background:var(--bad-bg);color:var(--bad);border:1px solid var(--bad-line)}
+.alert-ok{background:var(--ok-bg);color:var(--ok);border:1px solid var(--ok-line)}
+
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
