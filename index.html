@@ -3,41 +3,211 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>LicenseFlow — Get licensed, step by step</title>
-<meta name="description" content="Agent registration and a simple, state-by-state walkthrough to get your insurance license."/>
-<link rel="preconnect" href="https://esm.sh"/>
-<link rel="stylesheet" href="styles.css?v=7"/>
-<script src="config.js"></script>
+<title>LicenseFlow — Agent licensing &amp; management for insurance agencies</title>
+<meta name="description" content="LicenseFlow gives insurance agencies one system to license, track and manage every agent — configured around how your agency actually works. Covering all 51 US licensing jurisdictions."/>
+<meta property="og:title" content="LicenseFlow — An old industry. A new way in."/>
+<meta property="og:description" content="One system to license, track and manage every agent in your agency. Configured around how you actually work."/>
+<meta property="og:type" content="website"/>
+<meta property="og:url" content="https://lifelicenseflow.com/"/>
+<link rel="canonical" href="https://lifelicenseflow.com/"/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@400;500;600;700&family=Libre+Franklin:wght@600;700;800&display=swap"/>
+<link rel="stylesheet" href="landing.css?v=1"/>
 </head>
 <body>
-<div class="container top">
-  <a class="brand" href="index.html"><span class="mark">L</span> LicenseFlow</a>
-  <div style="display:flex;gap:8px;align-items:center">
-    <a class="btn btn-quiet btn-sm" href="login.html?mode=login">Log in</a>
-    <a class="btn btn-primary btn-sm" href="login.html?mode=signup">Get started</a>
+
+<a class="skip" href="#main">Skip to content</a>
+
+<div class="navwrap">
+  <div class="bound nav">
+    <a class="logo" href="index.html"><i>L</i> LicenseFlow</a>
+    <nav class="nav-links" aria-label="Primary">
+      <a href="#value">Why LicenseFlow</a>
+      <a href="#how">How it works</a>
+      <a href="#founder">About</a>
+    </nav>
+    <span class="nav-r">
+      <a class="btn btn-ghost btn-sm" href="login.html?mode=login">Agent login</a>
+      <a class="btn btn-pri btn-sm" href="https://calendly.com/admin-lifelicenseflow/30min" target="_blank" rel="noopener">Schedule a call</a>
+    </span>
   </div>
 </div>
 
-<main class="container hero">
-  <h1>Get licensed, step by step.</h1>
-  <p class="lead">Register once, and we walk you through every step to get your insurance license — tailored to your state, in the right order, one step at a time.</p>
-  <div class="hero-cta">
-    <a class="btn btn-primary btn-lg" href="login.html?mode=signup">Create your account</a>
-    <a class="btn btn-ghost btn-lg" href="login.html?mode=login">I already have an account</a>
+<main id="main">
+
+  <header class="hero">
+    <div class="bound">
+      <div class="eyebrow">Agent licensing &amp; management for insurance agencies</div>
+      <h1>An old industry. A new way in.</h1>
+      <p class="lead">Insurance has modernised almost everything except the way it brings people in. Recruits get lost between a study course and a state website, and coordinators spend the week chasing them. LicenseFlow gives your agency one system to license, track and manage every agent — configured around how you actually work.</p>
+      <p class="rev">
+        <span class="pre">Built for</span>
+        <span class="rev-slot" id="revSlot"></span>
+      </p>
+      <div class="btns">
+        <a class="btn btn-pri" href="https://calendly.com/admin-lifelicenseflow/30min" target="_blank" rel="noopener">Schedule a call</a>
+        <a class="btn btn-line" href="#how">See how it works</a>
+      </div>
+      <div class="trust">
+        <span><b>51</b> states and DC supported</span>
+        <span><b>No</b> per-agent fees</span>
+        <span><b>Configured</b> to your process, not a template</span>
+      </div>
+    </div>
+  </header>
+
+  <section class="flowband" aria-label="Licensing coverage">
+    <div class="flow-lab">
+      <span>Coverage</span>
+      <span><b>All 51 jurisdictions maintained</b></span>
+    </div>
+    <div class="rail" aria-hidden="true"><div class="track a" id="trackA"></div></div>
+    <div class="rail" aria-hidden="true"><div class="track b" id="trackB"></div></div>
+  </section>
+
+  <section class="band">
+    <div class="bound">
+      <p>Nobody should lose a career to paperwork. We're rebuilding the front door to this industry so the people who belong in it <span>actually make it through.</span></p>
+      <div class="sig">Our mission</div>
+    </div>
+  </section>
+
+  <div class="bound">
+
+    <section class="sec" id="value">
+      <div class="sec-lab">Both sides of the desk</div>
+      <h2>One system. Two very different jobs.</h2>
+      <p class="sub">Your agency gets visibility and reporting. Your agents get clarity. Neither of you should have to work for it.</p>
+      <div class="grid2">
+        <div class="card">
+          <span class="tagline">For the agency · your subscription</span>
+          <h3>Manage every agent, not just the licensing.</h3>
+          <p>See everyone you've brought on in a single view, spot who's genuinely stuck, and step in only where you're needed. Reporting and KPIs turn onboarding from a guess into a number you can manage.</p>
+          <div class="list">
+            <span class="li"><i>✓</i>Every agent's progress at a glance</span>
+            <span class="li"><i>✓</i>Agency reporting and KPIs, not spreadsheets</span>
+            <span class="li"><i>✓</i>Know who's gone quiet before you lose them</span>
+            <span class="li"><i>✓</i>Onboarding that scales past one person's memory</span>
+          </div>
+        </div>
+        <div class="card">
+          <span class="tagline">For your agents · no cost to them</span>
+          <h3>They always know where they stand.</h3>
+          <p>No guessing, no waiting on a text back, no wondering whether something's been missed. Your agents get a clear path, and you get their momentum.</p>
+          <div class="list">
+            <span class="li"><i>✓</i>One place instead of a dozen browser tabs</span>
+            <span class="li"><i>✓</i>Built around their state, not a generic list</span>
+            <span class="li"><i>✓</i>Nothing for an agent to buy or subscribe to</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="sec" id="how">
+      <div class="sec-lab">How we work together</div>
+      <h2>Set up for your agency, not shipped as a template.</h2>
+      <div class="grid3">
+        <div class="card">
+          <div class="stepn">01</div>
+          <h4>We talk first</h4>
+          <p>A thirty-minute call to understand how your agency onboards today, who your coordinators are, and where people fall out. No obligation, no demo script.</p>
+        </div>
+        <div class="card">
+          <div class="stepn">02</div>
+          <h4>We configure it for you</h4>
+          <p>Your agency's portal is built around your process — not a template you have to bend to fit. Setup is a one-time piece of work we scope with you.</p>
+        </div>
+        <div class="card">
+          <div class="stepn">03</div>
+          <h4>What it costs</h4>
+          <p>A setup fee to build it out, then an ongoing subscription for your agency, set by your size and the features you need. Your agents are never charged. We'll go through the numbers together on the call.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="sec" id="founder">
+      <div class="sec-lab">Why we built it</div>
+      <div class="fgrid">
+        <blockquote>“I watched capable people walk away before they ever wrote a policy — not because the work was hard, but because nobody could tell them what came next.”</blockquote>
+        <div class="body">
+          <p>I've spent years inside this process: training licensing coordinators and specialists, and eventually founding my own agency. The same thing happened over and over. Good candidates, real potential, lost somewhere between a study course and a state website.</p>
+          <p>The industry hasn't seriously rethought licensing in decades. It runs on tribal knowledge and whoever happens to be answering the phone. I built LicenseFlow to give every agency the guidance I used to deliver by hand — and to give the people doing that work their time back.</p>
+          <div class="fname">
+            <span class="av">MS</span>
+            <span><b>Mariah Stevenson</b><span class="role">Founder, LicenseFlow</span></span>
+          </div>
+        </div>
+      </div>
+    </section>
+
   </div>
 
-  <div class="steps-strip">
-    <div class="s"><div class="k">Step 1</div><div class="t">Study material</div></div>
-    <div class="s"><div class="k">Step 2</div><div class="t">Exam registration</div></div>
-    <div class="s"><div class="k">Step 3</div><div class="t">Fingerprints</div></div>
-    <div class="s"><div class="k">Step 4</div><div class="t">State application</div></div>
-    <div class="s"><div class="k">Step 5</div><div class="t">Contracting &amp; E&amp;O</div></div>
-  </div>
+  <section class="close" id="schedule">
+    <div class="bound">
+      <h2>Let's talk about your agency.</h2>
+      <p>Tell me how you onboard today and I'll show you what this looks like configured for your team. Thirty minutes, straight from the founder.</p>
+      <div class="btns">
+        <a class="btn btn-pri" href="https://calendly.com/admin-lifelicenseflow/30min" target="_blank" rel="noopener">Schedule a call</a>
+        <a class="btn btn-line" href="login.html?mode=login">Agent login</a>
+      </div>
+    </div>
+  </section>
+
 </main>
 
-<div class="footer" style="margin-top:70px">
-  <div class="container">© <span id="yr"></span> LicenseFlow. Steps and links are tailored by state.</div>
+<div class="bound foot">
+  <span>© <span id="yr">2026</span> LicenseFlow</span>
+  <span><a href="login.html?mode=login">Agent login</a></span>
 </div>
-<script>document.getElementById("yr").textContent=new Date().getFullYear();</script>
+
+<script>
+document.getElementById("yr").textContent = new Date().getFullYear();
+
+/* ---------- revolving audience line ---------- */
+(function(){
+  var slot = document.getElementById("revSlot");
+  if(!slot) return;
+  var roles = ["agency owners.","licensing coordinators.","recruiting teams.","the agents they bring in."];
+  var reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  roles.forEach(function(r){
+    var s = document.createElement("span");
+    s.textContent = r;
+    slot.appendChild(s);
+  });
+  var nodes = slot.querySelectorAll("span");
+  if(!nodes.length) return;
+
+  nodes[0].classList.add("in");
+  if (reduce) return;
+
+  var i = 0;
+  setInterval(function(){
+    var cur = nodes[i], nxt = nodes[(i + 1) % nodes.length];
+    cur.classList.remove("in"); cur.classList.add("out");
+    nxt.classList.remove("out"); void nxt.offsetWidth; nxt.classList.add("in");
+    i = (i + 1) % nodes.length;
+  }, 3200);
+})();
+
+/* ---------- continuous coverage rails ---------- */
+(function(){
+  var codes = ["AL","AK","AZ","AR","CA","CO","CT","DE","DC","FL","GA","HI","ID","IL","IN","IA","KS","KY","LA","ME","MD","MA","MI","MN","MS","MO","MT","NE","NV","NH","NJ","NM","NY","NC","ND","OH","OK","OR","PA","RI","SC","SD","TN","TX","UT","VT","VA","WA","WV","WI","WY"];
+  var half = Math.ceil(codes.length / 2);
+  function fill(el, arr, live){
+    if(!el) return;
+    var html = "";
+    for (var pass = 0; pass < 2; pass++){
+      arr.forEach(function(c){
+        html += '<span class="tile' + (live.indexOf(c) > -1 ? " on" : "") + '">' + c + '</span>';
+      });
+    }
+    el.innerHTML = html;
+  }
+  fill(document.getElementById("trackA"), codes.slice(0, half), ["CA","FL","GA"]);
+  fill(document.getElementById("trackB"), codes.slice(half),    ["TX","NC","OH"]);
+})();
+</script>
 </body>
 </html>

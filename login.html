@@ -3,7 +3,8 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Sign in — LicenseFlow</title>
+<title>Log in — LicenseFlow</title>
+<meta name="robots" content="noindex"/>
 <link rel="stylesheet" href="styles.css?v=7"/>
 <script src="config.js"></script>
 </head>
@@ -12,12 +13,9 @@
   <div class="screen-inner">
     <a class="brand" href="index.html" style="justify-content:center;margin-bottom:20px"><span class="mark">L</span> LicenseFlow</a>
     <div class="card pad">
-      <h2 id="title" style="text-align:center;font-size:1.5rem">Create your account</h2>
-      <p class="muted center" id="sub" style="margin-top:0">Register to start your licensing walkthrough</p>
-      <div class="tabs">
-        <button id="tabSignup" class="on" type="button">Create account</button>
-        <button id="tabLogin" type="button">Log in</button>
-      </div>
+      <h2 id="title" style="text-align:center;font-size:1.5rem">Welcome back</h2>
+      <p class="muted center" id="sub" style="margin-top:0">Log in to continue your licensing walkthrough</p>
+
       <div id="alert" class="alert"></div>
 
       <button id="google" class="btn btn-ghost btn-block btn-google" type="button">
@@ -40,14 +38,24 @@
             <label for="password">Password</label>
             <a href="#" id="forgot" class="lnk-quiet">Forgot your password?</a>
           </div>
-          <input id="password" name="password" type="password" required minlength="6" autocomplete="new-password"/>
+          <input id="password" name="password" type="password" required minlength="6" autocomplete="current-password"/>
         </div>
-        <button id="submit" class="btn btn-primary btn-block" type="submit" style="margin-top:18px">Create account</button>
+        <button id="submit" class="btn btn-primary btn-block" type="submit" style="margin-top:18px">Log in</button>
       </form>
+
       <p class="hint center" id="hint" style="margin-top:14px"></p>
     </div>
+
+    <!-- Accounts are created by the agency, not self-served. Someone who
+         can't get in needs to know why and what to do about it. -->
+    <p class="hint center" style="margin-top:18px">
+      Don't have an account? Your agency sets one up for you — ask your licensing coordinator.
+    </p>
+    <p class="hint center" style="margin-top:6px">
+      Run an agency? <a href="https://calendly.com/admin-lifelicenseflow/30min" target="_blank" rel="noopener">Schedule a call</a>.
+    </p>
   </div>
 </div>
-<script type="module" src="auth.js?v=5"></script>
+<script type="module" src="auth.js?v=6"></script>
 </body>
 </html>

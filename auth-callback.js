@@ -28,6 +28,16 @@ function fail(message) {
   el("actions").style.display = "block";
 }
 
+/* Sign-ups are disabled in Supabase because accounts are created per agency.
+   That makes "signups not allowed" an expected outcome here, not a fault: it
+   is what an unrecognised Google account gets instead of silently becoming a
+   new user. It needs to read as an instruction, not an error dump. */
+const NO_SIGNUP = /signups? not allowed|signup is disabled|user not allowed|not allowed for this instance/i;
+function noSignupMessage() {
+  return "There's no LicenseFlow account for that email yet. Accounts are created by your agency — " +
+         "ask your licensing coordinator to add you, then sign in here.";
+}
+
 function succeed() {
   // Strip the code/token out of the address bar before leaving, so the
   // one-time credential is never left sitting in browser history.
@@ -51,7 +61,9 @@ function succeed() {
       hash.get("error_description") ||
       err;
     const code = params.get("error_code") || hash.get("error_code") || "";
-    if (code === "otp_expired" || /expired/i.test(desc)) {
+    if (NO_SIGNUP.test(desc) || NO_SIGNUP.test(code)) {
+      fail(noSignupMessage());
+    } else if (code === "otp_expired" || /expired/i.test(desc)) {
       fail("That link has expired. Request a new one and try again.");
     } else if (/access_denied/i.test(err)) {
       fail("Sign-in was cancelled before it finished.");
@@ -125,7 +137,9 @@ function succeed() {
     // The PKCE verifier lives in this browser's local storage. If the link
     // was opened somewhere else (a different browser, or an email client's
     // in-app browser) there is nothing to exchange the code against.
-    if (/code.?verifier|code challenge|invalid request/i.test(msg)) {
+    if (NO_SIGNUP.test(msg)) {
+      fail(noSignupMessage());
+    } else if (/code.?verifier|code challenge|invalid request/i.test(msg)) {
       fail(
         "This link has to be opened in the same browser you started in. " +
           "Please head back and sign in again here."

@@ -1,0 +1,174 @@
+/* ============================================================
+   LicenseFlow — landing page (index.html) only.
+   Deliberately independent of styles.css: the marketing page and
+   the signed-in app are different design systems, and coupling
+   them means a tweak here silently changes the agent dashboard.
+   Palette: Navy & Azure. Light only, AA contrast throughout.
+   ============================================================ */
+:root{
+  --bg:#FFFFFF; --sub:#F4F7FA; --surf:#FFFFFF;
+  --ink:#061223; --ink2:#132741; --mut:#51637A; --faint:#8293A8;
+  --pri:#0C3D82; --pri6:#082C5F; --pri05:#EAF0F8; --pri-on:#FFFFFF;
+  --line:#DCE3EC; --line2:#EDF1F6;
+  --band:#0B1F3A; --band-ink:#E8EEF6; --band-accent:#7FB2F5;
+}
+
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
+body{
+  margin:0;background:var(--bg);color:var(--ink);
+  font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  line-height:1.6;-webkit-font-smoothing:antialiased;letter-spacing:-.008em;
+}
+a{text-decoration:none;color:inherit}
+img{max-width:100%}
+.bound{width:min(1180px,90vw);margin:0 auto}
+:focus-visible{outline:2px solid var(--pri);outline-offset:2px;border-radius:4px}
+h1,h2,h3,h4{font-family:"Libre Franklin",Inter,sans-serif;margin:0}
+.skip{position:absolute;left:-9999px;top:0}
+.skip:focus{left:12px;top:12px;z-index:99;background:var(--pri);color:#fff;padding:10px 16px;border-radius:6px}
+
+/* ---------- nav ---------- */
+.navwrap{border-bottom:1px solid var(--line);background:var(--bg);position:sticky;top:0;z-index:40}
+.nav{display:flex;align-items:center;justify-content:space-between;gap:20px;padding:16px 0}
+.logo{display:flex;align-items:center;gap:10px;font-family:"Libre Franklin",sans-serif;font-weight:800;font-size:1.06rem;letter-spacing:-.022em}
+.logo i{
+  width:30px;height:30px;border-radius:7px;background:var(--pri);color:var(--pri-on);
+  display:grid;place-items:center;font-style:normal;font-size:.86rem;font-weight:800;font-family:Inter,sans-serif;
+}
+.nav-links{display:flex;align-items:center;gap:26px}
+.nav-links a{font-size:.92rem;font-weight:500;color:var(--mut)}
+.nav-links a:hover{color:var(--ink)}
+.nav-r{display:flex;align-items:center;gap:10px}
+@media(max-width:860px){.nav-links{display:none}}
+
+/* ---------- buttons ---------- */
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;font-family:inherit;
+  font-size:.95rem;font-weight:600;letter-spacing:-.008em;padding:12px 22px;border-radius:8px;
+  border:1px solid transparent;cursor:pointer;transition:background .16s,border-color .16s,box-shadow .16s;
+}
+.btn-sm{padding:9px 17px;font-size:.88rem}
+.btn-pri{background:var(--pri);color:var(--pri-on);box-shadow:0 1px 2px rgba(6,18,35,.12)}
+.btn-pri:hover{background:var(--pri6)}
+.btn-line{background:var(--surf);color:var(--ink);border-color:var(--line)}
+.btn-line:hover{border-color:var(--mut);background:var(--sub)}
+.btn-ghost{background:transparent;color:var(--ink)}
+.btn-ghost:hover{background:var(--sub)}
+.btns{display:flex;gap:11px;flex-wrap:wrap}
+
+/* ---------- hero ---------- */
+.hero{padding:84px 0 66px;border-bottom:1px solid var(--line)}
+.eyebrow{
+  display:inline-flex;align-items:center;gap:9px;font-family:"IBM Plex Mono",ui-monospace,monospace;
+  font-size:.71rem;letter-spacing:.13em;text-transform:uppercase;color:var(--pri);font-weight:500;margin-bottom:22px;
+}
+.eyebrow::before{content:"";width:22px;height:2px;background:var(--pri);display:block}
+h1{font-weight:800;letter-spacing:-.035em;font-size:clamp(2.4rem,5.6vw,4rem);line-height:1.04;margin-bottom:22px;max-width:17ch;text-wrap:balance}
+.hero .lead{font-size:clamp(1.04rem,1.5vw,1.17rem);color:var(--mut);max-width:58ch;margin:0 0 18px;line-height:1.62}
+
+/* revolving audience line.
+   Both halves share one line-height and align from the top edge: an
+   overflow:hidden inline-block reports its baseline at the bottom margin
+   edge, which knocks the rotating text off a baseline-aligned row. */
+.rev{
+  display:flex;align-items:flex-start;gap:.4em;flex-wrap:wrap;margin:0 0 32px;
+  font-size:1.02rem;line-height:1.55;color:var(--ink2);font-weight:500;
+}
+.rev .pre{color:var(--mut);line-height:inherit}
+.rev-slot{position:relative;display:block;height:1.55em;line-height:inherit;overflow:hidden;min-width:20ch}
+.rev-slot span{
+  position:absolute;left:0;top:0;width:100%;white-space:nowrap;line-height:inherit;
+  font-weight:700;color:var(--pri);opacity:0;transform:translateY(100%);
+}
+.rev-slot span.in{animation:revIn 3.2s cubic-bezier(.28,.9,.3,1) forwards}
+.rev-slot span.out{animation:revOut 3.2s cubic-bezier(.28,.9,.3,1) forwards}
+@keyframes revIn{0%{opacity:0;transform:translateY(100%)}12%,100%{opacity:1;transform:translateY(0)}}
+@keyframes revOut{0%{opacity:1;transform:translateY(0)}12%,100%{opacity:0;transform:translateY(-100%)}}
+.hero .trust{display:flex;gap:26px;flex-wrap:wrap;margin-top:30px;font-size:.88rem;color:var(--faint);font-weight:500}
+.hero .trust b{color:var(--ink2);font-weight:600}
+
+/* ---------- continuous coverage rails ---------- */
+.flowband{background:var(--sub);border-bottom:1px solid var(--line);padding:26px 0 28px;overflow:hidden}
+.flow-lab{
+  width:min(1180px,90vw);margin:0 auto 16px;font-family:"IBM Plex Mono",ui-monospace,monospace;
+  font-size:.68rem;letter-spacing:.14em;text-transform:uppercase;color:var(--faint);
+  display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap;
+}
+.flow-lab b{color:var(--pri);font-weight:500}
+.rail{
+  position:relative;overflow:hidden;
+  -webkit-mask-image:linear-gradient(90deg,transparent,#000 9%,#000 91%,transparent);
+  mask-image:linear-gradient(90deg,transparent,#000 9%,#000 91%,transparent);
+}
+.rail + .rail{margin-top:9px}
+.track{display:flex;gap:9px;width:max-content;will-change:transform}
+.track.a{animation:slideL 46s linear infinite}
+.track.b{animation:slideR 52s linear infinite}
+@keyframes slideL{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+@keyframes slideR{from{transform:translateX(-50%)}to{transform:translateX(0)}}
+.rail:hover .track{animation-play-state:paused}
+.tile{
+  flex:0 0 auto;background:var(--surf);border:1px solid var(--line);border-radius:7px;
+  padding:9px 15px;font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:.79rem;
+  font-weight:500;color:var(--mut);letter-spacing:.05em;
+}
+.tile.on{border-color:var(--pri);color:var(--pri);background:var(--pri05)}
+
+@media (prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+  .track.a,.track.b{animation:none}
+  .rev-slot span.in,.rev-slot span.out{animation:none}
+  .rev-slot span.in{opacity:1;transform:none}
+}
+
+/* ---------- sections ---------- */
+.sec{padding:82px 0}
+.sec + .sec{border-top:1px solid var(--line)}
+.sec-lab{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:.69rem;letter-spacing:.15em;text-transform:uppercase;color:var(--faint);margin-bottom:14px}
+.sec h2{font-weight:800;letter-spacing:-.032em;font-size:clamp(1.6rem,3.1vw,2.25rem);line-height:1.12;margin-bottom:12px;max-width:22ch;text-wrap:balance}
+.sec .sub{color:var(--mut);font-size:1.02rem;max-width:58ch;margin:0 0 42px;line-height:1.6}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:22px}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:22px}
+@media(max-width:860px){.grid2,.grid3{grid-template-columns:1fr}}
+
+.card{background:var(--surf);border:1px solid var(--line);border-radius:10px;padding:30px;transition:border-color .18s,box-shadow .18s}
+.card:hover{border-color:#C9D2DC;box-shadow:0 2px 4px rgba(6,18,35,.04),0 10px 24px rgba(6,18,35,.05)}
+.tagline{
+  display:inline-block;font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:.67rem;
+  letter-spacing:.11em;text-transform:uppercase;font-weight:500;padding:5px 10px;border-radius:5px;
+  margin-bottom:16px;background:var(--pri05);color:var(--pri6);border:1px solid var(--line);
+}
+.card h3{font-weight:700;letter-spacing:-.028em;font-size:1.28rem;line-height:1.18;margin-bottom:10px}
+.card p{margin:0;color:var(--mut);font-size:.99rem;line-height:1.62}
+.list{margin-top:20px;display:flex;flex-direction:column;gap:10px}
+.li{display:flex;gap:11px;align-items:flex-start;font-size:.95rem;color:var(--ink2)}
+.li i{
+  flex:0 0 18px;width:18px;height:18px;border-radius:4px;background:var(--pri05);color:var(--pri6);
+  display:grid;place-items:center;font-style:normal;font-size:.6rem;font-weight:700;margin-top:3px;
+}
+.stepn{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:.72rem;letter-spacing:.12em;color:var(--pri);margin-bottom:12px}
+.card h4{font-weight:700;letter-spacing:-.024em;font-size:1.07rem;margin-bottom:8px}
+
+/* ---------- mission band ---------- */
+.band{background:var(--band);color:var(--band-ink);padding:74px 0}
+.band p{font-family:"Libre Franklin",Inter,sans-serif;font-weight:700;letter-spacing:-.028em;font-size:clamp(1.45rem,3.1vw,2.25rem);line-height:1.22;margin:0;max-width:26ch;text-wrap:balance}
+.band p span{color:var(--band-accent)}
+.band .sig{margin-top:24px;font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:.7rem;letter-spacing:.15em;text-transform:uppercase;color:var(--band-accent);opacity:.85}
+
+/* ---------- founder ---------- */
+.fgrid{display:grid;grid-template-columns:1fr 1fr;gap:52px;align-items:start}
+.fgrid blockquote{margin:0;font-family:"Libre Franklin",Inter,sans-serif;font-weight:700;letter-spacing:-.03em;font-size:clamp(1.3rem,2.5vw,1.85rem);line-height:1.26;text-wrap:balance}
+.fgrid .body p{margin:0 0 15px;color:var(--mut);font-size:1rem;line-height:1.64}
+.fname{display:flex;align-items:center;gap:13px;margin-top:26px;padding-top:22px;border-top:1px solid var(--line)}
+.fname .av{width:44px;height:44px;flex:0 0 44px;border-radius:8px;background:var(--pri);color:var(--pri-on);display:grid;place-items:center;font-weight:700;font-size:.95rem}
+.fname b{display:block;font-size:.98rem;font-weight:600;letter-spacing:-.015em}
+.fname .role{display:block;color:var(--faint);font-size:.87rem}
+@media(max-width:860px){.fgrid{grid-template-columns:1fr;gap:26px}}
+
+/* ---------- close ---------- */
+.close{background:var(--sub);border-top:1px solid var(--line);padding:76px 0}
+.close h2{font-weight:800;letter-spacing:-.034em;font-size:clamp(1.7rem,3.5vw,2.5rem);line-height:1.08;margin-bottom:14px;max-width:20ch;text-wrap:balance}
+.close p{color:var(--mut);font-size:1.03rem;max-width:50ch;margin:0 0 28px;line-height:1.6}
+.foot{border-top:1px solid var(--line);padding:26px 0 46px;display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap;font-size:.86rem;color:var(--faint)}
+.foot a:hover{color:var(--ink)}

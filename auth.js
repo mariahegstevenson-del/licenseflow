@@ -1,6 +1,12 @@
 import { supabase, isConfigured, callbackUrl } from "./supabase.js";
 
-let mode = new URLSearchParams(location.search).get("mode") === "login" ? "login" : "signup";
+/* LicenseFlow is sold per agency: accounts are created for agents, never
+   self-served. This screen therefore has exactly two states -- log in, and
+   "email me a reset link". Sign-up is also disabled server-side in Supabase
+   (Authentication -> Sign In / Providers -> allow new users to sign up), and
+   that is what actually enforces it: removing the form alone would still
+   leave the API and the Google button able to mint new accounts. */
+let mode = "login";
 const el = (id) => document.getElementById(id);
 const A = el("alert");
 const show = (m, ok) => { A.textContent = m; A.className = "alert show " + (ok ? "alert-ok" : "alert-error"); };
@@ -9,39 +15,30 @@ const clear = () => { A.className = "alert"; };
 /* Turn Supabase's terse errors into something a person can act on. */
 function friendly(err) {
   const msg = err?.message || "Something went wrong.";
-  if (/invalid login credentials/i.test(msg)) return "That email and password don't match an account. Check them, or create an account instead.";
+  if (/invalid login credentials/i.test(msg)) return "That email and password don't match an account. Check them, or use the reset link.";
   if (/email not confirmed/i.test(msg)) return "This account hasn't been confirmed yet. Check your inbox for the confirmation link.";
-  if (/user already registered|already been registered/i.test(msg)) return "There's already an account with that email. Try logging in instead.";
   if (/password should be at least/i.test(msg)) return "Please use a password of at least 6 characters.";
   if (/rate limit|too many requests|only request this after|for security purposes/i.test(msg)) return "Too many attempts just now. Please wait a minute and try again.";
-  if (/error sending confirmation|error sending email|smtp/i.test(msg)) return "We couldn't send the confirmation email. Please contact support so we can get you set up.";
-  if (/signups not allowed|signup is disabled/i.test(msg)) return "New sign-ups are turned off right now. Please contact support.";
+  if (/error sending confirmation|error sending email|smtp/i.test(msg)) return "We couldn't send that email. Please contact support so we can get you sorted.";
+  /* Sign-ups are off by design, so this is what an unrecognised Google
+     account hits. Say what to do about it rather than "not allowed". */
+  if (/signups not allowed|signup is disabled|user not allowed|not allowed for this instance/i.test(msg)) return "There's no LicenseFlow account for that email yet. Accounts are created by your agency — ask your licensing coordinator to add you.";
   if (/provider is not enabled/i.test(msg)) return "Google sign-in isn't switched on for this site yet.";
   if (/failed to fetch|network/i.test(msg)) return "We couldn't reach the server. Check your connection and try again.";
   return msg;
 }
 
-/* Three states share this one form: signup, login, and "email me a reset
-   link". Reset hides the password field entirely -- asking for a password
-   you've just said you can't remember is the classic version of this screen
-   done badly. */
 const COPY = {
-  signup: { title: "Create your account", sub: "Register to start your licensing walkthrough",
-            submit: "Create account", pw: "new-password",
-            hint: 'Already registered? <a href="#" data-go="login">Log in</a>' },
-  login:  { title: "Welcome back", sub: "Log in to continue your walkthrough",
-            submit: "Log in", pw: "current-password",
-            hint: 'New here? <a href="#" data-go="signup">Create an account</a>' },
-  reset:  { title: "Reset your password", sub: "We'll email you a link to set a new one",
-            submit: "Send reset link", pw: "current-password",
-            hint: 'Remembered it? <a href="#" data-go="login">Back to log in</a>' },
+  login: { title: "Welcome back", sub: "Log in to continue your licensing walkthrough",
+           submit: "Log in", pw: "current-password", hint: "" },
+  reset: { title: "Reset your password", sub: "We'll email you a link to set a new one",
+           submit: "Send reset link", pw: "current-password",
+           hint: 'Remembered it? <a href="#" data-go="login">Back to log in</a>' },
 };
 
 function render(keepAlert) {
   const c = COPY[mode];
   const resetting = mode === "reset";
-  el("tabSignup").classList.toggle("on", mode === "signup");
-  el("tabLogin").classList.toggle("on", mode !== "signup");
   el("title").textContent = c.title;
   el("sub").textContent = c.sub;
   el("submit").textContent = c.submit;
@@ -51,8 +48,7 @@ function render(keepAlert) {
   el("pwWrap").style.display = resetting ? "none" : "";
   el("password").disabled = resetting;
   el("password").setAttribute("autocomplete", c.pw);
-  // Nothing to have forgotten yet on the sign-up tab.
-  el("forgot").style.display = mode === "login" ? "" : "none";
+  el("forgot").style.display = resetting ? "none" : "";
 
   const g = el("google"), or = document.querySelector(".or");
   if (g) g.style.display = resetting ? "none" : "";
@@ -63,8 +59,7 @@ function render(keepAlert) {
   if (sw) sw.onclick = (e) => { e.preventDefault(); mode = sw.dataset.go; render(); };
   if (!keepAlert) clear();
 }
-el("tabSignup").onclick = () => { mode = "signup"; render(); };
-el("tabLogin").onclick = () => { mode = "login"; render(); };
+
 el("forgot").onclick = (e) => { e.preventDefault(); mode = "reset"; render(); el("email").focus(); };
 
 /* ---------- boot ---------- */
@@ -75,7 +70,8 @@ el("forgot").onclick = (e) => { e.preventDefault(); mode = "reset"; render(); el
   // dropping the user on a blank-looking login form.
   const q = new URLSearchParams(location.search);
   if (q.get("error_description") || q.get("error")) {
-    show(decodeURIComponent(q.get("error_description") || q.get("error")).replace(/\+/g, " "), false);
+    const raw = decodeURIComponent(q.get("error_description") || q.get("error")).replace(/\+/g, " ");
+    show(friendly({ message: raw }), false);
   }
 
   if (!isConfigured) {
@@ -110,36 +106,9 @@ el("form").addEventListener("submit", async (e) => {
       return;
     }
 
-    if (mode === "signup") {
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: { emailRedirectTo: callbackUrl() },
-      });
-      if (error) throw error;
-
-      if (data.session) {
-        // Email confirmation is off — the account is live immediately.
-        location.href = "app.html";
-        return;
-      }
-
-      // No session came back. Supabase deliberately returns a look-alike
-      // user with an empty identities array when the address is already
-      // registered, so that signup can't be used to probe for accounts.
-      if (data.user && Array.isArray(data.user.identities) && data.user.identities.length === 0) {
-        mode = "login"; render(true);
-        show("There's already an account with that email. Try logging in instead.", false);
-        return;
-      }
-
-      mode = "login"; render(true);
-      show("Account created. Check your email for the confirmation link, then log in.", true);
-    } else {
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
-      if (error) throw error;
-      location.href = "app.html";
-    }
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) throw error;
+    location.href = "app.html";
   } catch (err) {
     show(friendly(err), false);
   } finally {
@@ -148,7 +117,10 @@ el("form").addEventListener("submit", async (e) => {
   }
 });
 
-/* ---------- Continue with Google ---------- */
+/* ---------- Continue with Google ----------
+   Kept on for returning agents. Because sign-ups are disabled in Supabase,
+   an unrecognised Google account is refused at the callback instead of
+   quietly becoming a brand-new user. */
 const google = el("google");
 if (google) {
   google.addEventListener("click", async () => {
