@@ -11,7 +11,10 @@
 <script src="config.js"></script>
 </head>
 <body>
-<div class="container top">
+<div class="container top" style="gap:12px">
+  <button class="lf-burger" id="lfOpen" aria-label="Open resources" aria-expanded="false" aria-controls="lfDrawer" type="button">
+    <span></span><span></span><span></span>
+  </button>
   <a class="brand" href="app.html"><span class="mark">L</span> LicenseFlow</a>
   <div style="display:flex;gap:10px;align-items:center">
     <span class="muted" id="who" style="font-size:.9rem"></span>
@@ -21,6 +24,12 @@
   </div>
 </div>
 <div id="root"><div class="wt"><p class="muted">Loading…</p></div></div>
-<script type="module" src="app.js?v=7"></script>
+<div class="lf-scrim" id="lfScrim"></div>
+<aside class="lf-drawer" id="lfDrawer" role="dialog" aria-modal="true" aria-label="Resources and your details">
+  <div class="lf-dh"><h3>Resources</h3><button class="lf-x" id="lfClose" aria-label="Close" type="button">&#10005;</button></div>
+  <div class="lf-db" id="lfBody"></div>
+  <div class="lf-df">Need a hand? Ask your licensing coordinator.</div>
+</aside>
+<script type="module" src="app.js?v=8"></script>
 </body>
 </html>

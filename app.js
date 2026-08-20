@@ -303,7 +303,9 @@ function renderDashboard() {
       <div class="jlist">
         ${S.journey.reqs.map(r => {
           const st = F.reqStatus(r.key, S.sm); const g = F.gate(r, S.sm); const locked = g.blocked && !F.isDone(st);
-          return `<button class="jrow2 ${locked?"locked":""}" data-key="${r.key}">
+          const isNext = ns.type === "do" && ns.req && ns.req.key === r.key;
+          const rail = F.isDone(st) ? " is-done" : (isNext ? " is-now" : "");
+          return `<button class="jrow2 ${locked?"locked":""}${rail}" data-key="${r.key}">
             <span class="jmk ${F.STATUS_CLASS[st]}">${F.isDone(st)?"&#10003;":(locked?"&#8226;":"")}</span>
             <span class="jname">${esc(r.short)}</span>
             <span class="badge ${F.STATUS_CLASS[st]}">${esc(statusText(r, st))}</span>
@@ -315,11 +317,43 @@ function renderDashboard() {
   root.querySelectorAll(".jrow2[data-key]").forEach(b => b.onclick = () => goto("#/step/"+b.dataset.key));
   const dn = el("doNext"); if (dn) dn.onclick = () => goto("#/step/"+dn.dataset.key);
 }
+/* What the agent should have to hand before starting a step. Derived from the
+   requirement's own required fields and document, so it can never drift from
+   what the step actually asks for. */
+function needsFor(r){
+  const out = [];
+  if (r.doc && r.doc.required) out.push(`Your ${r.doc.label.toLowerCase()} as a PDF or photo`);
+  (r.fields || []).filter(f => f.required).forEach(f => out.push(f.label));
+  return out;
+}
+
 function nextCard(ns){
-  if (ns.type === "waiting") return `<div class="next waiting"><div class="k">Current status</div><h2>You're all set for now</h2><p>There are no actions required from you right now — your ${esc(ns.req.short)} is with the team for review. We'll surface your next step here as soon as it changes.</p></div>`;
-  if (ns.type === "done") return `<div class="next done"><div class="k">Complete</div><h2>Your licensing journey is complete</h2><p>You've completed every step in your configured licensing journey.</p></div>`;
-  const r = ns.req; const rej = ns.status==="rejected"||ns.status==="action_required";
-  return `<div class="next"><div class="k">Your next step</div><h2>${rej?"Fix: ":""}${esc(r.label)}</h2><p>${esc(r.lead||r.heading)}</p><button class="btn btn-primary btn-lg" id="doNext" data-key="${r.key}">${rej?"Resolve this":"Continue"}</button></div>`;
+  if (ns.type === "waiting") return `<div class="next waiting"><div class="nx-top"><div class="k">Current status</div></div><h2>You're all set for now</h2><p>There are no actions required from you right now — your ${esc(ns.req.short)} is with the team for review. We'll surface your next step here as soon as it changes.</p></div>`;
+  if (ns.type === "done") return `<div class="next done"><div class="nx-top"><div class="k">Complete</div></div><h2>Your licensing journey is complete</h2><p>You've completed every step in your configured licensing journey.</p></div>`;
+
+  const r = ns.req;
+  const rej = ns.status === "rejected" || ns.status === "action_required";
+  const all = S.journey ? S.journey.reqs : [];
+  const idx = all.findIndex(x => x.key === r.key);
+  const pos = idx >= 0 ? idx + 1 : null;
+  const needs = needsFor(r);
+
+  return `<div class="next">
+    ${pos ? `<span class="ghost">${pos}</span>` : ""}
+    <div class="nx-top">
+      <div class="k">${rej ? "Needs your attention" : "Your next step"}</div>
+      ${pos ? `<span class="nx-count">Step ${pos} of ${all.length}</span>` : ""}
+    </div>
+    <h2>${rej ? "Fix: " : ""}${esc(r.label)}</h2>
+    <p>${esc(r.lead || r.heading)}</p>
+    ${needs.length ? `<div class="need"><div class="t">What you'll need</div><ul>${
+      needs.map(n => `<li><i>&#10003;</i><span>${esc(n)}</span></li>`).join("")
+    }</ul></div>` : ""}
+    <span class="cta-wrap">
+      <button class="btn btn-primary" id="doNext" data-key="${r.key}">${
+        rej ? "Resolve this" : "Continue"} <span aria-hidden="true">&#8594;</span></button>
+    </span>
+  </div>`;
 }
 
 /* ============================================================
@@ -586,3 +620,108 @@ function videoEmbed(url){
   if(/\.mp4($|\?)/.test(url)) return `<video controls preload="metadata" src="${esc(url)}"></video>`;
   return `<iframe src="${esc(url)}" allowfullscreen loading="lazy"></iframe>`;
 }
+
+/* ============================================================
+   RESOURCE DRAWER
+   Everything here is read from data already loaded for the page --
+   no extra queries. Credentials and E&O come off the requirement
+   metadata; CE certificates and other files off documents.
+   ============================================================ */
+const STUDY_TIPS = [
+  "<b>Sit the exam within two weeks</b> of your course.",
+  "<b>Quiz yourself</b> &#8212; don't just re-read.",
+  "<b>Know the state section cold.</b> Most often failed.",
+  "<b>Bring two forms of ID</b> to the test centre.",
+];
+
+function metaOf(key){
+  const i = S.instances.find(x => x.requirement_key === key);
+  return (i && i.meta) || {};
+}
+function isVerified(key){ return F.isDone(F.reqStatus(key, S.sm)); }
+function shortDate(v){
+  if (!v) return "";
+  const d = new Date(v);
+  return isNaN(d) ? String(v) : d.toLocaleDateString(undefined,{day:"numeric",month:"short"});
+}
+function extOf(name){
+  const m = /\.([a-z0-9]{2,4})$/i.exec(String(name||""));
+  return m ? m[1].toUpperCase().slice(0,3) : "DOC";
+}
+
+function kvRow(label, value, id, verified){
+  if (!value) return "";
+  return `<div class="lf-kv"><span class="k">${esc(label)}</span>` +
+    (verified ? `<span class="lf-ok">&#10003;</span>` : "") +
+    `<span class="v" id="${id}">${esc(value)}</span>` +
+    `<button class="lf-copy" type="button" data-copy="${id}">Copy</button></div>`;
+}
+
+function renderDrawer(){
+  const body = el("lfBody");
+  if (!body) return;
+
+  const lic = metaOf("license_number").license_number;
+  const npn = metaOf("npn").npn;
+  const eo  = metaOf("eo");
+  const eoDone = S.instances.find(x => x.requirement_key === "eo");
+
+  /* CE certificates come off the CE step's own uploads. A slot with no file
+     yet reads "Miscellaneous" until one is added, then takes the file name. */
+  const certs = (metaOf("continuing_education").certs) || [];
+  const ceRows = certs.length
+    ? certs.map(c => `<div class="lf-doc"><span class="ic">${esc(extOf(c.filename))}</span>` +
+        `<span class="dn">${esc(c.filename || "Certificate")}</span>` +
+        `<span class="dd">${esc(shortDate(c.purchase_date))}</span></div>`).join("")
+    : `<div class="lf-doc pending"><span class="ic">&#8212;</span>` +
+      `<span class="dn">Miscellaneous</span><span class="dd">Not uploaded</span></div>`;
+
+  const otherDocs = (S.docs || []).filter(d => d.doc_key !== "continuing_education");
+  const docRows = otherDocs.length
+    ? otherDocs.map(d => `<div class="lf-doc"><span class="ic">${esc(extOf(d.file_url || d.label))}</span>` +
+        `<span class="dn">${esc(d.label || d.doc_key)}</span>` +
+        `<span class="dd">${esc(shortDate(d.updated_at))}</span></div>`).join("")
+    : `<div class="lf-doc pending"><span class="ic">&#8212;</span>` +
+      `<span class="dn">Nothing uploaded yet</span><span class="dd"></span></div>`;
+
+  const creds = kvRow("License number", lic, "lfLic", isVerified("license_number")) +
+                kvRow("NPN", npn, "lfNpn", isVerified("npn"));
+
+  const eoRows =
+    (eo.carrier ? `<div class="lf-kv"><span class="k">Carrier</span><span class="v">${esc(eo.carrier)}</span></div>` : "") +
+    kvRow("Policy number", eo.policy_number, "lfPol", false) +
+    (eoDone && eoDone.completed_at
+      ? `<div class="lf-kv"><span class="k">Added</span><span class="v">${esc(shortDate(eoDone.completed_at))}</span></div>` : "");
+
+  body.innerHTML =
+    `<div class="lf-g"><div class="lf-gt">Study tips</div>` +
+      STUDY_TIPS.map((t,i) => `<div class="lf-tip"><i>${i+1}</i><p>${t}</p></div>`).join("") +
+    `</div>` +
+    (creds ? `<div class="lf-g"><div class="lf-gt">Your credentials</div>${creds}</div>` : "") +
+    (eoRows ? `<div class="lf-g"><div class="lf-gt">Errors &amp; Omissions</div>${eoRows}</div>` : "") +
+    `<div class="lf-g"><div class="lf-gt">Continuing education &#183; includes AML</div>${ceRows}</div>` +
+    `<div class="lf-g"><div class="lf-gt">Other documents</div>${docRows}</div>`;
+
+  body.querySelectorAll("[data-copy]").forEach(b => {
+    b.onclick = () => {
+      const t = el(b.dataset.copy);
+      const txt = t ? t.textContent.trim() : "";
+      const done = () => { b.textContent = "Copied"; b.classList.add("done");
+        setTimeout(() => { b.textContent = "Copy"; b.classList.remove("done"); }, 1400); };
+      if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(txt).then(done, done);
+      else done();
+    };
+  });
+}
+
+(function wireDrawer(){
+  const d = el("lfDrawer"), sc = el("lfScrim"), o = el("lfOpen"), c = el("lfClose");
+  if (!d || !o) return;
+  let last = null;
+  const open = () => { renderDrawer(); last = document.activeElement;
+    d.classList.add("on"); sc.classList.add("on"); o.setAttribute("aria-expanded","true"); c.focus(); };
+  const close = () => { d.classList.remove("on"); sc.classList.remove("on");
+    o.setAttribute("aria-expanded","false"); if (last) last.focus(); };
+  o.onclick = open; c.onclick = close; sc.onclick = close;
+  document.addEventListener("keydown", e => { if (e.key === "Escape" && d.classList.contains("on")) close(); });
+})();
