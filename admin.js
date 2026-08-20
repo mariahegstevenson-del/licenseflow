@@ -56,7 +56,36 @@ const pname = (uid) => prof(uid)?.full_name || "Agent";
 const instFor = (uid) => A.instances.filter(i=>i.user_id===uid);
 function agentJourney(uid){ const p=prof(uid); return p?.designated_state ? F.buildJourney(p.designated_state) : null; }
 function agentDone(uid){ const j=agentJourney(uid); if(!j) return false; const sm=F.statusMap(instFor(uid)); return j.reqs.every(r=>F.isDone(F.reqStatus(r.key,sm))); }
-function agentLicensed(uid){ const sm=F.statusMap(instFor(uid)); return F.isDone(F.reqStatus("license_number",sm)); }
+
+/* Which requirement is an agent actually blocked on right now? This is the
+   single source of truth for "where does this person sit in the funnel" --
+   the first not-yet-done requirement in their journey, or "compliant" once
+   every requirement (including NPN, continuing ed, and E&O) is done. */
+function currentStage(uid){
+  const j = agentJourney(uid);
+  if (!j) return "study_material";
+  const sm = F.statusMap(instFor(uid));
+  for (const r of j.reqs) if (!F.isDone(F.reqStatus(r.key, sm))) return r.key;
+  return "compliant";
+}
+/* Collapse the 7 granular requirement keys into agency-friendly funnel
+   buckets. Getting a license number is one step among several -- NPN,
+   continuing education, and E&O still have to happen before an agent is
+   actually done. "License issued" and "Fully compliant" stay separate
+   buckets on purpose, so a trainer glancing at the roster never mistakes
+   "has a license number" for "finished." */
+const STAGE_BUCKET = {
+  study_material:"pre", exam:"pre",
+  nipr_application:"passedExam",
+  license_number:"applied",
+  npn:"issued", continuing_education:"issued", eo:"issued",
+  compliant:"compliant",
+};
+function pipelineCounts(){
+  const out = { pre:0, passedExam:0, applied:0, issued:0, compliant:0 };
+  A.profiles.forEach(p => out[STAGE_BUCKET[currentStage(p.user_id)]]++);
+  return out;
+}
 
 /* initials + a stable colour per agent, so faces are recognisable in a list */
 const AV = ["#3987e5","#d95926","#199e70","#8a5fd6","#c2185b","#0f8fa8"];
@@ -159,15 +188,20 @@ function attention(){
 
 function counts(){
   const at = attention();
+  const pipe = pipelineCounts();
   return {
     pending:   A.instances.filter(i=>i.status==="pending_review").length,
     sentBack:  at.sentBack,
     exceptions:at.exceptions,
     agents:    A.profiles.length,
-    licensed:  A.profiles.filter(p=>agentLicensed(p.user_id)).length,
     stuck:     at.stuck,
     videos:    A.videos.filter(v=>v.active).length,
     overdue:   at.overdue,
+    pre:        pipe.pre,
+    passedExam: pipe.passedExam,
+    applied:    pipe.applied,
+    issued:     pipe.issued,
+    compliant:  pipe.compliant,
   };
 }
 
@@ -177,10 +211,14 @@ const NAV = [
   {v:"overview", label:"Waiting on you",  c:"pending",  tone:"hot"},
   {v:"sentback", label:"Sent back",       c:"sentBack", tone:"crit"},
   {v:"exceptions", label:"Exceptions",    c:"exceptions"},
-  {grp:"Roster"},
-  {v:"agents",   label:"All agents",      c:"agents"},
-  {v:"licensed", label:"Licensed",        c:"licensed"},
   {v:"stuck",    label:"Stuck 14+ days",  c:"stuck", tone:"hot"},
+  {grp:"Pipeline"},
+  {v:"agents",      label:"All agents",      c:"agents"},
+  {v:"pre",         label:"Pre-licensing",   c:"pre"},
+  {v:"passedExam",  label:"Passed exam",     c:"passedExam"},
+  {v:"applied",     label:"Applied",         c:"applied"},
+  {v:"issued",      label:"License issued",  c:"issued"},
+  {v:"compliant",   label:"Fully compliant", c:"compliant"},
   {grp:"Content"},
   {v:"videos",   label:"Step videos",     c:"videos"},
 ];
@@ -316,8 +354,16 @@ function render(){
   if (v.name==="agent")  return renderAgent(v.arg);
   if (v.name==="videos")     return shell("Step videos","Paste a link; agents see it on that step.", renderVideos());
   if (v.name==="agents")     return shell("All agents","Everyone enrolled, whatever stage they're at.", renderAgents(A.profiles));
-  if (v.name==="licensed")   return shell("Licensed","Agents whose license number is verified.",
-                                   renderAgents(A.profiles.filter(p=>agentLicensed(p.user_id))));
+  if (v.name==="pre")        return shell("Pre-licensing","Working through study material, or registered for the exam but hasn't passed it yet.",
+                                   renderAgents(A.profiles.filter(p=>STAGE_BUCKET[currentStage(p.user_id)]==="pre")));
+  if (v.name==="passedExam") return shell("Passed exam","Exam complete — hasn't submitted a state application yet.",
+                                   renderAgents(A.profiles.filter(p=>STAGE_BUCKET[currentStage(p.user_id)]==="passedExam")));
+  if (v.name==="applied")    return shell("Applied","State application submitted — waiting on the license to be issued.",
+                                   renderAgents(A.profiles.filter(p=>STAGE_BUCKET[currentStage(p.user_id)]==="applied")));
+  if (v.name==="issued")     return shell("License issued","License number is verified, but NPN, continuing education, or E&O may still be outstanding — not yet fully compliant.",
+                                   renderAgents(A.profiles.filter(p=>STAGE_BUCKET[currentStage(p.user_id)]==="issued")));
+  if (v.name==="compliant")  return shell("Fully compliant","Every requirement is complete, including NPN, continuing education, and E&O.",
+                                   renderAgents(A.profiles.filter(p=>STAGE_BUCKET[currentStage(p.user_id)]==="compliant")));
   if (v.name==="stuck")      return shell(`Stuck ${STUCK_DAYS}+ days`,"No movement for two weeks or more.", renderStuck());
   if (v.name==="sentback")   return shell("Sent back","Waiting on the agent to fix something.", renderQueue(["action_required","rejected"]));
   if (v.name==="exceptions") return shell("Exceptions","Pathway couldn't be determined automatically.", renderExceptions());
@@ -339,7 +385,7 @@ function renderTiles(){
     <div class="cc-tile"><div class="l">Handled automatically</div>
       <div class="v">${s.autoRate==null?"—":s.autoRate+"%"}</div><div class="d">last 30 days</div></div>
     <div class="cc-tile"><div class="l">Active agents</div>
-      <div class="v">${c.agents}</div><div class="d">${c.licensed} licensed</div></div>
+      <div class="v">${c.agents}</div><div class="d">${c.compliant} fully compliant</div></div>
   </div>`;
 }
 
