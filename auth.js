@@ -37,7 +37,11 @@ const COPY = {
             submit: "Log in", pw: "current-password", hint: "" },
   signup: { title: "Create your account", sub: "",
             submit: "Create my account", pw: "new-password",
-            hint: 'Already have an account? <a href="#" data-go="login">Log in</a>' },
+            /* Said before they submit, not after: the confirmation email
+               is the one moment a recruit can wander off. */
+            hint: 'We\'ll email you a link to confirm your address &mdash; click it, '
+                + 'then come back and log in.<br/>'
+                + 'Already have an account? <a href="#" data-go="login">Log in</a>' },
   reset:  { title: "Reset your password", sub: "We'll email you a link to set a new one",
             submit: "Send reset link", pw: "current-password",
             hint: 'Remembered it? <a href="#" data-go="login">Back to log in</a>' },
@@ -58,8 +62,18 @@ let pinTries = 0;
 function heldKey() {
   try {
     return new URLSearchParams(location.search).get("k")
+      || localStorage.getItem("lf_join_key")
       || sessionStorage.getItem("lf_join_key") || "";
   } catch (_) { return ""; }
+}
+
+/* Hold the verified PIN where the app will still find it after the
+   recruit has left for their inbox and come back through a new tab.
+   localStorage is scoped to this agency's own subdomain by the browser,
+   and the registration form clears it once they're through. */
+function keepPin(k) {
+  try { localStorage.setItem("lf_join_key", k); } catch (_) {}
+  try { sessionStorage.setItem("lf_join_key", k); } catch (_) {}
 }
 
 /* Ask the database whether this is really the agency's PIN. Tolerates
@@ -164,7 +178,7 @@ document.querySelectorAll("[data-mode-tab]").forEach((b) => {
     const k = heldKey();
     if (k && await checkPin(k)) {
       pinOK = true;
-      try { sessionStorage.setItem("lf_join_key", k); } catch (_) {}
+      keepPin(k);
       render(true);
     }
   }
@@ -211,7 +225,7 @@ if (pinForm) {
       return;
     }
     pinOK = true;
-    try { sessionStorage.setItem("lf_join_key", pin); } catch (_) {}
+    keepPin(pin);
     render();
     el("email").focus();
   });

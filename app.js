@@ -85,9 +85,22 @@ async function load() {
 function joinKey(){
   try {
     const fromUrl = new URLSearchParams(location.search).get("k");
-    if (fromUrl) { sessionStorage.setItem("lf_join_key", fromUrl); return fromUrl; }
-    return sessionStorage.getItem("lf_join_key") || "";
+    if (fromUrl) { setJoinKey(fromUrl); return fromUrl; }
+    /* localStorage, not session: with email confirmation on, the recruit
+       leaves for their inbox and comes back through a fresh tab. The PIN
+       has to still be here when they do. It is scoped to this agency's
+       own subdomain by the browser itself. */
+    return localStorage.getItem("lf_join_key")
+        || sessionStorage.getItem("lf_join_key") || "";
   } catch (_) { return ""; }
+}
+function setJoinKey(k){
+  try { localStorage.setItem("lf_join_key", k); } catch (_) {}
+  try { sessionStorage.setItem("lf_join_key", k); } catch (_) {}
+}
+function forgetJoinKey(){
+  try { localStorage.removeItem("lf_join_key"); } catch (_) {}
+  try { sessionStorage.removeItem("lf_join_key"); } catch (_) {}
 }
 
 function firstName(){ return (S.profile?.answers?.first_name) || (S.profile?.full_name||"").split(" ")[0] || "there"; }
@@ -224,6 +237,36 @@ function renderRegistration() {
 function segInit(id, val){ const box=el(id); box.querySelectorAll("button").forEach(b=>{ b.classList.toggle("on", b.dataset.v===val); b.addEventListener("click",()=>{ box.querySelectorAll("button").forEach(x=>x.classList.remove("on")); b.classList.add("on"); }); }); }
 function segVal(id){ const b=el(id).querySelector("button.on"); return b?b.dataset.v:null; }
 
+/* The PIN, asked for a second time and in place, when whatever we were
+   holding has gone. It appears on the registration form itself rather
+   than sending anyone back to a sign-in page they've already passed. */
+function askForPin(agencyId) {
+  const A = el("regAlert");
+  A.className = "alert show alert-error";
+  const go = el("regGo");
+  if (el("regPinWrap")) {
+    A.textContent = "That PIN isn't right for this agency. Check it with your trainer.";
+    const f = el("regPin"); f.focus(); f.select();
+    return;
+  }
+  A.textContent = "One last thing before we can add you to your agency.";
+  const wrap = document.createElement("div");
+  wrap.id = "regPinWrap";
+  wrap.style.marginTop = "14px";
+  wrap.innerHTML =
+    '<label for="regPin">Registration PIN</label>' +
+    '<input id="regPin" type="text" autocomplete="off" spellcheck="false" ' +
+    'placeholder="Ask your trainer for this"/>' +
+    '<p class="hint" style="margin:6px 0 0">The same PIN your trainer gave you when you ' +
+    'registered &mdash; it\'s one PIN for the whole agency.</p>';
+  go.parentNode.insertBefore(wrap, go);
+  const input = el("regPin");
+  input.focus();
+  input.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") { e.preventDefault(); go.click(); }
+  });
+}
+
 async function submitReg() {
   const first=el("first").value.trim(), last=el("last").value.trim(), dob=el("dob").value;
   const resident=el("resident").value, trainer=el("trainer").value.trim();
@@ -246,12 +289,21 @@ async function submitReg() {
   const agencyId = S.tenant?.agency?.id || null;
   if (agencyId && !S.profile?.agency_id) {
     if (S.tenant.agency.needs_key) {
-      const { data: ok } = await supabase.rpc("lf_join_key_ok",
-        { p_agency: agencyId, p_key: joinKey() });
+      const typed = el("regPin") ? el("regPin").value.trim() : "";
+      const key = typed || joinKey();
+      let ok = false;
+      if (key) {
+        const r = await supabase.rpc("lf_join_key_ok", { p_agency: agencyId, p_key: key });
+        ok = !!r.data;
+      }
+      if (ok && typed) setJoinKey(typed);
       if (!ok) {
-        el("regGo").disabled=false; el("regGo").textContent="Create my account";
-        A.className="alert show alert-error";
-        A.textContent="That registration link isn't valid for this agency. Ask your trainer to send you their sign-up link again.";
+        /* Don't dead-end them. Someone who confirmed their email on a
+           different device arrives here with nothing held, through no
+           fault of their own -- so ask for the PIN again rather than
+           telling them to go and find a link. */
+        el("regGo").disabled=false; el("regGo").textContent="Continue";
+        askForPin(agencyId);
         return;
       }
     }
@@ -266,7 +318,7 @@ async function submitReg() {
   await supabase.from("profiles").upsert({ id:S.user.id, email:S.user.email, full_name:payload.full_name, state:resident, license_type:loa });
   await audit("registration", null, "complete", { military, confidence:path.confidence, designated:path.designated||null });
   if (path.exception) await createException(military?"ambiguous_military_pathway":"missing_data", path.exception, path.confidence);
-  try { sessionStorage.removeItem("lf_join_key"); } catch (_) {}
+  forgetJoinKey();
   delete payload.join_key;
   S.profile = { ...payload };
   el("who").textContent = payload.full_name;
