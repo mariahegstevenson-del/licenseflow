@@ -440,3 +440,14 @@ body{background:#F2F5F9}
   .lf-drawer,.lf-scrim{transition:none}
   .cta-wrap::before,.cta-wrap::after{animation:none;opacity:.26;transform:none}
 }
+
+/* The original dark .next.waiting / .next.done rules outrank the plain
+   .next above on specificity, so they survived the light-card rework and
+   left dark text sitting on a dark ground. Restate them here, later and at
+   equal specificity, tinted to carry the status without going dark. */
+.next.waiting{background:linear-gradient(150deg,#FFFFFF 0%,#FEFBF5 52%,#F4EBDA 100%);color:var(--ink)}
+.next.done{background:linear-gradient(150deg,#FFFFFF 0%,#F7FCF9 52%,#E1F0E8 100%);color:var(--ink)}
+.next.waiting .k{color:#8A5A00}
+.next.done .k{color:#0F6F40}
+.next.done h2,.next.waiting h2{color:var(--ink)}
+.next.done p,.next.waiting p{color:#33455C}
