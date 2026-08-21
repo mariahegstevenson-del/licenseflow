@@ -47,6 +47,11 @@ export function urlForAgency(slug, path) {
    agency off in the database switches off their portal. */
 export async function loadTenant() {
   const slug = tenantSlug();
+  /* Marks the document as an agency's portal from the hostname alone,
+     before the lookup returns. Anything that belongs to LicenseFlow's
+     own business -- a sales link, a "book a call" -- hides on this
+     class, so it can never surface on a customer's domain. */
+  if (slug) document.documentElement.classList.add("is-tenant");
   if (!slug || !isConfigured) return { slug, agency: null, unknown: false };
 
   const { data, error } = await supabase.rpc("lf_agency_public", { p_slug: slug });

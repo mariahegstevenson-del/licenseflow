@@ -1,5 +1,5 @@
 import { supabase, isConfigured, callbackUrl } from "./supabase.js";
-import { loadTenant, renderUnknownAgency, applyTenantChrome } from "./tenant.js?v=2";
+import { loadTenant, renderUnknownAgency, applyTenantChrome } from "./tenant.js?v=3";
 
 /* LicenseFlow is sold per agency: accounts are created for agents, never
    self-served. This screen therefore has exactly two states -- log in, and

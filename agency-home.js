@@ -10,7 +10,7 @@
    Everything rendered here comes out of the agencies row. All of it is
    escaped: an agency's own copy is not a reason to let markup through.
 ------------------------------------------------------------ */
-import { loadTenant, renderUnknownAgency, applyTheme } from "./tenant.js?v=2";
+import { loadTenant, renderUnknownAgency, applyTheme } from "./tenant.js?v=3";
 
 const root = document.getElementById("agencyHome");
 const site = document.getElementById("lfSite");

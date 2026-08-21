@@ -175,3 +175,7 @@ html.themed .cc-badge{
 }
 html.has-agency-display h2,
 html.has-agency-display .brand{font-family:var(--ff-display)}
+
+/* LicenseFlow's own business — selling to agency owners — has no place
+   on a customer's domain. Hidden from the hostname, before any lookup. */
+html.is-tenant .platform-only{display:none}
