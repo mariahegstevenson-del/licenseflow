@@ -531,3 +531,16 @@ body{background:#F2F5F9}
 .pg-rail .lf-doc .dd{color:var(--muted)}
 .pg-rail .lf-doc.pending .ic{background:transparent;border:1px dashed var(--line);color:var(--muted)}
 .pg-rail .lf-doc.pending .dn{color:var(--muted);font-weight:500}
+
+/* ============================================================
+   UPDATE v13: the agency's name in the chrome.
+   The product stays LicenseFlow -- this marks whose portal you are in,
+   the way a tenant name sits beside a product name, rather than
+   pretending the software belongs to the agency.
+   ============================================================ */
+.agency-tag{margin-right:auto;padding:.2rem .6rem;border-radius:999px;
+  background:var(--accent-050);color:var(--brand);border:1px solid #C7D8EE;
+  font-size:.78rem;font-weight:650;letter-spacing:-.008em;white-space:nowrap;
+  overflow:hidden;text-overflow:ellipsis;max-width:38ch}
+.agency-tag[hidden]{display:none}
+@media(max-width:760px){.agency-tag{display:none}}

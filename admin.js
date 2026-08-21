@@ -1,6 +1,7 @@
 import { supabase, isConfigured, requireSession } from "./supabase.js";
 import { STATES } from "./states.js?v=6";
 import * as F from "./flow.js?v=6";
+import { loadTenant, renderUnknownAgency, applyTenantChrome, urlForAgency } from "./tenant.js?v=1";
 
 const el = (id) => document.getElementById(id);
 const root = el("root"), navEl = el("nav"), railEl = el("rail");
@@ -25,13 +26,23 @@ const within = (t, from, to) => t != null && t >= from && t < to;
 /* ---------------- boot ---------------- */
 (async function () {
   if (!isConfigured) { root.innerHTML = pad("Connect Supabase."); return; }
+
+  A.tenant = await loadTenant();
+  if (A.tenant.unknown) { renderUnknownAgency(A.tenant.slug); return; }
+  applyTenantChrome(A.tenant.agency);
+
   /* Signed-out visitors go to the console's own front door, not the agent
      login -- the two products have separate doors on purpose. */
   const session = await requireSession("admin-login.html"); if (!session) return;
   A.me = session.user;
   el("logout").onclick = async () => { await supabase.auth.signOut(); location.href = "admin-login.html"; };
-  const { data:adm } = await supabase.from("admins").select("user_id").eq("user_id", A.me.id).maybeSingle();
+
+  const { data:adm } = await supabase.from("admins")
+    .select("user_id, is_platform, agency:agencies(id,slug,name)")
+    .eq("user_id", A.me.id).maybeSingle();
   A.admin = !!adm;
+  A.platform = !!adm?.is_platform;
+  A.agency = adm?.agency || null;
   if (!A.admin) {
     /* Not a fault -- an agent signed in and reached for a URL that isn't
        theirs. Send them to their own app rather than leaving them here.
@@ -46,6 +57,24 @@ const within = (t, from, to) => t != null && t >= from && t < to;
       <a class="btn btn-primary" href="app.html">Open the agent app</a></div>`;
     return;
   }
+
+  /* An agency's coordinator belongs on their agency's console. Arriving
+     anywhere else -- the main domain, or another agency's address --
+     hands them to their own. LicenseFlow staff are not redirected: their
+     remit is every agency, so whichever address they used is the right
+     one. Again a courtesy, not the control; the database is the control. */
+  if (!A.platform && A.agency && A.agency.slug !== (A.tenant?.slug || null)) {
+    window.location.replace(urlForAgency(A.agency.slug, "/admin.html"));
+    return;
+  }
+  if (A.agency) applyTenantChrome(A.agency);
+  else if (A.platform) {
+    document.querySelectorAll("[data-agency-name]").forEach((n) => {
+      n.textContent = A.tenant?.agency ? A.tenant.agency.name : "All agencies";
+      n.removeAttribute("hidden");
+    });
+  }
+
   await load();
 })();
 
@@ -57,6 +86,20 @@ async function load() {
     supabase.from("step_videos").select("*"),
   ]);
   A.profiles=p.data||[]; A.instances=inst.data||[]; A.exceptions=ex.data||[]; A.videos=vids.data||[];
+
+  /* An agency administrator is already limited to their own agency by
+     the database, so this narrowing does nothing for them. It is for
+     LicenseFlow staff, who can read every agency: standing on an
+     agency's own address should show that agency's console, not the
+     whole platform's. The main domain still shows everything. */
+  if (A.platform && A.tenant?.agency) {
+    const only = A.tenant.agency.id;
+    A.profiles = A.profiles.filter(x => x.agency_id === only);
+    const mine = new Set(A.profiles.map(x => x.user_id));
+    A.instances  = A.instances.filter(x => mine.has(x.user_id));
+    A.exceptions = A.exceptions.filter(x => mine.has(x.user_id));
+  }
+
   render();
 }
 function pad(t){ return `<p class="muted">${esc(t)}</p>`; }

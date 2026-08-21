@@ -1,4 +1,5 @@
 import { supabase, isConfigured, callbackUrl } from "./supabase.js";
+import { loadTenant, renderUnknownAgency, applyTenantChrome } from "./tenant.js?v=1";
 
 /* LicenseFlow is sold per agency: accounts are created for agents, never
    self-served. This screen therefore has exactly two states -- log in, and
@@ -64,6 +65,12 @@ el("forgot").onclick = (e) => { e.preventDefault(); mode = "reset"; render(); el
 
 /* ---------- boot ---------- */
 (async () => {
+  /* On an agency's own subdomain the sign-in card carries their name.
+     An address naming an agency that doesn't exist never gets a form. */
+  const tenant = await loadTenant();
+  if (tenant.unknown) { renderUnknownAgency(tenant.slug); return; }
+  applyTenantChrome(tenant.agency);
+
   render();
 
   // If a redirect bounced back here with an error, say so rather than

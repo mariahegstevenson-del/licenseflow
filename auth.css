@@ -130,3 +130,11 @@ body.admin-auth .screen{
     radial-gradient(820px 380px at 50% -10%, rgba(12,61,130,.11), transparent 72%),
     var(--sub);
 }
+
+/* The agency's name on their own sign-in card. Present only on a tenant
+   subdomain; the main domain's login stays plain LicenseFlow. */
+.agency-line{
+  text-align:center;font-size:.95rem;font-weight:650;color:var(--ink2);
+  letter-spacing:-.014em;margin:0 0 18px;
+}
+.agency-line[hidden]{display:none}

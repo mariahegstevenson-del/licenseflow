@@ -199,3 +199,11 @@ body.cc-locked .cc-nav,body.cc-locked .cc-rail{display:none}
   .cc-tiles{grid-template-columns:repeat(2,1fr)}
 }
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+
+/* Whose console this is. Sits beside the product name rather than
+   replacing it — a coordinator should always be able to tell which
+   agency's roster is on screen. */
+.cc-agency{padding:.16rem .55rem;border-radius:999px;background:#EEF2F7;
+  color:var(--ink-2);border:1px solid var(--line);font-size:.72rem;font-weight:650;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:34ch}
+.cc-agency[hidden]{display:none}

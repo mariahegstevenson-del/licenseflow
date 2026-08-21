@@ -1,6 +1,7 @@
 import { supabase, isConfigured, requireSession } from "./supabase.js";
 import { STATE_LIST, STATES } from "./states.js?v=6";
 import * as F from "./flow.js?v=6";
+import { loadTenant, renderUnknownAgency, applyTenantChrome, urlForAgency } from "./tenant.js?v=1";
 
 const el = (id) => document.getElementById(id);
 const root = el("root");
@@ -14,6 +15,14 @@ let ceRows = []; // transient new-certificate rows for the CE view
 /* ---------------- boot ---------------- */
 (async function () {
   if (!isConfigured) { root.innerHTML = box("Connect Supabase to use the app."); return; }
+
+  /* Which agency's portal is this? Resolved before anything is drawn, so
+     an address naming an agency that doesn't exist never gets as far as
+     showing a sign-in form. */
+  S.tenant = await loadTenant();
+  if (S.tenant.unknown) { renderUnknownAgency(S.tenant.slug); return; }
+  applyTenantChrome(S.tenant.agency);
+
   const session = await requireSession(); if (!session) return;
   S.user = session.user;
   el("logout").onclick = async () => { await supabase.auth.signOut(); location.href = "index.html"; };
@@ -33,7 +42,8 @@ async function load() {
     (r) => r, (e) => ({ data: null, error: e || new Error("Request failed") }));
 
   const [p, inst, docs, vids] = await Promise.all([
-    settle(supabase.from("licensing_profiles").select("*").eq("user_id", uid).maybeSingle()),
+    settle(supabase.from("licensing_profiles")
+      .select("*, agency:agencies(id,slug,name)").eq("user_id", uid).maybeSingle()),
     settle(supabase.from("requirement_instances").select("*").eq("user_id", uid)),
     settle(supabase.from("documents").select("*").eq("user_id", uid)),
     settle(supabase.from("step_videos").select("*")),
@@ -46,6 +56,19 @@ async function load() {
   S.profile = p.data; S.instances = inst.data || []; S.docs = docs.data || [];
   S.videos = {}; (vids.data||[]).forEach(v => S.videos[v.step_key] = v);
   S.sm = F.statusMap(S.instances);
+
+  /* An agent who arrives on the wrong agency's address -- an old
+     bookmark, a link from the main site -- is handed to their own
+     portal rather than shown an empty one. This is a courtesy, not a
+     control: the database already refuses them everything that isn't
+     theirs, whichever host they ask from. */
+  const home = S.profile?.agency?.slug || null;
+  if (home && home !== (S.tenant?.slug || null)) {
+    window.location.replace(urlForAgency(home));
+    return;
+  }
+  if (S.profile?.agency) applyTenantChrome(S.profile.agency);
+
   el("who").textContent = S.profile?.full_name || S.user.email;
   if (S.profile?.designated_state) S.journey = F.buildJourney(S.profile.designated_state);
   route();

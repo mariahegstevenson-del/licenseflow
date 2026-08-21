@@ -14,6 +14,7 @@
    and keep their session.
 ------------------------------------------------------------ */
 import { supabase, isConfigured, callbackUrl } from "./supabase.js";
+import { loadTenant, renderUnknownAgency, applyTenantChrome } from "./tenant.js?v=1";
 
 const el = (id) => document.getElementById(id);
 const A = el("alert");
@@ -68,6 +69,10 @@ el("forgot").onclick = (e) => { e.preventDefault(); clear(); setMode("reset"); e
 
 /* ---------- boot ---------- */
 (async () => {
+  const tenant = await loadTenant();
+  if (tenant.unknown) { renderUnknownAgency(tenant.slug); return; }
+  applyTenantChrome(tenant.agency);
+
   const q = new URLSearchParams(location.search);
   if (q.get("denied")) show(NOT_ADMIN);
 
