@@ -37,6 +37,11 @@ const within = (t, from, to) => t != null && t >= from && t < to;
   A.me = session.user;
   el("logout").onclick = async () => { await supabase.auth.signOut(); location.href = "admin-login.html"; };
 
+  /* Turns a pending invitation into a real admin row. Harmless and
+     silent for anyone who wasn't invited. Repeated here because Google
+     sign-in lands straight on this page without passing the door. */
+  try { await supabase.rpc("lf_claim_admin"); } catch (_) {}
+
   const { data:adm } = await supabase.from("admins")
     .select("user_id, is_platform, agency:agencies(id,slug,name)")
     .eq("user_id", A.me.id).maybeSingle();

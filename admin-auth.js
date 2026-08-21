@@ -44,6 +44,14 @@ const NOT_ADMIN =
 async function routeBySession(user) {
   const uid = user?.id || (await supabase.auth.getUser()).data?.user?.id;
   if (!uid) { show("We couldn't confirm your sign-in. Please try again."); return false; }
+
+  /* An agency's coordinator is put on a list before they have an
+     account. This is where that list becomes real: the database checks
+     the invited address against the one Supabase has confirmed for this
+     session, and writes the admin row itself. It does nothing at all for
+     everyone else, so it is safe to call on every sign-in. */
+  try { await supabase.rpc("lf_claim_admin"); } catch (_) {}
+
   const { data: adm, error } = await supabase.from("admins")
     .select("user_id").eq("user_id", uid).maybeSingle();
   if (error) { show("We couldn't check your access just now. Please try again."); return false; }

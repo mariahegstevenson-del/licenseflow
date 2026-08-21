@@ -62,6 +62,16 @@ async function load() {
      portal rather than shown an empty one. This is a courtesy, not a
      control: the database already refuses them everything that isn't
      theirs, whichever host they ask from. */
+  /* An agency's coordinator confirms their email like anyone else, and
+     the link lands them here. Without this they'd be met by an agent
+     registration form they should never fill in. Their invitation is
+     turned into an admin row and they're handed to the Command Center
+     instead. Nobody without an invitation is affected. */
+  if (!S.profile && !S.profileError) {
+    const { data: claimed } = await settle(supabase.rpc("lf_claim_admin"));
+    if (claimed) { window.location.replace("admin.html"); return; }
+  }
+
   const home = S.profile?.agency?.slug || null;
   if (home && home !== (S.tenant?.slug || null)) {
     window.location.replace(urlForAgency(home));
