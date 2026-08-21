@@ -629,10 +629,20 @@ function videoEmbed(url){
    metadata; CE certificates and other files off documents.
    ============================================================ */
 const STUDY_TIPS = [
-  "<b>Sit the exam within two weeks</b> of your course.",
-  "<b>Quiz yourself</b> &#8212; don't just re-read.",
-  "<b>Know the state section cold.</b> Most often failed.",
-  "<b>Bring two forms of ID</b> to the test centre.",
+  "<b>Watch the videos.</b> They carry the course &#8212; don't skip ahead to the text.",
+  "<b>Focus on vocabulary.</b> Most exam questions turn on knowing the exact term.",
+  "<b>Review your notes and the chapter summaries</b> rather than re-reading whole chapters.",
+  "<b>Take the practice quizzes and tests over and over.</b> Repetition is what makes it stick.",
+];
+
+/* The CE step collects several certificates, not one. Which ones an agent
+   needs is set by their registered state, so this list is a starting point
+   that should come from state configuration -- see states.js. */
+const CE_SLOTS = [
+  { key:"aml",           label:"Anti-Money Laundering (AML)", match:/aml|money.?launder/i },
+  { key:"ethics",        label:"Ethics",                      match:/ethic/i },
+  { key:"best_interest", label:"Best Interest",               match:/best.?interest|\bbi\b/i },
+  { key:"other",         label:"Other",                       match:null },
 ];
 
 function metaOf(key){
@@ -670,12 +680,23 @@ function renderDrawer(){
   /* CE certificates come off the CE step's own uploads. A slot with no file
      yet reads "Miscellaneous" until one is added, then takes the file name. */
   const certs = (metaOf("continuing_education").certs) || [];
-  const ceRows = certs.length
-    ? certs.map(c => `<div class="lf-doc"><span class="ic">${esc(extOf(c.filename))}</span>` +
-        `<span class="dn">${esc(c.filename || "Certificate")}</span>` +
-        `<span class="dd">${esc(shortDate(c.purchase_date))}</span></div>`).join("")
-    : `<div class="lf-doc pending"><span class="ic">&#8212;</span>` +
-      `<span class="dn">Miscellaneous</span><span class="dd">Not uploaded</span></div>`;
+  const claimed = new Set();
+  const ceRows = CE_SLOTS.map(slot => {
+    let hit = null;
+    if (slot.match) {
+      hit = certs.find((c, i) => !claimed.has(i) && slot.match.test(c.filename || "")) || null;
+    } else {
+      hit = certs.find((c, i) => !claimed.has(i)) || null;   // "Other" takes the leftovers
+    }
+    if (hit) claimed.add(certs.indexOf(hit));
+    const done = !!hit;
+    return `<div class="lf-slot${done ? " done" : ""}">
+      <span class="lf-mark">${done ? "&#10003;" : ""}</span>
+      <span class="lf-sn"><b>${esc(slot.label)}</b><span>${
+        done ? esc(hit.filename || "Uploaded") : "Not uploaded yet"}</span></span>
+      ${done && hit.purchase_date ? `<span class="lf-sd">${esc(shortDate(hit.purchase_date))}</span>` : ""}
+    </div>`;
+  }).join("");
 
   const otherDocs = (S.docs || []).filter(d => d.doc_key !== "continuing_education");
   const docRows = otherDocs.length
@@ -700,7 +721,7 @@ function renderDrawer(){
     `</div>` +
     (creds ? `<div class="lf-g"><div class="lf-gt">Your credentials</div>${creds}</div>` : "") +
     (eoRows ? `<div class="lf-g"><div class="lf-gt">Errors &amp; Omissions</div>${eoRows}</div>` : "") +
-    `<div class="lf-g"><div class="lf-gt">Continuing education &#183; includes AML</div>${ceRows}</div>` +
+    `<div class="lf-g"><div class="lf-gt">Continuing education</div>${ceRows}</div>` +
     `<div class="lf-g"><div class="lf-gt">Other documents</div>${docRows}</div>`;
 
   body.querySelectorAll("[data-copy]").forEach(b => {
