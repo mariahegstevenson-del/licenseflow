@@ -73,6 +73,23 @@ async function load() {
   if (S.profile?.designated_state) S.journey = F.buildJourney(S.profile.designated_state);
   route();
 }
+/* ------------------------------------------------------------
+   The trainer's registration key.
+
+   It rides in the link the trainer sends (?k=...), so the recruit never
+   types it. Stashed for this tab because the link lands on the sign-in
+   page and the key isn't needed until the registration form two screens
+   later. It is not a secret worth protecting in the browser -- the
+   database is what decides whether it is right.
+   ------------------------------------------------------------ */
+function joinKey(){
+  try {
+    const fromUrl = new URLSearchParams(location.search).get("k");
+    if (fromUrl) { sessionStorage.setItem("lf_join_key", fromUrl); return fromUrl; }
+    return sessionStorage.getItem("lf_join_key") || "";
+  } catch (_) { return ""; }
+}
+
 function firstName(){ return (S.profile?.answers?.first_name) || (S.profile?.full_name||"").split(" ")[0] || "there"; }
 function docFor(key){ return S.docs.find(d => d.doc_key === key); }
 function sysLine(){ return `Licensing state: <strong>${esc(stateName(S.profile.designated_state))}</strong> &nbsp;·&nbsp; License: <strong>${esc(S.profile.license_type)}</strong>`; }
@@ -221,6 +238,27 @@ async function submitReg() {
     payload.intended_state=el("intended").value||null; payload.existing_license=el("exlic").value.trim()||null; payload.existing_npn=el("exnpn").value.trim()||null;
   }
   el("regGo").disabled=true; el("regGo").textContent="Please wait…";
+
+  /* Registering on an agency's own portal joins that agency. The key is
+     checked here only so the recruit gets a sentence they can act on --
+     the database checks it again on the insert and is the thing that
+     actually decides, so a page with this bypassed still can't get in. */
+  const agencyId = S.tenant?.agency?.id || null;
+  if (agencyId && !S.profile?.agency_id) {
+    if (S.tenant.agency.needs_key) {
+      const { data: ok } = await supabase.rpc("lf_join_key_ok",
+        { p_agency: agencyId, p_key: joinKey() });
+      if (!ok) {
+        el("regGo").disabled=false; el("regGo").textContent="Create my account";
+        A.className="alert show alert-error";
+        A.textContent="That registration link isn't valid for this agency. Ask your trainer to send you their sign-up link again.";
+        return;
+      }
+    }
+    payload.agency_id = agencyId;
+    payload.join_key  = joinKey();
+  }
+
   const path = F.determinePathway(payload);
   payload.pathway_confidence = path.confidence;
   if (path.designated) payload.designated_state = path.designated;
@@ -228,6 +266,8 @@ async function submitReg() {
   await supabase.from("profiles").upsert({ id:S.user.id, email:S.user.email, full_name:payload.full_name, state:resident, license_type:loa });
   await audit("registration", null, "complete", { military, confidence:path.confidence, designated:path.designated||null });
   if (path.exception) await createException(military?"ambiguous_military_pathway":"missing_data", path.exception, path.confidence);
+  try { sessionStorage.removeItem("lf_join_key"); } catch (_) {}
+  delete payload.join_key;
   S.profile = { ...payload };
   el("who").textContent = payload.full_name;
   if (S.profile.designated_state) S.journey = F.buildJourney(S.profile.designated_state);

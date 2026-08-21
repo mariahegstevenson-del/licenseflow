@@ -596,3 +596,10 @@ html.has-agency-display .rail-pct,
 html.has-agency-display .dash-overall .big,
 html.has-agency-display .card.pad > h3,
 html.has-agency-display .step-card h2{font-family:var(--ff-display);font-weight:600;letter-spacing:-.018em}
+
+/* The registration form wears the agency's face too — it is the first
+   screen a new recruit ever sees of them. */
+html.has-agency-display .reg-wrap h1,
+html.has-agency-display .reg-wrap h2,
+html.has-agency-display .welcome h1{font-family:var(--ff-display);font-weight:600;letter-spacing:-.018em}
+html.themed .reg-wrap .seg button.on{background:var(--brand);color:#fff;border-color:var(--brand)}

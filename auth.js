@@ -17,32 +17,54 @@ const clear = () => { A.className = "alert"; };
 function friendly(err) {
   const msg = err?.message || "Something went wrong.";
   if (/invalid login credentials/i.test(msg)) return "That email and password don't match an account. Check them, or use the reset link.";
+  if (/already registered|already been registered|user already exists/i.test(msg)) return "There's already an account with that email. Log in instead, or use the reset link if you've forgotten the password.";
+  if (/password should be at least|weak.?password/i.test(msg)) return "Please choose a password of at least 8 characters.";
   if (/email not confirmed/i.test(msg)) return "This account hasn't been confirmed yet. Check your inbox for the confirmation link.";
-  if (/password should be at least/i.test(msg)) return "Please use a password of at least 6 characters.";
+  if (/password should be at least/i.test(msg)) return "Please use a password of at least 8 characters.";
   if (/rate limit|too many requests|only request this after|for security purposes/i.test(msg)) return "Too many attempts just now. Please wait a minute and try again.";
   if (/error sending confirmation|error sending email|smtp/i.test(msg)) return "We couldn't send that email. Please contact support so we can get you sorted.";
   /* Sign-ups are off by design, so this is what an unrecognised Google
      account hits. Say what to do about it rather than "not allowed". */
   if (/signups not allowed|signup is disabled|user not allowed|not allowed for this instance/i.test(msg)) return "There's no LicenseFlow account for that email yet. Accounts are created by your agency — ask your licensing coordinator to add you.";
+  if (/pwned|leaked|compromised|known.{0,12}password/i.test(msg)) return "That password has turned up in a known data breach. Please pick a different one.";
   if (/provider is not enabled/i.test(msg)) return "Google sign-in isn't switched on for this site yet.";
   if (/failed to fetch|network/i.test(msg)) return "We couldn't reach the server. Check your connection and try again.";
   return msg;
 }
 
 const COPY = {
-  login: { title: "Welcome back", sub: "Log in to continue your licensing walkthrough",
-           submit: "Log in", pw: "current-password", hint: "" },
-  reset: { title: "Reset your password", sub: "We'll email you a link to set a new one",
-           submit: "Send reset link", pw: "current-password",
-           hint: 'Remembered it? <a href="#" data-go="login">Back to log in</a>' },
+  login:  { title: "Welcome back", sub: "Log in to continue your licensing walkthrough",
+            submit: "Log in", pw: "current-password", hint: "" },
+  signup: { title: "Create your account", sub: "",
+            submit: "Create my account", pw: "new-password",
+            hint: 'Already have an account? <a href="#" data-go="login">Log in</a>' },
+  reset:  { title: "Reset your password", sub: "We'll email you a link to set a new one",
+            submit: "Send reset link", pw: "current-password",
+            hint: 'Remembered it? <a href="#" data-go="login">Back to log in</a>' },
 };
+
+/* Set once the agency is resolved, so the copy can name them and the
+   sign-up door only appears where an agency has actually opened it. */
+let TENANT = null;
 
 function render(keepAlert) {
   const c = COPY[mode];
   const resetting = mode === "reset";
+  const signing  = mode === "signup";
   el("title").textContent = c.title;
-  el("sub").textContent = c.sub;
+  el("sub").textContent = signing && TENANT?.agency
+    ? "Join " + (TENANT.agency.theme?.short_name || TENANT.agency.name) + " and start your licensing"
+    : c.sub;
   el("submit").textContent = c.submit;
+
+  /* The sign-up door exists only on an agency's own portal, and only
+     when that agency takes open registrations. */
+  const canSignUp = !!(TENANT && TENANT.agency && TENANT.agency.open_signup);
+  const tabs = el("modeSwitch");
+  if (tabs) tabs.style.display = canSignUp && !resetting ? "" : "none";
+  document.querySelectorAll("[data-mode-tab]").forEach((b) => {
+    b.classList.toggle("on", b.dataset.modeTab === mode);
+  });
 
   // Hiding an input isn't enough -- a hidden `required` field blocks submit
   // silently. Disabling it takes it out of validation as well as out of view.
@@ -63,6 +85,10 @@ function render(keepAlert) {
 
 el("forgot").onclick = (e) => { e.preventDefault(); mode = "reset"; render(); el("email").focus(); };
 
+document.querySelectorAll("[data-mode-tab]").forEach((b) => {
+  b.addEventListener("click", () => { mode = b.dataset.modeTab; render(); });
+});
+
 /* ---------- boot ---------- */
 (async () => {
   /* On an agency's own subdomain the sign-in card carries their name.
@@ -70,6 +96,17 @@ el("forgot").onclick = (e) => { e.preventDefault(); mode = "reset"; render(); el
   const tenant = await loadTenant();
   if (tenant.unknown) { renderUnknownAgency(tenant.slug); return; }
   applyTenantChrome(tenant.agency);
+  TENANT = tenant;
+
+  /* A trainer's link carries the key. Hold it for this tab so the
+     recruit never sees it, and never has to type it. */
+  try {
+    const k = new URLSearchParams(location.search).get("k");
+    if (k) sessionStorage.setItem("lf_join_key", k);
+  } catch (_) {}
+
+  const wants = new URLSearchParams(location.search).get("mode");
+  if (wants === "signup" && tenant.agency && tenant.agency.open_signup) mode = "signup";
 
   render();
 
@@ -110,6 +147,21 @@ el("form").addEventListener("submit", async (e) => {
       // a different reply here would let anyone test which emails have
       // accounts.
       show("If that email has an account, a reset link is on its way. It expires in an hour.", true);
+      return;
+    }
+
+    if (mode === "signup") {
+      const { data, error } = await supabase.auth.signUp({ email, password });
+      if (error) throw error;
+      /* With email confirmation on, signUp returns no session and the
+         person has to click a link first. Say so plainly rather than
+         bouncing them to an app that will send them back here. */
+      if (!data.session) {
+        show("Account created. Check " + email + " for a confirmation link, then come back and log in.", true);
+        mode = "login"; render(true);
+        return;
+      }
+      location.href = "app.html";
       return;
     }
 

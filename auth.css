@@ -179,3 +179,19 @@ html.has-agency-display .brand{font-family:var(--ff-display)}
 /* LicenseFlow's own business — selling to agency owners — has no place
    on a customer's domain. Hidden from the hostname, before any lookup. */
 html.is-tenant .platform-only{display:none}
+
+/* ---------- log in / create account ----------
+   Only shown on an agency portal that takes open registrations; the
+   main domain never renders it. */
+.mode-tabs{
+  display:flex;gap:4px;padding:4px;margin:0 0 18px;
+  background:var(--sub);border:1px solid var(--line);border-radius:11px;
+}
+.mode-tabs button{
+  flex:1;padding:.52rem .6rem;border:0;border-radius:8px;background:transparent;
+  font-family:inherit;font-size:.9rem;font-weight:600;color:var(--mut);cursor:pointer;
+  transition:background .14s ease,color .14s ease;
+}
+.mode-tabs button:hover{color:var(--ink)}
+.mode-tabs button.on{background:#fff;color:var(--pri);box-shadow:var(--sh-1)}
+html.themed .mode-tabs button.on{box-shadow:var(--sh-1),inset 0 -2px 0 var(--agency-gold,transparent)}

@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Create your account</title>
+<meta name="robots" content="noindex"/>
+<script>
+/* A short address a trainer can send: /register?k=THEIRKEY
+   Everything past this is the ordinary sign-in screen with the
+   create-account tab already selected, so there is one page to maintain
+   rather than two that drift apart. The key rides through untouched. */
+(function () {
+  var k = new URLSearchParams(location.search).get("k");
+  var to = "login.html?mode=signup" + (k ? "&k=" + encodeURIComponent(k) : "");
+  location.replace(to);
+})();
+</script>
+</head>
+<body></body>
+</html>
