@@ -544,3 +544,55 @@ body{background:#F2F5F9}
   overflow:hidden;text-overflow:ellipsis;max-width:38ch}
 .agency-tag[hidden]{display:none}
 @media(max-width:760px){.agency-tag{display:none}}
+
+/* ============================================================
+   UPDATE v14: AGENCY THEME LAYER
+   Only applies once tenant.js has resolved a themed agency and put
+   `themed` on <html>. On the main domain none of this matches, so
+   LicenseFlow's own look is untouched.
+
+   The colour tokens themselves (--brand and friends) are overwritten
+   inline on :root, so most of the product recolours without a single
+   rule here. What is below is the part colour swapping alone can't do:
+   the masthead inverting to the brand, and the agency's secondary
+   colour taking over the accents.
+   ============================================================ */
+html.themed .appbar{background:var(--brand);border-bottom:0;
+  box-shadow:0 1px 0 rgba(0,0,0,.12), 0 6px 18px rgba(6,18,35,.08)}
+html.themed .appbar .brand{color:#fff}
+html.themed .appbar .mark{background:rgba(255,255,255,.12);color:var(--agency-gold,#fff);
+  border:1px solid rgba(255,255,255,.22)}
+html.themed .appbar .muted{color:#A9C0E0}
+html.themed .appbar .btn-quiet{color:#C6D3E8}
+html.themed .appbar .btn-quiet:hover{color:#fff;background:rgba(255,255,255,.1)}
+html.themed .appbar .lf-burger{background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.24)}
+html.themed .appbar .lf-burger span{background:#fff}
+html.themed .appbar .lf-burger:hover{background:rgba(255,255,255,.18);border-color:rgba(255,255,255,.4)}
+html.themed .agency-tag{background:var(--agency-gold-050,rgba(255,255,255,.14));
+  color:var(--agency-gold-ink,#fff);border-color:transparent;font-weight:650}
+
+/* the agency's second colour does the accent work */
+html.themed .next::before{background:linear-gradient(180deg,var(--brand) 0%,
+  var(--brand-400) 58%, var(--agency-gold,var(--brand-400)) 100%)}
+html.themed .next .k{color:var(--agency-gold-ink,var(--brand))}
+html.themed .next .need li i{background:var(--agency-gold-050,var(--accent-050));
+  color:var(--agency-gold-ink,var(--brand));box-shadow:inset 0 0 0 1px rgba(6,18,35,.12)}
+html.themed .progress>i{background:linear-gradient(90deg,var(--brand-600),
+  var(--brand-400) 70%, var(--agency-gold,var(--brand-400)))}
+html.themed .jrow2.is-now::before{background:var(--agency-gold,var(--brand))}
+html.themed .jrow2.is-now{background:linear-gradient(90deg,var(--agency-gold-050,var(--accent-050)),transparent 62%)}
+html.themed .cta-wrap::before{background:linear-gradient(115deg,var(--brand-400),
+  var(--brand) 30%, var(--agency-gold,var(--brand-400)) 58%, var(--brand-600) 84%)}
+html.themed .cta-wrap::after{background:linear-gradient(115deg,var(--brand-400),var(--brand) 70%)}
+html.themed .rail-tips{background:var(--agency-gold-050,var(--accent-050));
+  color:var(--agency-gold-ink,var(--brand));border-color:transparent}
+html.themed .rail-tips:hover{filter:brightness(.97)}
+html.themed .pg-rail .lf-gt{color:var(--agency-gold-ink,var(--muted))}
+
+/* a display face, when the agency has one, on the headings only */
+html.has-agency-display .dash-head h1,
+html.has-agency-display .next h2,
+html.has-agency-display .rail-pct,
+html.has-agency-display .dash-overall .big,
+html.has-agency-display .card.pad > h3,
+html.has-agency-display .step-card h2{font-family:var(--ff-display);font-weight:600;letter-spacing:-.018em}

@@ -88,9 +88,86 @@ export function renderUnknownAgency(slug) {
    portal an agency is given, not software pretending to be theirs. */
 export function applyTenantChrome(agency) {
   if (!agency) return;
-  document.title = agency.name + " — LicenseFlow";
-  document.querySelectorAll("[data-agency-name]").forEach((n) => {
-    n.textContent = agency.name;
-    n.removeAttribute("hidden");
+  const t = (agency && agency.theme) || {};
+  const short = typeof t.short_name === "string" ? t.short_name.trim() : "";
+
+  document.title = agency.name + " \u2014 LicenseFlow";
+
+  /* A branded agency wears its own name in the masthead, with the pill
+     saying what the thing is. Without a theme the product name stays put
+     and the pill carries the agency -- so an unbranded agency still gets
+     a page that makes sense. */
+  if (short) {
+    document.querySelectorAll("[data-brand-name]").forEach((n) => { n.textContent = short; });
+    document.querySelectorAll("[data-brand-initial]").forEach((n) => {
+      n.textContent = short.charAt(0).toUpperCase();
+    });
+    document.querySelectorAll("[data-agency-name]").forEach((n) => {
+      n.textContent = "Licensing Portal";
+      n.removeAttribute("hidden");
+    });
+  } else {
+    document.querySelectorAll("[data-agency-name]").forEach((n) => {
+      n.textContent = agency.name;
+      n.removeAttribute("hidden");
+    });
+  }
+
+  applyTheme(t);
+}
+
+/* ------------------------------------------------------------
+   The theme.
+
+   An agency's branding is a row, not a stylesheet: a handful of colour
+   tokens written onto :root, over the top of the ones styles.css and
+   auth.css already use. Every rule in the product reads those tokens,
+   so recolouring the whole app is this one loop.
+
+   Only recognised keys are read, and each value must look like a hex
+   colour before it is written -- the theme comes from the database, and
+   a CSS custom property is a place where a hostile string could
+   otherwise end up inside a url() or a declaration.
+   ------------------------------------------------------------ */
+const HEX = /^#[0-9a-fA-F]{3,8}$/;
+
+/* theme key -> the variables that key drives, across all three sheets */
+const VAR_MAP = {
+  brand:      ["--brand", "--accent", "--pri"],
+  brand_600:  ["--brand-600", "--accent-600", "--pri6"],
+  brand_400:  ["--brand-400"],
+  accent_050: ["--accent-050", "--pri05"],
+  gold:       ["--agency-gold"],
+  gold_ink:   ["--agency-gold-ink"],
+  gold_050:   ["--agency-gold-050"],
+};
+
+export function applyTheme(theme) {
+  if (!theme || typeof theme !== "object") return;
+  const root = document.documentElement;
+
+  Object.keys(VAR_MAP).forEach((key) => {
+    const v = theme[key];
+    if (typeof v === "string" && HEX.test(v)) {
+      VAR_MAP[key].forEach((name) => root.style.setProperty(name, v));
+    }
   });
+
+  /* A display face, if the agency has one. Loaded from Google Fonts by
+     family name -- never by a URL out of the database, which would let
+     an agency record point the page at any host it liked. */
+  const display = typeof theme.display === "string" ? theme.display.trim() : "";
+  if (display && /^[A-Za-z0-9 ]{2,40}$/.test(display)) {
+    const href = "https://fonts.googleapis.com/css2?family=" +
+      encodeURIComponent(display).replace(/%20/g, "+") +
+      ":ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600&display=swap";
+    if (!document.querySelector('link[data-agency-font]')) {
+      const l = document.createElement("link");
+      l.rel = "stylesheet"; l.href = href; l.setAttribute("data-agency-font", "");
+      document.head.appendChild(l);
+    }
+    root.style.setProperty("--ff-display", '"' + display + '", Georgia, serif');
+    root.classList.add("has-agency-display");
+  }
+  root.classList.add("themed");
 }

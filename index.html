@@ -14,10 +14,26 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@400;500;600;700&family=Libre+Franklin:wght@600;700;800&display=swap"/>
 <link rel="stylesheet" href="landing.css?v=1"/>
+<link rel="stylesheet" href="agency.css?v=1"/>
+<script>
+/* Which product is this host serving? Decided from the hostname alone,
+   before anything paints, so an agency's agents never see a flash of
+   LicenseFlow's sales page on their own portal. The database still has
+   the final say on whether the agency exists -- this only picks which
+   of the two documents is allowed to show. */
+(function(){
+  var h = (location.hostname || "").toLowerCase(), d = "lifelicenseflow.com", sub = "";
+  if (h !== d && h.slice(-(d.length + 1)) === "." + d) sub = h.slice(0, -(d.length + 1));
+  var tenant = sub && sub !== "www" && sub.indexOf(".") === -1;
+  document.documentElement.className = tenant ? "is-tenant" : "is-platform";
+})();
+</script>
 </head>
 <body>
 
 <a class="skip" href="#main">Skip to content</a>
+
+<div id="lfSite">
 
 <div class="navwrap">
   <div class="bound nav">
@@ -156,7 +172,11 @@
 
 </main>
 
-<div class="bound foot">
+</div><!-- /#lfSite -->
+
+<main id="agencyHome" hidden></main>
+
+<div class="bound foot" id="lfFoot">
   <span>© <span id="yr">2026</span> LicenseFlow</span>
   <span><a href="login.html?mode=login">Agent login</a> &nbsp;&#183;&nbsp; <a href="admin-login.html">Command Center</a></span>
 </div>
@@ -209,5 +229,6 @@ document.getElementById("yr").textContent = new Date().getFullYear();
   fill(document.getElementById("trackB"), codes.slice(half),    ["TX","NC","OH"]);
 })();
 </script>
+<script type="module" src="agency-home.js?v=1"></script>
 </body>
 </html>

@@ -138,3 +138,40 @@ body.admin-auth .screen{
   letter-spacing:-.014em;margin:0 0 18px;
 }
 .agency-line[hidden]{display:none}
+
+/* ------------------------------------------------------------
+   Agency theme layer. `themed` lands on <html> only once tenant.js
+   has resolved a branded agency, so the main domain's sign-in is
+   untouched by every rule below.
+   ------------------------------------------------------------ */
+html.themed .screen{
+  background:
+    radial-gradient(760px 330px at 50% -6%, var(--agency-gold-050,#EAF0F8), transparent 72%),
+    var(--sub);
+}
+html.themed .agency-line{
+  font-size:.78rem;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--agency-gold-ink,var(--pri));font-weight:700;
+}
+html.themed .agency-line::before{
+  content:"";display:block;width:46px;height:2px;border-radius:2px;
+  background:var(--agency-gold,var(--pri));margin:0 auto 11px;
+}
+/* a navy-into-gold edge across the top of the card */
+html.themed .card{position:relative}
+html.themed .card::before{
+  content:"";position:absolute;left:0;right:0;top:0;height:3px;
+  border-radius:var(--r) var(--r) 0 0;
+  background:linear-gradient(90deg,var(--pri),var(--pri) 34%,var(--agency-gold,var(--pri)));
+}
+html.themed input:focus{
+  border-color:var(--agency-gold,var(--pri));
+  box-shadow:0 0 0 3px var(--agency-gold-050,var(--pri05));
+}
+html.themed .btn-primary{border-bottom:2px solid var(--agency-gold,transparent)}
+html.themed .cc-badge{
+  background:var(--agency-gold-050,var(--pri05));
+  border-color:transparent;color:var(--agency-gold-ink,var(--pri));
+}
+html.has-agency-display h2,
+html.has-agency-display .brand{font-family:var(--ff-display)}
