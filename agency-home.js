@@ -138,10 +138,18 @@ function render(agency) {
       <h1>${esc(t.hero_title || "Everything your licence needs,")}
         ${t.hero_em ? `<em>${esc(t.hero_em)}</em>` : ""}</h1>
       ${t.hero_body ? `<p class="ah-lede">${esc(t.hero_body)}</p>` : ""}
+      <!-- One front door, two ways through it. A recruit who has never
+           been here has somewhere obvious to click, and the PIN their
+           trainer gives them is the only thing they need to bring --
+           no link to find, nothing to have been sent in advance. -->
       <div class="ah-doors">
         <a class="ah-btn gold" href="login.html">I'm an agent &mdash; log in</a>
-        <a class="ah-btn ghost" href="admin-login.html">Command Center</a>
+        ${agency.open_signup
+          ? `<a class="ah-btn ghost" href="login.html?mode=signup">First time here &mdash; register</a>`
+          : `<a class="ah-btn ghost" href="admin-login.html">Command Center</a>`}
       </div>
+      ${agency.open_signup
+        ? `<p class="ah-note">Registering takes the PIN your trainer gives you.</p>` : ""}
     </div>
   </div>
 

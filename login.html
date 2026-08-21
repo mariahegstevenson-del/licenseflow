@@ -27,6 +27,15 @@
 
       <div id="alert" class="alert"></div>
 
+      <!-- Shown only where the agency uses a registration PIN, and only
+           until it has been checked. -->
+      <form id="pinForm" style="display:none">
+        <label for="pin">Registration PIN</label>
+        <input id="pin" name="pin" type="text" autocomplete="off" autocapitalize="characters"
+               spellcheck="false" placeholder="e.g. PRW2026" disabled/>
+        <button id="pinSubmit" class="btn btn-primary btn-block" type="submit" style="margin-top:18px">Continue</button>
+      </form>
+
       <button id="google" class="btn btn-ghost btn-block btn-google" type="button">
         <svg class="g-icon" width="18" height="18" viewBox="0 0 18 18" aria-hidden="true" focusable="false">
           <path fill="#4285F4" d="M17.64 9.2c0-.64-.06-1.25-.16-1.84H9v3.48h4.84a4.14 4.14 0 0 1-1.8 2.72v2.26h2.91c1.7-1.57 2.69-3.88 2.69-6.62z"/>
@@ -57,7 +66,7 @@
 
     <!-- Accounts are created by the agency, not self-served. Someone who
          can't get in needs to know why and what to do about it. -->
-    <p class="hint center" style="margin-top:18px">
+    <p class="hint center no-signup-note" style="margin-top:18px">
       Don't have an account? Your agency sets one up for you — ask your licensing coordinator.
     </p>
     <p class="hint center platform-only" style="margin-top:6px">
@@ -65,6 +74,6 @@
     </p>
   </div>
 </div>
-<script type="module" src="auth.js?v=10"></script>
+<script type="module" src="auth.js?v=12"></script>
 </body>
 </html>

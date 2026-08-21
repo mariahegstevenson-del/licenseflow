@@ -77,6 +77,8 @@ html.themed .ah-btn.gold{background:var(--ag-gold);color:#231A08}
 .ah-btn.gold:hover{filter:brightness(1.06)}
 .ah-btn.ghost{background:rgba(255,255,255,.07);color:#fff;border-color:rgba(255,255,255,.38)}
 .ah-btn.ghost:hover{background:rgba(255,255,255,.15)}
+/* Says what the second door costs before anyone walks through it. */
+.ah-note{margin:14px 0 0;font-size:.85rem;font-weight:300;color:rgba(255,255,255,.72)}
 
 /* ---------- mission ---------- */
 .ah-mission{background:#fff;border-bottom:1px solid var(--ag-line);padding:40px 26px;

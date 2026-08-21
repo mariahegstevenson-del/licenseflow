@@ -47,37 +47,90 @@ const COPY = {
    sign-up door only appears where an agency has actually opened it. */
 let TENANT = null;
 
+/* Registering on an agency's portal takes the PIN their trainer hands
+   out. It can arrive two ways -- typed into the box below, or carried
+   invisibly on a link -- and either way it is checked against the
+   database before the account form is shown at all. pinOK records that
+   the check has passed in this tab. */
+let pinOK = false;
+let pinTries = 0;
+
+function heldKey() {
+  try {
+    return new URLSearchParams(location.search).get("k")
+      || sessionStorage.getItem("lf_join_key") || "";
+  } catch (_) { return ""; }
+}
+
+/* Ask the database whether this is really the agency's PIN. Tolerates
+   case and stray spaces; the function itself does the comparing, so the
+   key never has to be readable from the browser. */
+async function checkPin(pin) {
+  const a = TENANT && TENANT.agency;
+  if (!a || !pin) return false;
+  try {
+    const { data, error } = await supabase.rpc("lf_join_key_ok",
+      { p_agency: a.id, p_key: pin });
+    if (error) return false;
+    return !!data;
+  } catch (_) { return false; }
+}
+
 function render(keepAlert) {
+  /* The sign-up door exists only on an agency's own portal, and only
+     where that agency takes registrations. On LicenseFlow's own domain
+     there is no such door at all: accounts there are made for people. */
+  const a = TENANT && TENANT.agency;
+  const canSignUp = !!(a && a.open_signup);
+  if (!canSignUp && mode === "signup") mode = "login";
+
   const c = COPY[mode];
   const resetting = mode === "reset";
-  const signing  = mode === "signup";
-  el("title").textContent = c.title;
-  el("sub").textContent = signing && TENANT?.agency
-    ? "Join " + (TENANT.agency.theme?.short_name || TENANT.agency.name) + " and start your licensing"
-    : c.sub;
+  const signing   = mode === "signup";
+  /* Registering is two steps when the agency uses a PIN: prove you were
+     sent here, then make the account. Doing it in that order means
+     nobody creates a login they then can't use. */
+  const pinStep = signing && !!(a && a.needs_key) && !pinOK;
+
+  el("title").textContent = pinStep ? "First time here?" : c.title;
+  el("sub").textContent = pinStep
+    ? "Enter the registration PIN your trainer gave you"
+    : (signing && a
+        ? "Join " + (a.theme?.short_name || a.name) + " and start your licensing"
+        : c.sub);
   el("submit").textContent = c.submit;
 
-  /* The sign-up door exists only on an agency's own portal, and only
-     when that agency takes open registrations. */
-  const canSignUp = !!(TENANT && TENANT.agency && TENANT.agency.open_signup);
   const tabs = el("modeSwitch");
   if (tabs) tabs.style.display = canSignUp && !resetting ? "" : "none";
   document.querySelectorAll("[data-mode-tab]").forEach((b) => {
     b.classList.toggle("on", b.dataset.modeTab === mode);
   });
+  /* Contradicts the Create account tab sitting right above it. */
+  document.querySelectorAll(".no-signup-note").forEach((n) => {
+    n.style.display = canSignUp ? "none" : "";
+  });
 
-  // Hiding an input isn't enough -- a hidden `required` field blocks submit
-  // silently. Disabling it takes it out of validation as well as out of view.
-  el("pwWrap").style.display = resetting ? "none" : "";
-  el("password").disabled = resetting;
+  /* The PIN step replaces the account form rather than sitting above it,
+     so there is only ever one thing on screen to fill in. */
+  const pinForm = el("pinForm");
+  if (pinForm) pinForm.style.display = pinStep ? "" : "none";
+  el("form").style.display = pinStep ? "none" : "";
+  /* A hidden `required` field blocks submit silently, so take the inputs
+     out of validation as well as out of view. */
+  el("email").disabled = pinStep;
+  el("pwWrap").style.display = resetting || pinStep ? "none" : "";
+  el("password").disabled = resetting || pinStep;
   el("password").setAttribute("autocomplete", c.pw);
-  el("forgot").style.display = resetting ? "none" : "";
+  el("forgot").style.display = resetting || pinStep ? "none" : "";
+  if (el("pin")) el("pin").disabled = !pinStep;
 
   const g = el("google"), or = document.querySelector(".or");
-  if (g) g.style.display = resetting ? "none" : "";
-  if (or) or.style.display = resetting ? "none" : "";
+  if (g) g.style.display = resetting || pinStep ? "none" : "";
+  if (or) or.style.display = resetting || pinStep ? "none" : "";
 
-  el("hint").innerHTML = c.hint;
+  el("hint").innerHTML = pinStep
+    ? 'Don\'t have a PIN? Your trainer has it. &middot; <a href="#" data-go="login">Log in instead</a>'
+    : c.hint;
   const sw = el("hint").querySelector("[data-go]");
   if (sw) sw.onclick = (e) => { e.preventDefault(); mode = sw.dataset.go; render(); };
   if (!keepAlert) clear();
@@ -98,17 +151,23 @@ document.querySelectorAll("[data-mode-tab]").forEach((b) => {
   applyTenantChrome(tenant.agency);
   TENANT = tenant;
 
-  /* A trainer's link carries the key. Hold it for this tab so the
-     recruit never sees it, and never has to type it. */
-  try {
-    const k = new URLSearchParams(location.search).get("k");
-    if (k) sessionStorage.setItem("lf_join_key", k);
-  } catch (_) {}
-
   const wants = new URLSearchParams(location.search).get("mode");
   if (wants === "signup" && tenant.agency && tenant.agency.open_signup) mode = "signup";
 
   render();
+
+  /* A link may carry the PIN for someone -- a trainer sending it ahead,
+     a second page in the same tab. If it checks out, skip the box; if it
+     doesn't, say nothing and let them type it. Nothing depends on the
+     link existing: the PIN box on its own is the whole route in. */
+  if (isConfigured && tenant.agency && tenant.agency.needs_key) {
+    const k = heldKey();
+    if (k && await checkPin(k)) {
+      pinOK = true;
+      try { sessionStorage.setItem("lf_join_key", k); } catch (_) {}
+      render(true);
+    }
+  }
 
   // If a redirect bounced back here with an error, say so rather than
   // dropping the user on a blank-looking login form.
@@ -127,6 +186,36 @@ document.querySelectorAll("[data-mode-tab]").forEach((b) => {
   const { data } = await supabase.auth.getSession();
   if (data.session) location.href = "app.html";
 })();
+
+/* ---------- the PIN step ---------- */
+const pinForm = el("pinForm");
+if (pinForm) {
+  pinForm.addEventListener("submit", async (e) => {
+    e.preventDefault(); clear();
+    const pin = el("pin").value.trim();
+    if (!pin) { show("Please enter your agency's registration PIN.", false); return; }
+    /* A PIN is short by design, so it is worth slowing down guessing.
+       Five wrong tries in a tab and the box stops answering. */
+    if (pinTries >= 5) {
+      show("Too many tries. Reload the page and check the PIN with your trainer.", false);
+      return;
+    }
+    const b = el("pinSubmit");
+    b.disabled = true; b.textContent = "Checking…";
+    const ok = await checkPin(pin);
+    b.disabled = false; b.textContent = "Continue";
+    if (!ok) {
+      pinTries++;
+      show("That PIN isn't right for this agency. Check it with your trainer.", false);
+      el("pin").select();
+      return;
+    }
+    pinOK = true;
+    try { sessionStorage.setItem("lf_join_key", pin); } catch (_) {}
+    render();
+    el("email").focus();
+  });
+}
 
 /* ---------- email + password ---------- */
 el("form").addEventListener("submit", async (e) => {
