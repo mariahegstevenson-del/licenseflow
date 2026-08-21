@@ -717,7 +717,7 @@ function renderDrawer(){
 
   body.innerHTML =
     `<div class="lf-g"><div class="lf-gt">Study tips</div>` +
-      STUDY_TIPS.map((t,i) => `<div class="lf-tip"><i>${i+1}</i><p>${t}</p></div>`).join("") +
+      STUDY_TIPS.map(t => `<div class="lf-tip"><i></i><p>${t}</p></div>`).join("") +
     `</div>` +
     (creds ? `<div class="lf-g"><div class="lf-gt">Your credentials</div>${creds}</div>` : "") +
     (eoRows ? `<div class="lf-g"><div class="lf-gt">Errors &amp; Omissions</div>${eoRows}</div>` : "") +
