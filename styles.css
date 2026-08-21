@@ -506,7 +506,10 @@ body{background:#F2F5F9}
 .pg-rail .lf-gt{color:var(--muted)}
 .pg-rail .lf-kv{border-bottom:1px solid var(--line-2)}
 .pg-rail .lf-kv:last-child{border-bottom:0}
-.pg-rail .lf-kv .k{color:var(--muted);flex:0 0 104px}
+/* The rail is narrower than the drawer, so the label column gives ground
+   to the value -- a truncated licence number is worse than a tight label. */
+.pg-rail .lf-kv .k{color:var(--muted);flex:0 0 84px;font-size:.82rem}
+.pg-rail .lf-copy{padding:.16rem .42rem;font-size:.72rem}
 .pg-rail .lf-kv .v{color:var(--ink)}
 .pg-rail .lf-ok{background:var(--ok);color:#fff;border:0}
 .pg-rail .lf-copy{border:1px solid var(--line);background:#fff;color:var(--muted)}
