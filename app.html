@@ -7,29 +7,30 @@
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Libre+Franklin:wght@600;700;800&display=swap"/>
-<link rel="stylesheet" href="styles.css?v=10"/>
+<link rel="stylesheet" href="styles.css?v=11"/>
 <script src="config.js"></script>
 </head>
 <body>
-<div class="container top" style="gap:12px">
-  <button class="lf-burger" id="lfOpen" aria-label="Open resources" aria-expanded="false" aria-controls="lfDrawer" type="button">
-    <span></span><span></span><span></span>
-  </button>
-  <a class="brand" href="app.html"><span class="mark">L</span> LicenseFlow</a>
-  <div style="display:flex;gap:10px;align-items:center">
-    <span class="muted" id="who" style="font-size:.9rem"></span>
-    <a class="btn btn-quiet btn-sm" href="#/welcome">Welcome</a>
-    <a class="btn btn-ghost btn-sm" href="admin.html" id="adminLink" style="display:none">Admin</a>
-    <button class="btn btn-quiet btn-sm" id="logout">Log out</button>
+<header class="appbar">
+  <div class="container top" style="gap:12px">
+    <button class="lf-burger" id="lfOpen" aria-label="Open resources" aria-expanded="false" aria-controls="lfDrawer" type="button">
+      <span></span><span></span><span></span>
+    </button>
+    <a class="brand" href="app.html"><span class="mark">L</span> LicenseFlow</a>
+    <div style="display:flex;gap:10px;align-items:center">
+      <span class="muted" id="who" style="font-size:.9rem"></span>
+      <a class="btn btn-quiet btn-sm" href="#/welcome">Welcome</a>
+      <button class="btn btn-quiet btn-sm" id="logout">Log out</button>
+    </div>
   </div>
-</div>
-<div id="root"><div class="wt"><p class="muted">Loading…</p></div></div>
+</header>
+<div id="root"><div class="wt"><p class="muted">Loading&#8230;</p></div></div>
 <div class="lf-scrim" id="lfScrim"></div>
 <aside class="lf-drawer" id="lfDrawer" role="dialog" aria-modal="true" aria-label="Resources and your details">
   <div class="lf-dh"><h3>Resources</h3><button class="lf-x" id="lfClose" aria-label="Close" type="button">&#10005;</button></div>
   <div class="lf-db" id="lfBody"></div>
   <div class="lf-df">Need a hand? Ask your licensing coordinator.</div>
 </aside>
-<script type="module" src="app.js?v=11"></script>
+<script type="module" src="app.js?v=12"></script>
 </body>
 </html>

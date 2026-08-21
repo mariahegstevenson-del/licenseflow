@@ -50,6 +50,9 @@ a:hover{text-decoration:underline}
   letter-spacing:-.024em;color:var(--ink);
 }
 .brand:hover{text-decoration:none}
+/* The brand is inline-flex, so centring it needs the element itself to be
+   a block-level flex container -- justify-content alone does nothing. */
+.screen-inner > .brand{display:flex}
 .mark{
   width:30px;height:30px;border-radius:8px;background:var(--pri);color:var(--pri-on);
   display:grid;place-items:center;font-weight:800;font-size:.86rem;font-family:Inter,sans-serif;
@@ -110,3 +113,20 @@ input:focus{outline:none;border-color:var(--pri);box-shadow:0 0 0 3px var(--pri0
 .alert-ok{background:var(--ok-bg);color:var(--ok);border:1px solid var(--ok-line)}
 
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+
+/* ------------------------------------------------------------
+   Command Center sign-in (admin-login.html)
+   Same card, marked so an administrator can see at a glance that
+   they are at the right door and not the agent login.
+   ------------------------------------------------------------ */
+.cc-badge{
+  display:block;width:max-content;margin:0 auto 18px;
+  padding:.24rem .7rem;border-radius:999px;
+  background:var(--pri05);border:1px solid #C7D8EE;color:var(--pri);
+  font-size:.74rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
+}
+body.admin-auth .screen{
+  background:
+    radial-gradient(820px 380px at 50% -10%, rgba(12,61,130,.11), transparent 72%),
+    var(--sub);
+}

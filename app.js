@@ -18,7 +18,9 @@ let ceRows = []; // transient new-certificate rows for the CE view
   S.user = session.user;
   el("logout").onclick = async () => { await supabase.auth.signOut(); location.href = "index.html"; };
   window.addEventListener("hashchange", route);
-  supabase.from("admins").select("user_id").eq("user_id", S.user.id).maybeSingle().then(({ data }) => { if (data) { const a = el("adminLink"); if (a) a.style.display = ""; } });
+  /* No admin affordance lives in the agent app. Administrators sign in to the
+     Command Center through its own door (admin-login.html) so that what an
+     agent sees is only ever the agent product. */
   await load();
 })();
 
@@ -77,11 +79,43 @@ function route() {
   if (!p.welcome_completed) return renderWelcome();
   const h = (location.hash || "#/dashboard").replace("#/", "");
   const [base, arg] = h.split("/");
-  if (base === "welcome") return renderWelcome();
-  if (base === "step") return renderStep(arg);
-  return renderDashboard();
+  if (base === "welcome") { renderWelcome(); return shell(); }
+  if (base === "step") { renderStep(arg); return shell(); }
+  renderDashboard(); return shell();
 }
 function goto(hash){ if (location.hash === hash) route(); else location.hash = hash; }
+
+/* ------------------------------------------------------------
+   PAGE SHELL
+   The journey and step views are a single narrow column, which on a
+   desktop monitor leaves most of the screen empty and reads as a phone
+   layout that failed to load. On wide screens we move that column into a
+   grid alongside a standing rail carrying the agent's own record -- the
+   same material as the drawer, which stays as the small-screen route to
+   it. Wrapping happens here rather than inside each render function so
+   the views keep emitting one block of markup and nothing has to be kept
+   in sync; moving the nodes preserves the handlers already bound to them.
+   ------------------------------------------------------------ */
+function shell(){
+  const first = root.firstElementChild;
+  if (!first || first.classList.contains("pg")) return;
+  if (!first.classList.contains("wt") && !first.classList.contains("dash")) return;
+  if (!S.profile || !S.journey) return;
+
+  const pg   = document.createElement("div"); pg.className = "pg";
+  const main = document.createElement("div"); main.className = "pg-main";
+  const rail = document.createElement("aside"); rail.className = "pg-rail";
+  rail.setAttribute("aria-label", "Your record");
+
+  root.insertBefore(pg, first);
+  main.appendChild(first);
+  pg.appendChild(main);
+  rail.innerHTML = railHTML();
+  pg.appendChild(rail);
+  wireCopy(rail);
+  const t = rail.querySelector("#railTips");
+  if (t) t.onclick = () => { const b = el("lfOpen"); if (b) b.click(); };
+}
 
 /* ============================================================
    REGISTRATION (with military branch) — unchanged behavior
@@ -660,6 +694,8 @@ function extOf(name){
   return m ? m[1].toUpperCase().slice(0,3) : "DOC";
 }
 
+/* The drawer and the desktop rail both show these rows, so ids are prefixed
+   per surface -- two elements answering to "lfLic" would break copy. */
 function kvRow(label, value, id, verified){
   if (!value) return "";
   return `<div class="lf-kv"><span class="k">${esc(label)}</span>` +
@@ -668,10 +704,23 @@ function kvRow(label, value, id, verified){
     `<button class="lf-copy" type="button" data-copy="${id}">Copy</button></div>`;
 }
 
-function renderDrawer(){
-  const body = el("lfBody");
-  if (!body) return;
+/* Copy-to-clipboard, bound within one surface only. */
+function wireCopy(scope){
+  scope.querySelectorAll("[data-copy]").forEach(b => {
+    b.onclick = () => {
+      const t = el(b.dataset.copy);
+      const txt = t ? t.textContent.trim() : "";
+      const done = () => { b.textContent = "Copied"; b.classList.add("done");
+        setTimeout(() => { b.textContent = "Copy"; b.classList.remove("done"); }, 1400); };
+      if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(txt).then(done, done);
+      else done();
+    };
+  });
+}
 
+/* Credentials, E&O, CE slots and documents, built once and rendered into
+   whichever surface asked for them. `p` prefixes element ids. */
+function recordGroups(p){
   const lic = metaOf("license_number").license_number;
   const npn = metaOf("npn").npn;
   const eo  = metaOf("eo");
@@ -706,34 +755,48 @@ function renderDrawer(){
     : `<div class="lf-doc pending"><span class="ic">&#8212;</span>` +
       `<span class="dn">Nothing uploaded yet</span><span class="dd"></span></div>`;
 
-  const creds = kvRow("License number", lic, "lfLic", isVerified("license_number")) +
-                kvRow("NPN", npn, "lfNpn", isVerified("npn"));
+  const creds = kvRow("License number", lic, p+"Lic", isVerified("license_number")) +
+                kvRow("NPN", npn, p+"Npn", isVerified("npn"));
 
   const eoRows =
     (eo.carrier ? `<div class="lf-kv"><span class="k">Carrier</span><span class="v">${esc(eo.carrier)}</span></div>` : "") +
-    kvRow("Policy number", eo.policy_number, "lfPol", false) +
+    kvRow("Policy number", eo.policy_number, p+"Pol", false) +
     (eoDone && eoDone.completed_at
       ? `<div class="lf-kv"><span class="k">Added</span><span class="v">${esc(shortDate(eoDone.completed_at))}</span></div>` : "");
 
-  body.innerHTML =
-    `<div class="lf-g"><div class="lf-gt">Study tips</div>` +
-      STUDY_TIPS.map(t => `<div class="lf-tip"><i></i><p>${t}</p></div>`).join("") +
-    `</div>` +
-    (creds ? `<div class="lf-g"><div class="lf-gt">Your credentials</div>${creds}</div>` : "") +
+  return (creds ? `<div class="lf-g"><div class="lf-gt">Your credentials</div>${creds}</div>` : "") +
     (eoRows ? `<div class="lf-g"><div class="lf-gt">Errors &amp; Omissions</div>${eoRows}</div>` : "") +
     `<div class="lf-g"><div class="lf-gt">Continuing education</div>${ceRows}</div>` +
     `<div class="lf-g"><div class="lf-gt">Other documents</div>${docRows}</div>`;
+}
 
-  body.querySelectorAll("[data-copy]").forEach(b => {
-    b.onclick = () => {
-      const t = el(b.dataset.copy);
-      const txt = t ? t.textContent.trim() : "";
-      const done = () => { b.textContent = "Copied"; b.classList.add("done");
-        setTimeout(() => { b.textContent = "Copy"; b.classList.remove("done"); }, 1400); };
-      if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(txt).then(done, done);
-      else done();
-    };
-  });
+function tipsGroup(){
+  return `<div class="lf-g"><div class="lf-gt">Study tips</div>` +
+    STUDY_TIPS.map(t => `<div class="lf-tip"><i></i><p>${t}</p></div>`).join("") + `</div>`;
+}
+
+function renderDrawer(){
+  const body = el("lfBody");
+  if (!body) return;
+  body.innerHTML = tipsGroup() + recordGroups("lf");
+  wireCopy(body);
+}
+
+/* The desktop rail. Same record as the drawer, on a light card, with the
+   overall figure at the top so the agent always has their standing in
+   view -- and a way through to the study tips, which stay in the drawer. */
+function railHTML(){
+  const pr = F.progress(S.journey, S.sm);
+  const p  = S.profile;
+  return `<div class="rail-card">
+    <div class="rail-head">
+      <div class="rail-pct">${pr.overall}<span>%</span></div>
+      <div class="rail-sub"><b>Your record</b><span>${esc(stateName(p.designated_state))} &#183; ${esc(p.license_type)}</span></div>
+    </div>
+    <div class="progress"><i style="width:${pr.overall}%"></i></div>
+    ${recordGroups("rl")}
+    <button class="rail-tips" type="button" id="railTips">Study tips <span aria-hidden="true">&#8594;</span></button>
+  </div>`;
 }
 
 (function wireDrawer(){

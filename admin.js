@@ -25,16 +25,25 @@ const within = (t, from, to) => t != null && t >= from && t < to;
 /* ---------------- boot ---------------- */
 (async function () {
   if (!isConfigured) { root.innerHTML = pad("Connect Supabase."); return; }
-  const session = await requireSession(); if (!session) return;
+  /* Signed-out visitors go to the console's own front door, not the agent
+     login -- the two products have separate doors on purpose. */
+  const session = await requireSession("admin-login.html"); if (!session) return;
   A.me = session.user;
-  el("logout").onclick = async () => { await supabase.auth.signOut(); location.href = "index.html"; };
+  el("logout").onclick = async () => { await supabase.auth.signOut(); location.href = "admin-login.html"; };
   const { data:adm } = await supabase.from("admins").select("user_id").eq("user_id", A.me.id).maybeSingle();
   A.admin = !!adm;
   if (!A.admin) {
+    /* Not a fault -- an agent signed in and reached for a URL that isn't
+       theirs. Send them to their own app rather than leaving them here.
+       The database refuses them too: every table behind this console is
+       admin-gated by RLS, so there is nothing to read even if they stay. */
     navEl.innerHTML = ""; railEl.innerHTML = "";
-    root.innerHTML = `<div class="card pad"><h2 style="margin-top:0">Not authorized</h2>
-      <p class="muted">This area is for licensing administrators.
-      <a href="app.html">Go to the agent app</a>.</p></div>`;
+    document.body.classList.add("cc-locked");
+    root.innerHTML = `<div class="card pad" style="max-width:520px;margin:48px auto">
+      <h2 style="margin-top:0">This area is for administrators</h2>
+      <p class="muted">Your LicenseFlow account is set up as an agent. Your licensing
+      walkthrough is in the agent app.</p>
+      <a class="btn btn-primary" href="app.html">Open the agent app</a></div>`;
     return;
   }
   await load();
@@ -88,7 +97,8 @@ function pipelineCounts(){
 }
 
 /* initials + a stable colour per agent, so faces are recognisable in a list */
-const AV = ["#3987e5","#d95926","#199e70","#8a5fd6","#c2185b","#0f8fa8"];
+/* Avatar grounds: all dark enough to carry white initials at 4.5:1+. */
+const AV = ["#1E5FB4","#B04513","#0F6F40","#6B45C4","#A81552","#0B6E85"];
 function avatar(uid){
   const n = (pname(uid)||"A").trim().split(/\s+/);
   const ini = ((n[0]?.[0]||"A") + (n[1]?.[0]||"")).toUpperCase();
@@ -250,7 +260,7 @@ function sparkline(vals, tone){
   const w=62,h=20,min=Math.min(...clean),max=Math.max(...clean),r=(max-min)||1;
   const pts=clean.map((v,i)=>`${(i*(w/(clean.length-1))).toFixed(1)},${(h-((v-min)/r)*h).toFixed(1)}`).join(" ");
   const lx=w, ly=(h-((clean.at(-1)-min)/r)*h).toFixed(1);
-  const col = tone==="up" ? "#3fae7d" : tone==="down" ? "#ec7b78" : "#7a7972";
+  const col = tone==="up" ? "#0F6F40" : tone==="down" ? "#A32019" : "#51637A";
   return `<svg width="${w+4}" height="${h+4}" viewBox="-2 -2 ${w+4} ${h+4}" aria-hidden="true">
     <polyline fill="none" stroke="${col}" stroke-width="1.6" stroke-linecap="round"
       stroke-linejoin="round" points="${pts}"/><circle cx="${lx}" cy="${ly}" r="2.2" fill="${col}"/></svg>`;
@@ -408,11 +418,11 @@ function renderStages(){
     const hDone = d.done*u, hProg = d.prog*u;
     const yDone = base-hDone, yProg = yDone-2-hProg;
     const total = d.done+d.prog;
-    return `${d.done?`<rect x="${x}" y="${yDone}" width="${bw}" height="${hDone}" fill="#199e70"/>`:""}
-      ${d.prog?`<rect x="${x}" y="${yProg}" width="${bw}" height="${hProg}" fill="#3987e5" rx="4"/>`:""}
-      ${total?`<text x="${x+bw/2}" y="${(d.prog?yProg:yDone)-7}" fill="#a8a79e" font-size="11"
+    return `${d.done?`<rect x="${x}" y="${yDone}" width="${bw}" height="${hDone}" fill="#0F6F40"/>`:""}
+      ${d.prog?`<rect x="${x}" y="${yProg}" width="${bw}" height="${hProg}" fill="#1E5FB4" rx="4"/>`:""}
+      ${total?`<text x="${x+bw/2}" y="${(d.prog?yProg:yDone)-7}" fill="#51637A" font-size="11"
         text-anchor="middle">${total}</text>`:""}
-      <text x="${x+bw/2}" y="158" fill="#7a7972" font-size="11" text-anchor="middle">${esc(d.label)}</text>`;
+      <text x="${x+bw/2}" y="158" fill="#51637A" font-size="11" text-anchor="middle">${esc(d.label)}</text>`;
   }).join("");
   return `<div class="cc-panel">
     <div class="cc-panel-h"><h2>Where agents are sitting</h2>
@@ -420,9 +430,9 @@ function renderStages(){
     <div class="pad">
       <svg viewBox="0 0 ${W} ${H}" width="100%" role="img"
         aria-label="Agents at each stage, in progress versus complete">
-        <line x1="16" y1="${base+.5}" x2="${W-16}" y2="${base+.5}" stroke="#2e2e2b"/>${bars}</svg>
-      <div class="cc-legend"><span><i style="background:#3987e5"></i>In progress</span>
-        <span><i style="background:#199e70"></i>Complete</span>
+        <line x1="16" y1="${base+.5}" x2="${W-16}" y2="${base+.5}" stroke="#DCE3EC"/>${bars}</svg>
+      <div class="cc-legend"><span><i style="background:#1E5FB4"></i>In progress</span>
+        <span><i style="background:#0F6F40"></i>Complete</span>
         <span style="color:var(--faint)">· number above each bar = agents at that stage</span></div>
     </div></div>`;
 }

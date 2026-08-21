@@ -451,3 +451,80 @@ body{background:#F2F5F9}
 .next.done .k{color:#0F6F40}
 .next.done h2,.next.waiting h2{color:var(--ink)}
 .next.done p,.next.waiting p{color:#33455C}
+
+/* ============================================================
+   UPDATE v11: DESKTOP SHELL
+   Two problems this fixes. The app bar was a 1080px box floating in the
+   middle of the viewport, so on a wide monitor it read as a card rather
+   than as chrome. And the content column is 720px, which on a 27" screen
+   left most of the window empty and looked like a phone layout that had
+   failed to load. The bar is now full-bleed, and on wide screens the
+   column sits in a grid beside a standing rail carrying the agent's own
+   record. Below 1120px the rail drops out and the drawer, which holds the
+   same material, is the way to it.
+   ============================================================ */
+.appbar{position:sticky;top:0;z-index:30;background:rgba(255,255,255,.94);
+  backdrop-filter:blur(10px);border-bottom:1px solid var(--line);
+  box-shadow:0 1px 0 rgba(6,18,35,.03),0 6px 18px rgba(6,18,35,.03)}
+.appbar .top{position:static;background:none;border-bottom:none;backdrop-filter:none;
+  width:min(1240px,94vw);height:66px}
+@supports not (backdrop-filter:blur(10px)){.appbar{background:#fff}}
+
+.pg{width:min(1240px,94vw);margin:0 auto;padding:26px 0 96px;
+  display:grid;grid-template-columns:minmax(0,1fr) 336px;gap:30px;align-items:start}
+.pg-main{min-width:0}
+.pg .wt,.pg .dash{max-width:none;width:auto;margin:0;padding:0}
+.pg-rail{position:sticky;top:92px}
+@media(max-width:1119px){
+  .pg{grid-template-columns:minmax(0,1fr);width:min(840px,94vw)}
+  .pg-rail{display:none}
+}
+
+/* --- the rail card ------------------------------------------------- */
+.rail-card{background:#fff;border:1px solid var(--line);border-radius:var(--r-lg);
+  box-shadow:var(--e2);overflow:hidden;padding:0 0 6px}
+.rail-head{display:flex;align-items:center;gap:14px;padding:18px 20px 12px}
+.rail-pct{font-family:var(--ff-display);font-weight:800;font-size:2rem;line-height:1;
+  color:var(--brand);letter-spacing:-.03em;font-variant-numeric:tabular-nums}
+.rail-pct span{font-size:1rem;font-weight:700;margin-left:1px}
+.rail-sub{min-width:0;line-height:1.3}
+.rail-sub b{display:block;font-size:.94rem;font-weight:700;color:var(--ink);letter-spacing:-.012em}
+.rail-sub span{display:block;font-size:.82rem;color:var(--muted);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rail-card>.progress{margin:0 20px 4px}
+
+.rail-tips{display:flex;align-items:center;justify-content:space-between;width:calc(100% - 40px);
+  margin:6px 20px 12px;padding:.6rem .85rem;border:1px solid var(--line);border-radius:12px;
+  background:var(--accent-050);color:var(--brand);font-family:inherit;font-size:.88rem;
+  font-weight:650;cursor:pointer;transition:background .15s ease,border-color .15s ease}
+.rail-tips:hover{background:#DDE8F6;border-color:var(--brand-400)}
+
+/* The record groups are shared markup with the drawer, which is dark.
+   Inside the rail they sit on white, so the palette is restated here. */
+.pg-rail .lf-g{padding:14px 20px 12px}
+.pg-rail .lf-g + .lf-g{border-top:1px solid var(--line-2)}
+.pg-rail .lf-gt{color:var(--muted)}
+.pg-rail .lf-kv{border-bottom:1px solid var(--line-2)}
+.pg-rail .lf-kv:last-child{border-bottom:0}
+.pg-rail .lf-kv .k{color:var(--muted);flex:0 0 104px}
+.pg-rail .lf-kv .v{color:var(--ink)}
+.pg-rail .lf-ok{background:var(--ok);color:#fff;border:0}
+.pg-rail .lf-copy{border:1px solid var(--line);background:#fff;color:var(--muted)}
+.pg-rail .lf-copy:hover{background:var(--accent-050);border-color:var(--brand);color:var(--brand)}
+.pg-rail .lf-copy.done{background:var(--ok-050);border-color:#9AD4B4;color:#0B6B3F}
+.pg-rail .lf-slot{border-bottom:1px solid var(--line-2)}
+.pg-rail .lf-slot:last-child{border-bottom:0}
+.pg-rail .lf-mark{border:1.5px dashed var(--line);color:transparent}
+.pg-rail .lf-slot.done .lf-mark{border:1px solid var(--ok);background:var(--ok);color:#fff}
+/* The drawer's done-state rules are three classes deep, so the light
+   restatements have to match that depth or the white-on-navy colours win. */
+.pg-rail .lf-sn b,.pg-rail .lf-slot.done .lf-sn b{color:var(--ink)}
+.pg-rail .lf-sn span,.pg-rail .lf-sd,
+.pg-rail .lf-slot.done .lf-sn span{color:var(--muted)}
+.pg-rail .lf-doc{border-bottom:1px solid var(--line-2)}
+.pg-rail .lf-doc:last-child{border-bottom:0}
+.pg-rail .lf-doc .ic{background:var(--accent-050);color:var(--brand)}
+.pg-rail .lf-doc .dn{color:var(--ink)}
+.pg-rail .lf-doc .dd{color:var(--muted)}
+.pg-rail .lf-doc.pending .ic{background:transparent;border:1px dashed var(--line);color:var(--muted)}
+.pg-rail .lf-doc.pending .dn{color:var(--muted);font-weight:500}

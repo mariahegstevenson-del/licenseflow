@@ -35,12 +35,14 @@ export function callbackUrl(next) {
   return u.href;
 }
 
-/* Small helper: redirect to login if there is no active session. */
-export async function requireSession() {
+/* Small helper: redirect to login if there is no active session.
+   The agent app and the Command Center have separate front doors, so the
+   caller says which one a signed-out visitor should be sent to. */
+export async function requireSession(loginPage) {
   if (!supabase) return null;
   const { data } = await supabase.auth.getSession();
   if (!data.session) {
-    window.location.href = "login.html";
+    window.location.href = loginPage || "login.html";
     return null;
   }
   return data.session;
