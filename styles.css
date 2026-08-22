@@ -700,3 +700,42 @@ html.has-agency-display .welcome .launch h2,
 html.has-agency-display .welcome .card.pad > h3,
 html.has-agency-display .reg-wrap h1,
 html.has-agency-display .reg-wrap h2{font-weight:500}
+
+/* ============================================================
+   UPDATE v16: THE AGENCY'S DAWN
+
+   Pinned to the window rather than to the content column, so it spans
+   the full width on any screen and doesn't move while the page scrolls
+   under it. It sits below everything the app draws and above the page
+   ground, and it only exists at all once route() has said this is a
+   greeting screen for an agency whose theme asks for scenery.
+   ============================================================ */
+#lfScene{position:fixed;left:0;right:0;top:0;height:min(52vh,430px);
+  z-index:0;pointer-events:none;display:none}
+#lfScene svg{display:block;width:100%;height:100%}
+html.scene-on #lfScene{display:block}
+
+/* Everything the app renders has to sit above it. #root covers the
+   plain screens; .pg is the desktop two-column shell inside it. */
+#root,.pg{position:relative;z-index:1}
+
+/* The card the eye lands on gets a little more weight against a sky
+   than it needs against flat grey. */
+html.scene-on .welcome .card,
+html.scene-on .reg-wrap .card{box-shadow:0 1px 2px rgba(6,18,35,.07),0 10px 30px rgba(6,18,35,.10)}
+
+/* On the greeting screens the details strip is read straight over the
+   dawn, so it stops being translucent and becomes a panel. */
+html.scene-on .desig{background:rgba(255,255,255,.78);backdrop-filter:blur(3px)}
+@supports not (backdrop-filter:blur(3px)){html.scene-on .desig{background:rgba(255,255,255,.93)}}
+
+/* The sky is drawn from the agency's own colours, so a printed page or
+   a reduced-transparency setting still has to read: nothing on these
+   screens depends on the picture to be legible. */
+@media print{#lfScene{display:none!important}}
+
+/* The details strip: label above value, wrapping to as many columns as
+   fit rather than one long row that squeezes on a laptop. */
+.desig{display:flex;gap:14px 30px;flex-wrap:wrap}
+.desig > div{min-width:0}
+.desig strong{font-weight:600;letter-spacing:-.01em}

@@ -129,6 +129,13 @@ function videoBlock(key, fallbackTitle){
 /* ---------------- router ---------------- */
 function route() {
   const p = S.profile;
+  /* The scenery belongs to the two screens that greet somebody -- their
+     registration and their welcome. Past those, the work gets a plain
+     ground. Decided here, in one place, so no view can leave it on. */
+  const greeting = !S.profileError && (!p || !p.registered || !p.welcome_completed
+    || (location.hash || "").indexOf("#/welcome") === 0);
+  setScene(greeting);
+
   // Couldn't reach the profile at all -- say so and offer a retry. Never
   // fall through to registration on an error; see load().
   if (S.profileError) return renderLoadError();
@@ -391,6 +398,69 @@ const EXPECT = [
   ["05","Continuing education","Add your continuing-education certificates."],
   ["06","E&O","Upload your Errors & Omissions certificate."],
 ];
+/* ------------------------------------------------------------
+   The agency's own scenery, behind the top of the portal.
+
+   Drawn rather than photographed: it paints with the page, costs no
+   request, never pixelates, and takes its colours from the agency's
+   theme -- so it is the agency's dawn, not a stock one. It appears only
+   where an agency has asked for it in their theme row, which is why
+   LicenseFlow's own domain and an unthemed agency stay plain.
+
+   It is pinned to the window rather than to the column so it spans the
+   whole width, and it fades into the page ground well above the first
+   card, so nothing is ever read across a picture.
+------------------------------------------------------------ */
+function sceneMarkup() {
+  return `
+  <div id="lfScene" aria-hidden="true">
+    <svg viewBox="0 0 1400 420" preserveAspectRatio="xMidYMax slice" focusable="false">
+      <defs>
+        <linearGradient id="lfSky" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0"   style="stop-color:#DCE7F5;stop-color:color-mix(in srgb,var(--brand) 13%,#fff)"/>
+          <stop offset=".58" style="stop-color:#F0E6D2;stop-color:color-mix(in srgb,var(--agency-gold,var(--brand)) 26%,#fff)"/>
+          <stop offset="1"   style="stop-color:#F2F5F9"/>
+        </linearGradient>
+        <radialGradient id="lfSun" cx=".68" cy=".80" r=".44">
+          <stop offset="0" style="stop-color:#F4D9A0;stop-color:color-mix(in srgb,var(--agency-gold,#E7C66B) 46%,#fff)" stop-opacity=".9"/>
+          <stop offset="1" style="stop-color:#F4D9A0;stop-color:color-mix(in srgb,var(--agency-gold,#E7C66B) 46%,#fff)" stop-opacity="0"/>
+        </radialGradient>
+        <linearGradient id="lfFar" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" style="stop-color:#93A9C6;stop-color:color-mix(in srgb,var(--brand) 42%,#fff)"/>
+          <stop offset="1" style="stop-color:#C3D0E0;stop-color:color-mix(in srgb,var(--brand) 18%,#fff)"/>
+        </linearGradient>
+        <linearGradient id="lfNear" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" style="stop-color:#7E96B8;stop-color:color-mix(in srgb,var(--brand) 54%,#fff)"/>
+          <stop offset="1" style="stop-color:#AEBFD4;stop-color:color-mix(in srgb,var(--brand) 26%,#fff)"/>
+        </linearGradient>
+        <linearGradient id="lfFade" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#F2F5F9" stop-opacity="0"/>
+          <stop offset=".58" stop-color="#F2F5F9" stop-opacity=".5"/>
+          <stop offset="1" stop-color="#F2F5F9" stop-opacity="1"/>
+        </linearGradient>
+      </defs>
+      <rect width="1400" height="420" fill="url(#lfSky)"/>
+      <ellipse cx="996" cy="322" rx="520" ry="226" fill="url(#lfSun)"/>
+      <path fill="url(#lfFar)" opacity=".52" d="M0,284 C150,275 234,258 324,248
+        C412,238 468,206 542,200 C632,193 688,220 762,208 C848,194 908,138 974,136
+        C1030,134 1082,194 1164,212 C1252,231 1334,222 1400,214 L1400,420 L0,420 Z"/>
+      <path fill="url(#lfNear)" opacity=".46" d="M0,342 C112,324 236,340 364,318
+        C492,296 578,322 696,310 C826,297 918,322 1046,310 C1164,299 1298,320 1400,304
+        L1400,420 L0,420 Z"/>
+      <rect width="1400" height="420" fill="url(#lfFade)"/>
+    </svg>
+  </div>`;
+}
+
+/* Put it on the page once, and only leave it showing on the two screens
+   it belongs to. Everything else in the app keeps its plain ground. */
+function setScene(on) {
+  const wanted = !!on && (S.tenant?.agency?.theme || {}).scene === "sunrise";
+  const root = document.documentElement;
+  if (wanted && !el("lfScene")) document.body.insertAdjacentHTML("afterbegin", sceneMarkup());
+  root.classList.toggle("scene-on", wanted);
+}
+
 function renderWelcome() {
   const p=S.profile, code=p.designated_state;
   const mil = p.military ? `
@@ -400,13 +470,29 @@ function renderWelcome() {
       <div><span class="desig-k">Licensing state</span><strong>${esc(stateName(code))}</strong></div>
     </div>${confBadge(p.pathway_confidence)}
     ${F.militaryTestingNote(code)?`<div class="callout" style="margin-top:14px"><span class="lab">Military testing option</span>${esc(F.militaryTestingNote(code))}</div>`:""}` : "";
+
+  /* What the agent themselves told us, read back on the first screen.
+     A wrong state or a misheard name is cheapest to catch here, before
+     any of it has been carried into an application -- and a recruit who
+     can see their own record believes the rest of the page more. */
+  /* The masthead already says whose portal this is, so the strip stays
+     to what the agent told us about themselves. */
+  const facts = `
+    <div class="desig">
+      <div><span class="desig-k">Name</span><strong>${esc(p.full_name || "—")}</strong></div>
+      <div><span class="desig-k">Licensing state</span><strong>${esc(stateName(code)) || "—"}</strong></div>
+      <div><span class="desig-k">Lines of authority</span>${esc(p.license_type || "—")}</div>
+      ${p.answers?.trainer ? `<div><span class="desig-k">Your trainer</span>${esc(p.answers.trainer)}</div>` : ""}
+    </div>
+    <p class="hint" style="margin:9px 0 20px">Something not right? Tell your licensing coordinator
+      before you start &mdash; these details follow you onto your state application.</p>`;
   root.innerHTML = `
   <div class="welcome">
     <div class="welcome-hero">
       <div class="eyebrow2">Welcome to the team</div>
       <h1>Welcome to the team, ${esc(firstName())}.</h1>
       <p class="lead">We're glad you're here. Your licensing journey has been prepared for your <strong>${esc(stateName(code))} ${esc(p.license_type)} license</strong>.</p>
-      ${mil}
+      ${mil || facts}
       <p class="muted" style="max-width:60ch">We'll guide you through the steps required to become properly licensed. The state regulator ultimately decides whether a license is issued — our job is to get your file properly prepared at every stage.</p>
     </div>
     <div class="card pad" style="margin-bottom:18px">
