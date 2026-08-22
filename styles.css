@@ -611,3 +611,92 @@ html.has-agency-display .reg-wrap h1,
 html.has-agency-display .reg-wrap h2,
 html.has-agency-display .welcome h1{font-family:var(--ff-display);font-weight:600;letter-spacing:-.018em}
 html.themed .reg-wrap .seg button.on{background:var(--brand);color:#fff;border-color:var(--brand)}
+
+/* ============================================================
+   UPDATE v15: THE AGENCY'S GOLD ON THE FIRST TWO SCREENS
+
+   Registration and the welcome page are the only two screens a new
+   recruit sees before they start work, so they carry the most branding.
+   Everything here hangs off `html.themed`, which only exists once an
+   agency has been resolved -- LicenseFlow's own domain is untouched, and
+   an agency with no second colour falls back to their navy rather than
+   showing gold that isn't theirs.
+
+   Gold does the marking; navy still does the reading. The one place gold
+   carries text is --agency-gold-ink, which is dark enough to pass AA on
+   both white and the warm wash (5.0:1 and 4.6:1).
+   ============================================================ */
+
+/* ---------- shared: eyebrows and section heads ---------- */
+html.themed .welcome .eyebrow2,
+html.themed .reg-wrap .section-k{
+  color:var(--agency-gold-ink,var(--brand));font-weight:600;letter-spacing:.12em}
+
+/* A short gold rule under a heading, the same mark the front page uses
+   under the mission line. Drawn on a pseudo-element so no markup moves. */
+html.themed .welcome-hero h1::after,
+html.themed .reg-wrap > h1::after{
+  content:"";display:block;width:52px;height:2px;border-radius:2px;
+  background:var(--agency-gold,var(--brand));margin:14px 0 2px}
+
+html.themed .welcome .card.pad > h3{position:relative;padding-bottom:12px}
+html.themed .welcome .card.pad > h3::after{
+  content:"";position:absolute;left:0;bottom:0;width:32px;height:2px;border-radius:2px;
+  background:var(--agency-gold,var(--brand))}
+
+/* The licence the journey was built for is the sentence that matters
+   most on the page. */
+html.themed .welcome .lead strong{color:var(--agency-gold-ink,var(--brand));font-weight:650}
+
+/* ---------- welcome: what to expect ---------- */
+html.themed .welcome .ex-n{
+  color:var(--agency-gold-ink,var(--faint));font-weight:600;
+  font-variant-numeric:tabular-nums}
+html.themed .welcome .ex{border-top-color:var(--agency-gold-050,var(--line-2))}
+
+/* ---------- welcome: the designation box ---------- */
+html.themed .desig{
+  background:var(--agency-gold-050,var(--soft));border-color:transparent;
+  border-left:3px solid var(--agency-gold,var(--brand));border-radius:12px}
+html.themed .desig-k{color:var(--agency-gold-ink,var(--faint))}
+
+/* ---------- welcome: the launch card ---------- */
+html.themed .launch{
+  background:linear-gradient(160deg,#fff 0%,var(--agency-gold-050,var(--soft)) 100%);
+  border-top:2px solid var(--agency-gold,var(--brand))}
+html.themed .launch .eyebrow2{color:var(--agency-gold-ink,var(--brand))}
+
+/* ---------- registration ---------- */
+/* The card gets the same navy-into-gold edge the sign-in card wears, so
+   the two screens read as one piece of stationery. */
+html.themed .reg-wrap .card{position:relative;overflow:hidden}
+html.themed .reg-wrap .card::before{
+  content:"";position:absolute;left:0;right:0;top:0;height:3px;
+  background:linear-gradient(90deg,var(--brand) 0%,var(--brand-400) 45%,
+    var(--agency-gold,var(--brand-400)) 100%)}
+html.themed .reg-wrap label{color:var(--ink-2);font-weight:560}
+html.themed .callout .lab{color:var(--agency-gold-ink,var(--ink))}
+html.themed .reg-wrap .callout{
+  background:var(--agency-gold-050,var(--soft));border-color:transparent;
+  border-left:3px solid var(--agency-gold,var(--brand))}
+/* A typed answer is the agent's own mark on the form. */
+html.themed .reg-wrap input:focus,
+html.themed .reg-wrap select:focus{
+  border-color:var(--agency-gold,var(--brand));
+  box-shadow:0 0 0 3px var(--agency-gold-050,var(--accent-050))}
+html.themed .reg-wrap .seg button.on{box-shadow:inset 0 -3px 0 var(--agency-gold,transparent)}
+
+/* The display face, where the agency has one, reaches the smaller heads
+   on these two screens as well as the big ones. */
+html.has-agency-display .welcome .card.pad > h3,
+html.has-agency-display .welcome .launch h2{
+  font-family:var(--ff-display);font-weight:600;letter-spacing:-.014em}
+
+/* Playfair at 600 reads heavier than the same face does on the agency's
+   own front page, where it is set at 500. Match it, so the welcome page
+   feels like the next room of the same building rather than a shout. */
+html.has-agency-display .welcome h1,
+html.has-agency-display .welcome .launch h2,
+html.has-agency-display .welcome .card.pad > h3,
+html.has-agency-display .reg-wrap h1,
+html.has-agency-display .reg-wrap h2{font-weight:500}
