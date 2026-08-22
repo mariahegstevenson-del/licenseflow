@@ -27,6 +27,9 @@ function friendly(err) {
   const msg = err?.message || "Something went wrong.";
   if (/invalid login credentials/i.test(msg)) return "That email and password don't match an account.";
   if (/email not confirmed/i.test(msg)) return "This account hasn't been confirmed yet. Check your inbox for the confirmation link.";
+  if (/known to be weak|easy to guess|pwned|leaked|compromised/i.test(msg))
+    return "That password has turned up in a past data breach somewhere on the internet, so it isn't safe to reuse. Any three unrelated words together will pass.";
+  if (/password should be at least|weak.?password/i.test(msg)) return "Please choose a password of at least 8 characters.";
   if (/rate limit|too many requests|only request this after|for security purposes/i.test(msg)) return "Too many attempts just now. Please wait a minute and try again.";
   if (/signups? not allowed|signup is disabled|user not allowed|not allowed for this instance/i.test(msg)) return "There's no LicenseFlow account for that email.";
   if (/provider is not enabled/i.test(msg)) return "Google sign-in isn't switched on for this site yet.";

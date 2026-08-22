@@ -57,6 +57,12 @@
             <a href="#" id="forgot" class="lnk-quiet">Forgot your password?</a>
           </div>
           <input id="password" name="password" type="password" required minlength="8" autocomplete="current-password"/>
+          <!-- Said up front, because the rule people expect (symbols) isn't
+               the rule that's applied (length, and not previously breached). -->
+          <p class="hint" id="pwNote" style="margin:6px 0 0;display:none">
+            Eight characters or more. Three unrelated words works well &mdash; no capitals or
+            symbols required.
+          </p>
         </div>
         <button id="submit" class="btn btn-primary btn-block" type="submit" style="margin-top:18px">Log in</button>
       </form>
@@ -74,6 +80,6 @@
     </p>
   </div>
 </div>
-<script type="module" src="auth.js?v=13"></script>
+<script type="module" src="auth.js?v=14"></script>
 </body>
 </html>

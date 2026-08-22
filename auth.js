@@ -18,6 +18,13 @@ function friendly(err) {
   const msg = err?.message || "Something went wrong.";
   if (/invalid login credentials/i.test(msg)) return "That email and password don't match an account. Check them, or use the reset link.";
   if (/already registered|already been registered|user already exists/i.test(msg)) return "There's already an account with that email. Log in instead, or use the reset link if you've forgotten the password.";
+  /* Two different rejections both call a password "weak", and the fix is
+     different for each, so this has to come before the length rule.
+     Supabase checks new passwords against the Have I Been Pwned list --
+     a long password can still be refused because it has appeared in a
+     breach somewhere else, which is baffling unless you say so. */
+  if (/known to be weak|easy to guess|pwned|leaked|compromised/i.test(msg))
+    return "That password has turned up in a past data breach somewhere on the internet, so it isn't safe to reuse. Any three unrelated words together will pass — length is what counts here, not symbols.";
   if (/password should be at least|weak.?password/i.test(msg)) return "Please choose a password of at least 8 characters.";
   if (/email not confirmed/i.test(msg)) return "This account hasn't been confirmed yet. Check your inbox for the confirmation link.";
   if (/password should be at least/i.test(msg)) return "Please use a password of at least 8 characters.";
@@ -26,7 +33,6 @@ function friendly(err) {
   /* Sign-ups are off by design, so this is what an unrecognised Google
      account hits. Say what to do about it rather than "not allowed". */
   if (/signups not allowed|signup is disabled|user not allowed|not allowed for this instance/i.test(msg)) return "There's no LicenseFlow account for that email yet. Accounts are created by your agency — ask your licensing coordinator to add you.";
-  if (/pwned|leaked|compromised|known.{0,12}password/i.test(msg)) return "That password has turned up in a known data breach. Please pick a different one.";
   if (/provider is not enabled/i.test(msg)) return "Google sign-in isn't switched on for this site yet.";
   if (/failed to fetch|network/i.test(msg)) return "We couldn't reach the server. Check your connection and try again.";
   return msg;
@@ -136,6 +142,7 @@ function render(keepAlert) {
   el("password").disabled = resetting || pinStep;
   el("password").setAttribute("autocomplete", c.pw);
   el("forgot").style.display = resetting || pinStep ? "none" : "";
+  if (el("pwNote")) el("pwNote").style.display = signing && !pinStep ? "" : "none";
   if (el("pin")) el("pin").disabled = !pinStep;
 
   const g = el("google"), or = document.querySelector(".or");
