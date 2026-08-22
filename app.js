@@ -236,7 +236,7 @@ function renderRegistration() {
       <label for="trainer">Who is your agency representative / trainer?</label>
       <input id="trainer" value="${esc(a.trainer||"")}"/>
       <div id="regAlert" class="alert"></div>
-      <button class="btn btn-primary btn-lg btn-block" id="regGo" style="margin-top:20px">Continue</button>
+      <span class="cta-wrap" style="margin-top:20px"><button class="btn btn-primary btn-lg btn-block" id="regGo">Continue</button></span>
     </div>
   </div>`;
   segInit("mil","No"); segInit("loa", S.profile?.license_type || "Life & Health");
@@ -269,7 +269,10 @@ function askForPin(agencyId) {
     'placeholder="Ask your trainer for this"/>' +
     '<p class="hint" style="margin:6px 0 0">The same PIN your trainer gave you when you ' +
     'registered &mdash; it\'s one PIN for the whole agency.</p>';
-  go.parentNode.insertBefore(wrap, go);
+  /* The button now sits inside its own halo wrapper, so the field goes
+     above that wrapper rather than inside it. */
+  const anchor = go.closest(".cta-wrap") || go;
+  anchor.parentNode.insertBefore(wrap, anchor);
   const input = el("regPin");
   input.focus();
   input.addEventListener("keydown", (e) => {
@@ -418,7 +421,7 @@ function renderWelcome() {
       <div class="eyebrow2">Ready?</div>
       <h2 style="margin:.2rem 0 .4rem">${p.welcome_completed ? "Your licensing journey" : "Let's get your license started."}</h2>
       <p class="muted">${p.welcome_completed ? "You've already started — jump back into your journey anytime." : "We'll take you straight to your first step — no guessing where to go."}</p>
-      <button class="btn btn-primary btn-lg" id="launch">${p.welcome_completed ? "Back to my journey" : "Launch my licensing journey"}</button>
+      <span class="cta-wrap"><button class="btn btn-primary btn-lg" id="launch">${p.welcome_completed ? "Back to my journey" : "Launch my licensing journey"}</button></span>
     </div>
   </div>`;
   el("launch").onclick = async () => {
