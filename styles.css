@@ -846,3 +846,27 @@ html.scene-on .desig{background:rgba(255,255,255,.78);backdrop-filter:blur(3px)}
 /* A date or a licence number in a field 1300px wide looks like a mistake.
    The answers on these steps are all short; give them a short box. */
 .form-block .cta.fw{max-width:420px}
+
+/* ============================================================
+   UPDATE v18: the action zone, centred
+
+   The recording and the button that sends an agent off to do the task
+   are the two things they act on. Centring them separates them from the
+   reading, which stays left-aligned where it belongs.
+   ============================================================ */
+.step-body .section-k{text-align:center}
+.video{margin-left:auto;margin-right:auto}
+.step-body .link-row{display:flex;justify-content:center;margin-top:4px}
+.step-body .link-row .btn{min-width:360px;justify-content:center}
+.step-body .link-note{text-align:center}
+@media(max-width:560px){.step-body .link-row .btn{min-width:0;width:100%}}
+
+/* The provider line reads as the label on the button below it, so it
+   shares its width and its centre rather than spanning the whole card. */
+.step-body .syscard{max-width:720px;margin-left:auto;margin-right:auto}
+
+/* Save & continue is now genuinely shut until the step is satisfied.
+   Keep the deliberate quiet look rather than the generic half-faded
+   disabled one -- the line underneath already says why. */
+#ctaGo .btn:disabled{opacity:1;cursor:not-allowed}
+#ctaGo .btn:disabled:hover{background:#fff;color:var(--faint)}

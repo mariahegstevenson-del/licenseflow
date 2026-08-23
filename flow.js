@@ -34,9 +34,14 @@ export const isDone = (s) => DONE.has(s);
 ------------------------------------------------------------------ */
 export const REQS = [
   { key:"study_material", label:"Study Materials", short:"Study Materials", verify:"auto",
+    doneLabel:"Purchased",
     render:"action", linkKey:"study_material", providerLabel:"Xcel Solutions",
     heading:"Purchase your pre-licensing study material",
-    lead:"Purchase and begin your state-approved Life & Health course.",
+    /* Buying it is the whole of this step. Finishing the course is not a
+       prerequisite for scheduling the exam, and saying otherwise costs
+       agents weeks -- exam slots are booked out further than the course
+       takes to study. */
+    lead:"Buy your state-approved Life & Health course. As soon as it's purchased you can go and schedule your exam \u2014 you don't have to finish the course first.",
     fields:[{name:"purchase_date",label:"Study material purchase date",type:"date",required:true}],
     dependsOn:[] },
 

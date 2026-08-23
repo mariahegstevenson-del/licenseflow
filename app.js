@@ -1,6 +1,6 @@
 import { supabase, isConfigured, requireSession } from "./supabase.js";
 import { STATE_LIST, STATES } from "./states.js?v=6";
-import * as F from "./flow.js?v=6";
+import * as F from "./flow.js?v=7";
 import { loadTenant, renderUnknownAgency, applyTenantChrome, urlForAgency } from "./tenant.js?v=3";
 
 const el = (id) => document.getElementById(id);
@@ -212,6 +212,10 @@ function paintNext(r){
   const ready = !linkPending && !firstMissing && !docMissing;
   glow("ctaGo", ready);
   go.classList.toggle("ready", ready);
+  /* Not just quiet -- shut. The line underneath says what is missing, so
+     a button that refuses to be pressed is never a mystery. */
+  const btn = el("submitStep");
+  if (btn) { btn.disabled = !ready; btn.setAttribute("aria-disabled", String(!ready)); }
 
   if (need) {
     let msg = "";
@@ -504,8 +508,8 @@ function renderReview(path){
    WELCOME
    ============================================================ */
 const EXPECT = [
-  ["01","Study material","Purchase and complete your pre-licensing education."],
-  ["02","Exam","Schedule and take your state examination."],
+  ["01","Study material","Buy your state-approved pre-licensing course."],
+  ["02","Exam","Schedule your state exam \u2014 you can book it as soon as the course is bought."],
   ["03","Application","Submit your license application."],
   ["04","License","Record your license number and NPN."],
   ["05","Continuing education","Add your continuing-education certificates."],
@@ -752,7 +756,7 @@ function renderStep(key) {
       ${r.help ? `<div class="callout"><span class="lab">${esc(r.help.title)}</span>${esc(r.help.body)}</div>` : ""}
       ${videoBlock(r.key, r.help?r.help.title:"Watch")}
       ${r.render==="action" && r.providerLabel ? `<div class="syscard"><span class="sys-k">Your provider</span><strong>${esc(r.providerLabel)}</strong></div>` : ""}
-      ${r.link ? `<div class="link-row"><span class="cta" id="ctaLink"><a class="btn btn-accent btn-lg" id="stepLink" href="${esc(r.link)}" target="_blank" rel="noopener">${esc(openLabel(r,""))}</a></span></div><div class="link-note">Opens in a new tab. Complete it there, then come back and record what you did.</div>` : ""}
+      ${r.link ? `<div class="link-row"><span class="cta" id="ctaLink"><a class="btn btn-accent btn-lg" id="stepLink" href="${esc(r.link)}" target="_blank" rel="noopener">${esc(openLabel(r,""))}</a></span></div><div class="link-note">Opens in a new tab. When you're done there, come back and record it below.</div>` : ""}
       ${r.lookupUrl ? `<div class="link-row"><a class="btn btn-accent btn-lg" href="${esc(r.lookupUrl)}" target="_blank" rel="noopener">${esc(r.lookupLabel||"Look it up")}</a></div><div class="link-note">Opens the official lookup in a new tab.</div>` : ""}
       ${r.instructions ? `<details class="inst" style="margin-top:16px"><summary>Step-by-step instructions</summary><ol>${r.instructions.map(i=>`<li>${linkify(i)}</li>`).join("")}</ol></details>` : ""}
       <div class="form-block">
@@ -837,7 +841,7 @@ function renderExam(r, st, head) {
     <div class="step-card"><div class="step-body">
       <div class="step-top"><span></span><span class="badge ${scheduled?"s-green":"s-gray"}">${scheduled?"Scheduled":"Not scheduled"}</span></div>
       <h2 style="margin-top:.4rem">Schedule your exam</h2>
-      <p class="step-desc">${esc(info.examTitle)}. We've prepared the correct examination information for you.</p>
+      <p class="step-desc">${esc(info.examTitle)}. We've prepared the correct examination information for you. You can book this as soon as you've bought your course \u2014 you don't need to have finished studying.</p>
 
       ${videoBlock("exam","Watch before you schedule") || `<div class="section-k">Watch before you schedule</div><div class="video">${videoEmbed(null)}</div><p class="link-note" style="margin-top:-12px">Learn how to schedule your licensing examination.</p>`}
 
@@ -969,7 +973,7 @@ function renderGate(r, g) {
     <div class="step-card"><div class="step-body">
       <div class="gate-ic">!</div>
       <h2>You're not quite ready for this step</h2>
-      <p class="step-desc">Before <strong>${esc(r.label)}</strong>, you'll need to finish:</p>
+      <p class="step-desc">Before <strong>${esc(r.label)}</strong>, this needs to be done first:</p>
       <ul class="miss">${names.map(n=>`<li>${esc(n)}</li>`).join("")}</ul>
       <button class="btn btn-primary" id="fix">Go to that step</button>
     </div></div>
