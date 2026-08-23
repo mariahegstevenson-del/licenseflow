@@ -43,7 +43,7 @@ async function load() {
 
   const [p, inst, docs, vids] = await Promise.all([
     settle(supabase.from("licensing_profiles")
-      .select("*, agency:agencies(id,slug,name)").eq("user_id", uid).maybeSingle()),
+      .select("*, agency:agencies(id,slug,name,theme)").eq("user_id", uid).maybeSingle()),
     settle(supabase.from("requirement_instances").select("*").eq("user_id", uid)),
     settle(supabase.from("documents").select("*").eq("user_id", uid)),
     settle(supabase.from("step_videos").select("*")),
@@ -120,10 +120,122 @@ async function audit(event, before, after, meta={}) { await supabase.from("audit
 function stepIndex(key){ return S.journey ? S.journey.reqs.findIndex(r=>r.key===key) : -1; }
 function videoBlock(key, fallbackTitle){
   const v = S.videos?.[key];
-  if (!v || !v.active || !v.url) return "";
+  if (!v || !v.active || !v.url) {
+    /* No recording for this step yet. Hold the space rather than letting
+       the layout jump the day one is added, and say plainly that it is
+       coming -- an empty frame with no explanation reads as broken. */
+    return `<div class="section-k">Watch this step</div>
+      <div class="video is-soon">
+        <div class="ph">
+          <div class="pi"></div>
+          <b>Walkthrough coming soon</b>
+          <span>A short screen recording of this step is being made.</span>
+        </div>
+      </div>`;
+  }
   return `<div class="section-k">${esc(v.title||fallbackTitle||"Watch")}</div>
     <div class="video">${videoEmbed(v.url)}</div>
     ${v.description?`<p class="link-note" style="margin-top:-12px">${esc(v.description)}</p>`:""}`;
+}
+
+/* ------------------------------------------------------------
+   The progress band.
+
+   Full width, directly under the masthead, on every step screen. It is
+   the one place that answers "where am I, how much is left" -- the job
+   the side panel was doing badly and in front of people who had not
+   earned the context to read it yet.
+------------------------------------------------------------ */
+function setStepBar(html){
+  const n = el("stepbar");
+  if (!n) return;
+  n.innerHTML = html || "";
+  n.classList.toggle("on", !!html);
+}
+
+function stepBarHTML(r, idx, total){
+  let segs = "";
+  for (let i = 0; i < total; i++) {
+    const req = S.journey.reqs[i];
+    const done = F.isDone(F.reqStatus(req.key, S.sm));
+    segs += `<i class="${i === idx ? "now" : (done ? "done" : "")}"></i>`;
+  }
+  return `<div class="sb-in">
+    <div class="sb-top">
+      <a class="sb-back" href="#/dashboard">&larr; Your journey</a>
+      <span class="sb-now">${esc(r.label || r.heading || "")}</span>
+      <span class="sb-count">Step <b>${idx + 1}</b> of ${total}</span>
+    </div>
+    <div class="sb-seg" role="img" aria-label="Step ${idx + 1} of ${total}">${segs}</div>
+  </div>`;
+}
+
+/* ------------------------------------------------------------
+   One glow, and it always sits on the next thing that has to happen.
+
+   The rule is deliberately dumb, because a rule an agent can predict is
+   worth more than a clever one: whatever is still missing, glows. Save
+   & continue only lights up once the step is genuinely satisfied, which
+   is what stops somebody pressing it on the way past. It is still
+   clickable before then -- submitGeneric() names what's missing, which
+   is more use than a dead button nobody can explain.
+------------------------------------------------------------ */
+function openedKey(key){ return "lf_opened_" + (S.user?.id || "") + "_" + key; }
+function markOpened(key){ try { localStorage.setItem(openedKey(key), "1"); } catch (_) {} }
+function wasOpened(key){
+  try { return localStorage.getItem(openedKey(key)) === "1"; } catch (_) { return false; }
+}
+
+function paintNext(r){
+  const glow = (id, on) => { const n = el(id); if (n) n.classList.toggle("on", !!on); };
+  const need = el("needLine");
+  const go   = el("ctaGo");
+  if (!go) return;
+
+  /* 1. the outside task, if this step has one and they haven't been yet */
+  const linkPending = !!r.link && !wasOpened(r.key) && !F.isDone(F.reqStatus(r.key, S.sm));
+
+  /* 2. the first required answer still blank */
+  let firstMissing = null;
+  for (const f of (r.fields || [])) {
+    if (!f.required) continue;
+    const n = el("f_" + f.name);
+    if (n && !String(n.value || "").trim()) { firstMissing = f; break; }
+  }
+  const df = el("docInput");
+  const docMissing = !!(r.doc?.required && !docFor(r.key) && !(df && df.files[0]));
+
+  glow("ctaLink", linkPending);
+  (r.fields || []).forEach((f) => glow("w_" + f.name, !linkPending && firstMissing === f));
+  glow("ctaDoc", !linkPending && !firstMissing && docMissing);
+
+  const ready = !linkPending && !firstMissing && !docMissing;
+  glow("ctaGo", ready);
+  go.classList.toggle("ready", ready);
+
+  if (need) {
+    let msg = "";
+    if (linkPending) msg = `Open ${esc(r.providerLabel || "the link above")} first &mdash; then come back and record what you did.`;
+    else if (firstMissing) msg = `Enter your ${esc(String(firstMissing.label).toLowerCase())} to finish this step.`;
+    else if (docMissing) msg = `Attach your ${esc(String(r.doc.label).toLowerCase())} to finish this step.`;
+    need.innerHTML = msg ? `<span aria-hidden="true">&#9679;</span><span>${msg}</span>` : "";
+    need.classList.toggle("hide", !msg);
+  }
+}
+
+/* Wire the glow to everything that could change what's still missing. */
+function wireNext(r){
+  const link = el("stepLink");
+  if (link) link.addEventListener("click", () => { markOpened(r.key); setTimeout(() => paintNext(r), 60); });
+  (r.fields || []).forEach((f) => {
+    const n = el("f_" + f.name);
+    if (!n) return;
+    n.addEventListener("input", () => paintNext(r));
+    n.addEventListener("change", () => paintNext(r));
+  });
+  const df = el("docInput");
+  if (df) df.addEventListener("change", () => paintNext(r));
+  paintNext(r);
 }
 
 /* ---------------- router ---------------- */
@@ -135,6 +247,7 @@ function route() {
   const greeting = !S.profileError && (!p || !p.registered || !p.welcome_completed
     || (location.hash || "").indexOf("#/welcome") === 0);
   setScene(greeting);
+  setStepBar("");            // renderStep puts it back; every other view runs without it
 
   // Couldn't reach the profile at all -- say so and offer a retry. Never
   // fall through to registration on an error; see load().
@@ -621,8 +734,8 @@ function renderStep(key) {
   if (g.blocked && !F.isDone(st)) return renderGate(r, g);
 
   const idx = stepIndex(r.key), total = S.journey.reqs.length;
-  const head = `
-    <div class="wt-head"><div class="wt-meta"><span><a href="#/dashboard" style="color:inherit">← Your journey</a></span><span>Step ${idx+1} of ${total}</span></div><div class="wt-state">${sysLine()}</div></div>`;
+  setStepBar(stepBarHTML(r, idx, total));
+  const head = `<div class="wt-head"><div class="wt-state">${sysLine()}</div></div>`;
 
   if (r.render === "exam") return renderExam(r, st, head);
   if (r.render === "ce") return renderCE(r, st, head);
@@ -639,34 +752,39 @@ function renderStep(key) {
       ${r.help ? `<div class="callout"><span class="lab">${esc(r.help.title)}</span>${esc(r.help.body)}</div>` : ""}
       ${videoBlock(r.key, r.help?r.help.title:"Watch")}
       ${r.render==="action" && r.providerLabel ? `<div class="syscard"><span class="sys-k">Your provider</span><strong>${esc(r.providerLabel)}</strong></div>` : ""}
-      ${r.link ? `<div class="link-row"><a class="btn btn-accent btn-lg" href="${esc(r.link)}" target="_blank" rel="noopener">${esc(openLabel(r,""))}</a></div><div class="link-note">Opens in a new tab. Complete it, then record the details below.</div>` : ""}
+      ${r.link ? `<div class="link-row"><span class="cta" id="ctaLink"><a class="btn btn-accent btn-lg" id="stepLink" href="${esc(r.link)}" target="_blank" rel="noopener">${esc(openLabel(r,""))}</a></span></div><div class="link-note">Opens in a new tab. Complete it there, then come back and record what you did.</div>` : ""}
       ${r.lookupUrl ? `<div class="link-row"><a class="btn btn-accent btn-lg" href="${esc(r.lookupUrl)}" target="_blank" rel="noopener">${esc(r.lookupLabel||"Look it up")}</a></div><div class="link-note">Opens the official lookup in a new tab.</div>` : ""}
       ${r.instructions ? `<details class="inst" style="margin-top:16px"><summary>Step-by-step instructions</summary><ol>${r.instructions.map(i=>`<li>${linkify(i)}</li>`).join("")}</ol></details>` : ""}
       <div class="form-block">
-        <h3 style="margin:22px 0 6px;font-size:1.02rem">${r.render==="eo"?"Upload your certificate":"Enter your details"}</h3>
+        <h3 style="margin:22px 0 6px;font-size:1.02rem">${r.render==="eo"?"Upload your certificate":"Record what you did"}</h3>
         ${(r.fields||[]).map(f => field(f, meta)).join("")}
         ${r.doc && r.doc.label ? docField(r.doc, doc) : ""}
         <div id="stepAlert" class="alert"></div>
         <div class="wt-nav" style="margin-top:18px">
           <a class="btn btn-ghost" href="#/dashboard">Save for later</a>
-          <button class="btn btn-primary" id="submitStep">${r.verify==="admin"?"Submit for review":"Save & continue"}</button>
+          <span class="cta" id="ctaGo"><button class="btn btn-primary" id="submitStep">${r.verify==="admin"?"Submit for review":"Save & continue"}</button></span>
         </div>
+        <p class="need-line" id="needLine"></p>
         ${r.verify==="admin" ? `<p class="hint" style="margin-top:8px">This is verified by the team before it's marked complete. Entering information here does not mean it's verified.</p>` : ""}
       </div>
     </div></div>
   </div>`;
   const df = el("docInput"); if (df) df.addEventListener("change", () => { const n=df.files[0]?.name; el("docName").textContent = n?`Selected: ${n}`:""; });
   el("submitStep").onclick = () => submitGeneric(r);
+  wireNext(r);
 }
 
 function field(f, meta) {
   const v = meta[f.name] ?? "";
-  if (f.type === "select") return `<label>${esc(f.label)}${f.required?" *":""}</label><select id="f_${f.name}"><option value="">Select…</option>${f.options.map(o=>`<option ${o===v?"selected":""}>${esc(o)}</option>`).join("")}</select>`;
-  return `<label>${esc(f.label)}${f.required?" *":""}</label><input id="f_${f.name}" type="${f.type==="date"?"date":"text"}" value="${esc(v)}"/>`;
+  /* The wrapper is what carries the glow when this is the answer still
+     missing. It is display:block, so nothing about the field moves. */
+  const open = `<label for="f_${f.name}">${esc(f.label)}${f.required?" *":""}</label><span class="cta fw" id="w_${f.name}">`;
+  if (f.type === "select") return `${open}<select id="f_${f.name}"><option value="">Select…</option>${f.options.map(o=>`<option ${o===v?"selected":""}>${esc(o)}</option>`).join("")}</select></span>`;
+  return `${open}<input id="f_${f.name}" type="${f.type==="date"?"date":"text"}" value="${esc(v)}"/></span>`;
 }
 function docField(d, existing){
   return `<label style="margin-top:14px">${esc(d.label)}${d.required?" *":""}</label>
-    <div class="upload"><label class="btn btn-ghost btn-sm" for="docInput">${existing?"Replace certificate":"Choose file"}</label>
+    <div class="upload cta" id="ctaDoc"><label class="btn btn-ghost btn-sm" for="docInput">${existing?"Replace certificate":"Choose file"}</label>
       <input id="docInput" type="file" style="display:none" accept=".pdf,.png,.jpg,.jpeg,.heic,.webp"/>
       <span id="docName" class="hint">${existing?`Uploaded: ${esc(existing.note||"certificate")}`:""}</span></div>
     ${existing?`<div class="hint">${existing.meta_detected?`Detected: ${esc(existing.meta_detected)} · `:""}Uploaded ${new Date(existing.updated_at).toLocaleDateString()}</div>`:""}`;

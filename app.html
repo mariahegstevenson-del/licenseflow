@@ -7,7 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Libre+Franklin:wght@600;700;800&display=swap"/>
-<link rel="stylesheet" href="styles.css?v=18"/>
+<link rel="stylesheet" href="styles.css?v=19"/>
 <script src="config.js"></script>
 </head>
 <body>
@@ -25,6 +25,9 @@
     </div>
   </div>
 </header>
+<!-- The progress band lives outside #root so it can span the whole
+     window. Views fill it or empty it; see setStepBar() in app.js. -->
+<div id="stepbar"></div>
 <div id="root"><div class="wt"><p class="muted">Loading&#8230;</p></div></div>
 <div class="lf-scrim" id="lfScrim"></div>
 <aside class="lf-drawer" id="lfDrawer" role="dialog" aria-modal="true" aria-label="Resources and your details">
@@ -32,6 +35,6 @@
   <div class="lf-db" id="lfBody"></div>
   <div class="lf-df">Need a hand? Ask your licensing coordinator.</div>
 </aside>
-<script type="module" src="app.js?v=20"></script>
+<script type="module" src="app.js?v=21"></script>
 </body>
 </html>

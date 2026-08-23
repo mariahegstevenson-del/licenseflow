@@ -739,3 +739,110 @@ html.scene-on .desig{background:rgba(255,255,255,.78);backdrop-filter:blur(3px)}
 .desig{display:flex;gap:14px 30px;flex-wrap:wrap}
 .desig > div{min-width:0}
 .desig strong{font-weight:600;letter-spacing:-.01em}
+
+/* ============================================================
+   UPDATE v17: THE STEP SCREEN
+
+   Three things this fixes. The side panel was showing a brand-new agent
+   four documents they hadn't uploaded before they had bought a course,
+   which reads as four failures; that material lives in the menu now,
+   top left, where it can be looked up rather than confronted. The
+   content column was squeezed left by that panel, so it sat off-centre
+   in a window with dead space beside it. And nothing on the screen said
+   which of the several controls was the one to press next.
+   ============================================================ */
+
+/* ---------- masthead, a size up ---------- */
+.appbar .top{height:78px;gap:15px}
+.appbar .brand{font-size:1.16rem}
+.appbar .mark{width:32px;height:32px;border-radius:9px;font-size:.95rem}
+.lf-burger{width:44px;height:44px}
+.lf-burger span{width:17px}
+.agency-tag{font-size:.78rem;padding:5px 14px}
+
+/* ---------- one column, centred, wider ---------- */
+.pg{grid-template-columns:minmax(0,1fr);width:min(1108px,94vw)}
+.pg-rail{display:none}
+@media(max-width:1119px){.pg{width:min(1108px,94vw)}}
+
+/* ---------- the progress band ---------- */
+#stepbar{display:none;background:#fff;border-bottom:1px solid var(--line);
+  padding:20px 28px 22px;position:sticky;top:78px;z-index:20}
+#stepbar.on{display:block}
+.sb-in{max-width:1060px;margin:0 auto;display:flex;flex-direction:column;gap:13px}
+.sb-top{display:flex;align-items:baseline;gap:16px}
+.sb-back{color:var(--brand);font-weight:560;font-size:.95rem;text-decoration:none;flex:0 0 auto}
+.sb-back:hover{text-decoration:underline}
+.sb-now{font-family:var(--ff-display);font-weight:600;font-size:1.2rem;color:var(--ink);
+  letter-spacing:-.018em;margin:0 auto;text-align:center}
+.sb-count{font-size:.9rem;color:var(--muted);font-variant-numeric:tabular-nums;flex:0 0 auto}
+.sb-count b{color:var(--agency-gold-ink,var(--brand));font-weight:700}
+.sb-seg{display:flex;gap:6px}
+.sb-seg i{flex:1;height:10px;border-radius:99px;background:var(--line);display:block}
+.sb-seg i.done{background:var(--agency-gold,var(--brand))}
+.sb-seg i.now{background:var(--agency-gold,var(--brand));
+  box-shadow:0 0 0 4px color-mix(in srgb,var(--agency-gold,var(--brand)) 22%,transparent)}
+@media(max-width:700px){
+  #stepbar{top:64px;padding:14px 16px 16px}
+  .sb-now{display:none}
+}
+
+/* ---------- the card ---------- */
+.pg .wt{max-width:none}
+.wt-head{margin-bottom:14px}
+.step-card{border-radius:20px}
+.step-body{padding:36px 44px 32px}
+@media(max-width:700px){.step-body{padding:24px 20px}}
+.step-card h2{font-size:1.95rem;letter-spacing:-.022em}
+.step-desc{max-width:62ch}
+
+/* ---------- the moving glow ----------
+   Exactly one control breathes at a time and it is always the next
+   thing that has to happen. A wrapper rather than a state on the
+   control itself, so it can move between a link, a field and a button
+   without any of them changing size. */
+.cta{position:relative;isolation:isolate;display:inline-flex}
+.cta.fw{display:block}
+.cta::before{content:"";position:absolute;inset:-6px;border-radius:16px;z-index:-1;
+  background:linear-gradient(115deg,var(--brand-400),var(--brand) 30%,
+    var(--agency-gold,var(--brand-400)) 58%,var(--brand-600) 84%);
+  filter:blur(10px);opacity:0;transition:opacity .35s ease}
+.cta.on::before{animation:lfBreathe 3.6s ease-in-out infinite}
+@media (prefers-reduced-motion:reduce){.cta.on::before{animation:none;opacity:.3}}
+
+/* Save & continue is quiet until the step is genuinely satisfied. It
+   stays clickable -- the validation names what is missing, which is
+   more use than a dead button nobody can explain -- but it never looks
+   like the thing to press until it is. */
+#ctaGo .btn{background:#fff;color:var(--faint);border:1px solid var(--line);
+  font-weight:560;box-shadow:none;
+  transition:background .25s,color .25s,border-color .25s,box-shadow .25s}
+#ctaGo .btn:hover{background:var(--soft);color:var(--muted)}
+#ctaGo.ready .btn{background:var(--brand);color:#fff;border-color:transparent;font-weight:700;
+  box-shadow:0 1px 2px rgba(8,44,95,.28),0 6px 16px rgba(8,44,95,.22)}
+#ctaGo.ready .btn:hover{background:var(--brand-600)}
+
+.need-line{display:flex;align-items:center;gap:8px;margin:12px 0 0;font-size:.88rem;
+  color:var(--agency-gold-ink,var(--warn))}
+.need-line.hide{display:none}
+.need-line span[aria-hidden]{font-size:.6rem;line-height:1}
+
+/* ---------- the space a screen recording will fill ---------- */
+.video.is-soon{background:linear-gradient(160deg,#fff,var(--soft));
+  border:1px dashed var(--line);box-shadow:none}
+.video.is-soon .ph b{display:block;font-weight:560;color:var(--ink-2);font-size:.98rem}
+.video.is-soon .ph span{display:block;font-size:.87rem;color:var(--muted);margin-top:2px}
+.video.is-soon .pi{border-color:var(--agency-gold,var(--line));
+  background:var(--agency-gold-050,#fff)}
+.video.is-soon .pi:after{border-left-color:var(--agency-gold,#cfcfcf)}
+
+/* A 16:9 frame at the full width of the card is 700px of nothing, which
+   buries the actual task below the fold. The reserved space is a band,
+   not a screen; the recording itself gets a sensible reading width. */
+.video{max-width:720px}
+.video.is-soon{aspect-ratio:auto;min-height:168px;padding:24px}
+.video.is-soon .pi{width:44px;height:44px;margin-bottom:8px}
+
+/* A date or a licence number in a field 1300px wide looks like a mistake.
+   The answers on these steps are all short; give them a short box. */
+.form-block .cta.fw{max-width:420px}
