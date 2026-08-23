@@ -1,4 +1,4 @@
-import { supabase, isConfigured, requireSession } from "./supabase.js";
+import { supabase, isConfigured, requireSession, hardSignOut } from "./supabase.js?v=2";
 import { STATES } from "./states.js?v=6";
 import * as F from "./flow.js?v=6";
 import { loadTenant, renderUnknownAgency, applyTenantChrome, urlForAgency } from "./tenant.js?v=4";
@@ -35,7 +35,7 @@ const within = (t, from, to) => t != null && t >= from && t < to;
      login -- the two products have separate doors on purpose. */
   const session = await requireSession("admin-login.html"); if (!session) return;
   A.me = session.user;
-  el("logout").onclick = async () => { await supabase.auth.signOut(); location.href = "admin-login.html"; };
+  el("logout").onclick = async () => { await hardSignOut(); location.href = "admin-login.html"; };
 
   /* Turns a pending invitation into a real admin row. Harmless and
      silent for anyone who wasn't invited. Repeated here because Google

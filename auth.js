@@ -1,4 +1,4 @@
-import { supabase, isConfigured, callbackUrl } from "./supabase.js";
+import { supabase, isConfigured, callbackUrl, hardSignOut } from "./supabase.js?v=2";
 import { loadTenant, renderUnknownAgency, applyTenantChrome } from "./tenant.js?v=4";
 
 /* LicenseFlow is sold per agency: accounts are created for agents, never
@@ -118,8 +118,8 @@ function showAlreadySignedIn(user) {
   el("alreadyOut").onclick = async () => {
     el("alreadyOut").disabled = true;
     el("alreadyOut").textContent = "Signing out\u2026";
-    try { await supabase.auth.signOut(); } catch (_) {}
-    location.replace("login.html");
+    await hardSignOut();
+    location.replace("login.html?fresh=1");
   };
 }
 
@@ -232,7 +232,11 @@ document.querySelectorAll("[data-mode-tab]").forEach((b) => {
     return;
   }
   const { data } = await supabase.auth.getSession();
-  if (data.session) { showAlreadySignedIn(data.session.user); return; }
+  /* ?fresh=1 means we have just signed them out on purpose. Never offer
+     the "already signed in" choice on that arrival, even if a stale
+     session somehow survived -- that is precisely the loop. */
+  const justSignedOut = new URLSearchParams(location.search).get("fresh") === "1";
+  if (data.session && !justSignedOut) { showAlreadySignedIn(data.session.user); return; }
 })();
 
 /* ---------- the PIN step ---------- */

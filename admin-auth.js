@@ -13,7 +13,7 @@
    be an agent using the wrong door, so they get pointed at the right one
    and keep their session.
 ------------------------------------------------------------ */
-import { supabase, isConfigured, callbackUrl } from "./supabase.js";
+import { supabase, isConfigured, callbackUrl, hardSignOut } from "./supabase.js?v=2";
 import { loadTenant, renderUnknownAgency, applyTenantChrome } from "./tenant.js?v=4";
 
 const el = (id) => document.getElementById(id);
@@ -81,8 +81,8 @@ function showAlreadySignedIn(user) {
   el("alreadyOut").onclick = async () => {
     el("alreadyOut").disabled = true;
     el("alreadyOut").textContent = "Signing out\u2026";
-    try { await supabase.auth.signOut(); } catch (_) {}
-    location.replace("admin-login.html");
+    await hardSignOut();
+    location.replace("admin-login.html?fresh=1");
   };
 }
 
@@ -117,7 +117,8 @@ el("forgot").onclick = (e) => { e.preventDefault(); clear(); setMode("reset"); e
     return;
   }
   const { data } = await supabase.auth.getSession();
-  if (data.session) showAlreadySignedIn(data.session.user);
+  const justSignedOut = new URLSearchParams(location.search).get("fresh") === "1";
+  if (data.session && !justSignedOut) showAlreadySignedIn(data.session.user);
 })();
 
 /* ---------- email + password ---------- */

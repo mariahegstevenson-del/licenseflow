@@ -1,4 +1,4 @@
-import { supabase, isConfigured, requireSession } from "./supabase.js";
+import { supabase, isConfigured, requireSession, hardSignOut } from "./supabase.js?v=2";
 import { STATE_LIST, STATES, ceSlots } from "./states.js?v=7";
 import * as F from "./flow.js?v=7";
 import { loadTenant, renderUnknownAgency, applyTenantChrome, urlForAgency } from "./tenant.js?v=4";
@@ -25,7 +25,7 @@ let ceRows = []; // transient new-certificate rows for the CE view
 
   const session = await requireSession(); if (!session) return;
   S.user = session.user;
-  el("logout").onclick = async () => { await supabase.auth.signOut(); location.href = "index.html"; };
+  el("logout").onclick = async () => { await hardSignOut(); location.href = "index.html"; };
   window.addEventListener("hashchange", route);
   /* No admin affordance lives in the agent app. Administrators sign in to the
      Command Center through its own door (admin-login.html) so that what an

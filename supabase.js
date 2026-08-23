@@ -47,3 +47,35 @@ export async function requireSession(loginPage) {
   }
   return data.session;
 }
+
+/* ------------------------------------------------------------
+   Signing out, and meaning it.
+
+   supabase.auth.signOut() revokes the refresh token on the server, and
+   that call can fail -- most often because the token was already
+   revoked from another of this account's subdomains, each of which
+   keeps its own copy. Some versions then leave the local session
+   sitting in storage, so the next page load finds a session, decides
+   you are signed in, and offers to sign you out again. That is the
+   loop.
+
+   So: ask the server, then ask locally, then clear the browser's copy
+   by hand. Only this origin's keys, and only Supabase's own.
+------------------------------------------------------------ */
+export async function hardSignOut() {
+  if (supabase) {
+    try { await supabase.auth.signOut(); } catch (_) {}
+    try { await supabase.auth.signOut({ scope: "local" }); } catch (_) {}
+  }
+  try {
+    Object.keys(localStorage).forEach((k) => {
+      if (/^sb-.+-auth-token/.test(k) || k.indexOf("supabase.auth.") === 0) {
+        localStorage.removeItem(k);
+      }
+    });
+  } catch (_) {}
+  /* The registration PIN and anything else held for this visit go too --
+     signing out should not leave the next person's session primed. */
+  try { sessionStorage.clear(); } catch (_) {}
+  try { localStorage.removeItem("lf_join_key"); } catch (_) {}
+}
