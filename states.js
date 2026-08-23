@@ -194,3 +194,36 @@ export function buildWalkthrough(code) {
   ];
   return { state: s, provider, misc: s.misc || null, steps };
 }
+
+/* ------------------------------------------------------------------
+   CONTINUING EDUCATION — which certificates an agent must produce.
+
+   AML is a federal carrier requirement and applies everywhere, so it is
+   the one entry marked required by default: a file with no AML
+   certificate is not contractable, however complete the rest looks.
+
+   Everything else varies by state and by carrier. Nothing per-state is
+   guessed here. To pin a state down, add a `ce` array to its entry in
+   STATES above, confirmed against that state's department of insurance
+   or the carrier's contracting checklist -- for example:
+
+     CA: { name:"California", exam:"…", ce:[
+       { key:"aml",    label:"Anti-Money Laundering (AML)", required:true },
+       { key:"ethics", label:"Ethics",                      required:true },
+       { key:"other",  label:"Other",                       required:false },
+     ] },
+
+   Until a state carries its own list it uses the default below, which
+   is what the product did before this was configurable.
+------------------------------------------------------------------ */
+export const CE_DEFAULT = [
+  { key:"aml",           label:"Anti-Money Laundering (AML)", required:true  },
+  { key:"ethics",        label:"Ethics",                      required:false },
+  { key:"best_interest", label:"Best Interest",               required:false },
+  { key:"other",         label:"Other",                       required:false },
+];
+
+export function ceSlots(code){
+  const s = STATES[code];
+  return (s && Array.isArray(s.ce) && s.ce.length) ? s.ce : CE_DEFAULT;
+}

@@ -854,7 +854,9 @@ html.scene-on .desig{background:rgba(255,255,255,.78);backdrop-filter:blur(3px)}
    are the two things they act on. Centring them separates them from the
    reading, which stays left-aligned where it belongs.
    ============================================================ */
-.step-body .section-k{text-align:center}
+/* Only the label over the recording is centred -- the others head lists
+   and belong on the left with the reading. */
+.step-body .center-k{text-align:center}
 .video{margin-left:auto;margin-right:auto}
 .step-body .link-row{display:flex;justify-content:center;margin-top:4px}
 .step-body .link-row .btn{min-width:360px;justify-content:center}

@@ -1,5 +1,5 @@
 import { supabase, isConfigured, requireSession } from "./supabase.js";
-import { STATE_LIST, STATES } from "./states.js?v=6";
+import { STATE_LIST, STATES, ceSlots } from "./states.js?v=7";
 import * as F from "./flow.js?v=7";
 import { loadTenant, renderUnknownAgency, applyTenantChrome, urlForAgency } from "./tenant.js?v=3";
 
@@ -124,7 +124,7 @@ function videoBlock(key, fallbackTitle){
     /* No recording for this step yet. Hold the space rather than letting
        the layout jump the day one is added, and say plainly that it is
        coming -- an empty frame with no explanation reads as broken. */
-    return `<div class="section-k">Watch this step</div>
+    return `<div class="section-k center-k">Watch this step</div>
       <div class="video is-soon">
         <div class="ph">
           <div class="pi"></div>
@@ -133,7 +133,7 @@ function videoBlock(key, fallbackTitle){
         </div>
       </div>`;
   }
-  return `<div class="section-k">${esc(v.title||fallbackTitle||"Watch")}</div>
+  return `<div class="section-k center-k">${esc(v.title||fallbackTitle||"Watch")}</div>
     <div class="video">${videoEmbed(v.url)}</div>
     ${v.description?`<p class="link-note" style="margin-top:-12px">${esc(v.description)}</p>`:""}`;
 }
@@ -843,7 +843,7 @@ function renderExam(r, st, head) {
       <h2 style="margin-top:.4rem">Schedule your exam</h2>
       <p class="step-desc">${esc(info.examTitle)}. We've prepared the correct examination information for you. You can book this as soon as you've bought your course \u2014 you don't need to have finished studying.</p>
 
-      ${videoBlock("exam","Watch before you schedule") || `<div class="section-k">Watch before you schedule</div><div class="video">${videoEmbed(null)}</div><p class="link-note" style="margin-top:-12px">Learn how to schedule your licensing examination.</p>`}
+      ${videoBlock("exam","Watch before you schedule") || `<div class="section-k center-k">Watch before you schedule</div><div class="video">${videoEmbed(null)}</div><p class="link-note" style="margin-top:-12px">Learn how to schedule your licensing examination.</p>`}
 
       <div class="section-k" style="margin-top:22px">Your examination platform</div>
       <div class="syscard"><span class="sys-k">Scheduled through</span><strong>${esc(info.providerLabel)}</strong></div>
@@ -893,11 +893,23 @@ function renderCE(r, st, head) {
       ${videoBlock("continuing_education","How to complete your continuing education")}
       ${r.link ? `<div class="link-row"><a class="btn btn-accent btn-lg" href="${esc(r.link)}" target="_blank" rel="noopener">Open Success CE</a></div><div class="link-note">Review your state's continuing-education requirements.</div>` : ""}
 
+      ${(() => {
+        const missing = ceMissing(certs);
+        if (!missing.length) return "";
+        return `<div class="callout callout-warn"><span class="lab">Needed before you can be contracted</span>
+          ${missing.map(m => esc(m.label)).join(", ")}. Carriers will not appoint an agent whose
+          file is missing these, whatever else is complete.</div>`;
+      })()}
+
       ${certs.length ? `<div class="section-k" style="margin-top:22px">Your certificates</div>
         <div class="ce-list">${certs.map((c,i)=>`
           <div class="ce-item">
-            <div class="ce-row"><strong>Certificate ${i+1}</strong>${badge(c.status)}</div>
+            <div class="ce-row"><strong>${esc(ceLabel(c.type) || ("Certificate " + (i+1)))}</strong>${badge(c.status)}</div>
             <div class="hint">Purchase date: ${esc(c.purchase_date||"—")} · ${esc(c.filename||"file")}</div>
+            ${!c.type ? `<label for="ret_${i}" style="margin-top:8px">What is this certificate?</label>
+              <select id="ret_${i}" class="ce-retype" data-idx="${i}">
+                <option value="">Choose…</option>${ceSlotList().map(o=>`<option value="${esc(o.key)}">${esc(o.label)}</option>`).join("")}
+              </select>` : ""}
             <label class="btn btn-ghost btn-sm" for="rep_${i}" style="margin-top:8px">Replace certificate</label>
             <input id="rep_${i}" type="file" data-idx="${i}" class="ce-replace" style="display:none" accept=".pdf,.png,.jpg,.jpeg,.heic,.webp"/>
             <span class="hint" id="repn_${i}"></span>
@@ -921,14 +933,26 @@ function renderCE(r, st, head) {
   el("submitStep").onclick = () => submitCE(r);
 }
 function drawCeRows() {
+  /* The agent says what each certificate is. Guessing from the file name
+     filed "AML and Ethics.pdf" under one heading and gave up entirely on
+     "scan_002.pdf" -- and a certificate in the wrong slot reads as a
+     missing certificate to whoever is contracting them. */
+  const opts = (sel) => ceSlotList().map(o =>
+    `<option value="${esc(o.key)}"${o.key===sel?" selected":""}>${esc(o.label)}</option>`).join("");
   el("ceNew").innerHTML = ceRows.map((row,i)=>`
     <div class="ce-item">
-      <div class="row2">
+      <label for="cet_${i}">What is this certificate?</label>
+      <select id="cet_${i}" class="ce-type" data-i="${i}">
+        <option value="">Choose…</option>${opts(row.type)}
+      </select>
+      <div class="row2" style="margin-top:12px">
         <div><label>Purchase date</label><input class="ce-date" data-i="${i}" type="date" value="${esc(row.purchase_date)}"/></div>
         <div><label>Certificate</label><div class="upload"><label class="btn btn-ghost btn-sm" for="cef_${i}">Choose file</label><input id="cef_${i}" class="ce-file" data-i="${i}" type="file" style="display:none" accept=".pdf,.png,.jpg,.jpeg,.heic,.webp"/><span class="hint" id="cefn_${i}"></span></div></div>
       </div>
       ${ceRows.length>1?`<button class="btn btn-quiet btn-sm ce-rm" data-i="${i}" style="margin-top:4px">Remove</button>`:""}
     </div>`).join("");
+  root.querySelectorAll(".ce-type").forEach(sel=>sel.addEventListener("change",()=>{
+    ceRows[Number(sel.dataset.i)].type = sel.value; }));
   root.querySelectorAll(".ce-file").forEach(inp=>inp.addEventListener("change",()=>{ el("cefn_"+inp.dataset.i).textContent = inp.files[0]?`Selected: ${inp.files[0].name}`:""; }));
   root.querySelectorAll(".ce-rm").forEach(b=>b.onclick=()=>{ ceRows.splice(Number(b.dataset.i),1); if(!ceRows.length) ceRows=[{purchase_date:"",file:null}]; drawCeRows(); });
 }
@@ -950,17 +974,38 @@ async function submitCE(r) {
       const d = dates[i]?.value || ""; const f = files[i]?.files[0];
       if (!f && !d) continue;
       if (f && !d) { A.className="alert show alert-error"; A.textContent="Please add a purchase date for each certificate."; el("submitStep").disabled=false; el("submitStep").textContent="Save certificates"; return; }
-      if (f) { const path = await uploadFile(f, "ce"); certs.push({ id:"c"+Date.now()+i, purchase_date:d, filename:f.name, path, status:"pending_review" }); }
+      const t = ceRows[i]?.type || "";
+      if (f && !t) { A.className="alert show alert-error"; A.textContent="Please say what each certificate is."; el("submitStep").disabled=false; el("submitStep").textContent="Save certificates"; return; }
+      if (f) { const path = await uploadFile(f, "ce"); certs.push({ id:"c"+Date.now()+i, type:t, purchase_date:d, filename:f.name, path, status:"pending_review" }); }
+    }
+    /* Types put on certificates that were uploaded before there was a
+       choice. Saved even when nothing else on the page changed. */
+    for (const sel of root.querySelectorAll(".ce-retype")) {
+      if (sel.value) certs[Number(sel.dataset.idx)] = { ...certs[Number(sel.dataset.idx)], type: sel.value };
     }
     if (!certs.length) { A.className="alert show alert-error"; A.textContent="Add at least one certificate (purchase date + file)."; el("submitStep").disabled=false; el("submitStep").textContent="Save certificates"; return; }
+    /* A file missing its AML certificate is not contractable, however
+       many other certificates are in it -- so the step does not go
+       forward for review until the required ones are present. Work
+       already done is still saved; it just isn't called finished. */
+    const missing = ceMissing(certs);
     const allVerified = certs.every(c=>["admin_verified","verified","complete"].includes(c.status));
-    const status = allVerified ? F.ST.COMPLETE : F.ST.PENDING;
+    const status = missing.length ? F.ST.IN_PROGRESS
+                 : (allVerified ? F.ST.COMPLETE : F.ST.PENDING);
     const before = F.reqStatus(r.key, S.sm);
     const clean = { certs }; // drop _reject on resubmit
     await supabase.from("requirement_instances").upsert({ user_id:S.user.id, requirement_key:r.key, label:r.label, status, meta:clean, completed_at:F.isDone(status)?new Date().toISOString():null, updated_at:new Date().toISOString() }, { onConflict:"user_id,requirement_key" });
-    await audit("requirement:continuing_education", before, status, { count:certs.length });
+    await audit("requirement:continuing_education", before, status, { count:certs.length, missing:missing.map(m=>m.key) });
     ceRows = [];
     await load();
+    if (missing.length) {
+      route();
+      const A2 = el("stepAlert");
+      if (A2) { A2.className = "alert show alert-ok";
+        A2.textContent = "Saved. Still needed before you can be contracted: " +
+          missing.map(m=>m.label).join(", ") + "."; }
+      return;
+    }
     goto("#/dashboard");
   } catch(e){ A.className="alert show alert-error"; A.textContent="Something went wrong: "+(e.message||e); el("submitStep").disabled=false; el("submitStep").textContent="Save certificates"; }
 }
@@ -1005,15 +1050,43 @@ const STUDY_TIPS = [
   "<b>Take the practice quizzes and tests over and over.</b> Repetition is what makes it stick.",
 ];
 
-/* The CE step collects several certificates, not one. Which ones an agent
-   needs is set by their registered state, so this list is a starting point
-   that should come from state configuration -- see states.js. */
-const CE_SLOTS = [
-  { key:"aml",           label:"Anti-Money Laundering (AML)", match:/aml|money.?launder/i },
-  { key:"ethics",        label:"Ethics",                      match:/ethic/i },
-  { key:"best_interest", label:"Best Interest",               match:/best.?interest|\bbi\b/i },
-  { key:"other",         label:"Other",                       match:null },
-];
+/* Which certificates this agent needs comes from their licensing state
+   now, not from a list hardcoded here -- see states.js. */
+function ceSlotList(){ return ceSlots(S.profile?.designated_state); }
+
+/* Legacy certificates were filed by guessing at the file name, which put
+   "AML_and_Ethics_2026.pdf" in one slot and shrugged at "cert3.pdf".
+   New ones carry the type the agent chose. These patterns are kept only
+   to place certificates uploaded before there was a choice. */
+const CE_GUESS = {
+  aml:           /aml|money.?launder/i,
+  ethics:        /ethic/i,
+  best_interest: /best.?interest|\bbi\b/i,
+};
+
+/* Which of the agent's certificates sits in a given slot: what they said
+   it was, or -- for older uploads -- what the file name suggests. */
+function certInSlot(certs, slot, claimed){
+  let hit = certs.find((c, i) => !claimed.has(i) && c.type === slot.key);
+  if (!hit) {
+    const pat = CE_GUESS[slot.key];
+    if (pat) hit = certs.find((c, i) => !claimed.has(i) && !c.type && pat.test(c.filename || ""));
+    else     hit = certs.find((c, i) => !claimed.has(i) && !c.type);
+  }
+  if (hit) claimed.add(certs.indexOf(hit));
+  return hit || null;
+}
+
+/* What is still standing between this agent and being contractable. */
+function ceLabel(key){
+  const slot = ceSlotList().find(o => o.key === key);
+  return slot ? slot.label : "";
+}
+
+function ceMissing(certs){
+  const claimed = new Set();
+  return ceSlotList().filter((slot) => slot.required && !certInSlot(certs, slot, claimed));
+}
 
 function metaOf(key){
   const i = S.instances.find(x => x.requirement_key === key);
@@ -1066,18 +1139,13 @@ function recordGroups(p){
      yet reads "Miscellaneous" until one is added, then takes the file name. */
   const certs = (metaOf("continuing_education").certs) || [];
   const claimed = new Set();
-  const ceRows = CE_SLOTS.map(slot => {
-    let hit = null;
-    if (slot.match) {
-      hit = certs.find((c, i) => !claimed.has(i) && slot.match.test(c.filename || "")) || null;
-    } else {
-      hit = certs.find((c, i) => !claimed.has(i)) || null;   // "Other" takes the leftovers
-    }
-    if (hit) claimed.add(certs.indexOf(hit));
+  const ceRows = ceSlotList().map(slot => {
+    const hit = certInSlot(certs, slot, claimed);
     const done = !!hit;
     return `<div class="lf-slot${done ? " done" : ""}">
       <span class="lf-mark">${done ? "&#10003;" : ""}</span>
-      <span class="lf-sn"><b>${esc(slot.label)}</b><span>${
+      <span class="lf-sn"><b>${esc(slot.label)}${
+        slot.required && !done ? " \u00b7 required" : ""}</b><span>${
         done ? esc(hit.filename || "Uploaded") : "Not uploaded yet"}</span></span>
       ${done && hit.purchase_date ? `<span class="lf-sd">${esc(shortDate(hit.purchase_date))}</span>` : ""}
     </div>`;
