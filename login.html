@@ -27,6 +27,16 @@
 
       <div id="alert" class="alert"></div>
 
+      <!-- Shown when a session is already sitting in this browser. Each
+           agency lives on its own subdomain, so signing out of one leaves
+           the others signed in -- which used to teleport people straight
+           back into whichever portal still had a session. -->
+      <div id="already" style="display:none">
+        <p class="muted center" id="alreadyWho" style="margin-bottom:16px"></p>
+        <button id="alreadyGo" class="btn btn-primary btn-block" type="button">Continue</button>
+        <button id="alreadyOut" class="btn btn-ghost btn-block" type="button" style="margin-top:10px">Use a different account</button>
+      </div>
+
       <!-- Shown only where the agency uses a registration PIN, and only
            until it has been checked. -->
       <form id="pinForm" style="display:none">
@@ -80,6 +90,6 @@
     </p>
   </div>
 </div>
-<script type="module" src="auth.js?v=14"></script>
+<script type="module" src="auth.js?v=15"></script>
 </body>
 </html>

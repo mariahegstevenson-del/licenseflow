@@ -152,3 +152,45 @@ html.themed .ah-face b{color:var(--ag-gold)}
 @media (prefers-reduced-motion:reduce){
   .ah-track.a,.ah-track.b{animation:none}
 }
+
+/* ============================================================
+   NO THEME, NO BORROWED IDENTITY
+
+   An agency row with an empty theme was inheriting the design built for
+   Pacific Ridgeway -- their dawn, their dark hero, their editorial type
+   -- because that page had quietly become the default for everybody.
+   LicenseFlow's own demo wore a customer's clothes.
+
+   An unthemed agency now gets LicenseFlow's house style: white ground,
+   navy type, the plain hero from the marketing site.
+   ============================================================ */
+html.plain .ah-bar{background:#fff;border-bottom:1px solid #DCE3EC;height:66px}
+html.plain .ah-mark{background:var(--ag,#0C3D82);border-color:transparent;color:#fff}
+html.plain .ah-word b{font-family:Inter,-apple-system,"Segoe UI",Roboto,sans-serif;
+  font-weight:700;color:#061223;letter-spacing:-.02em}
+html.plain .ah-word span{color:#8293A8}
+html.plain .ah-tag{background:#EAF0F8;color:#0C3D82;border-color:transparent}
+html.plain .ah-nav a{color:#51637A}
+html.plain .ah-nav a:hover{color:#061223}
+
+html.plain .ah-hero{background:#fff;min-height:0;border-bottom:1px solid #EDF1F6}
+html.plain .ah-in{padding:82px 26px 74px}
+/* The short rule before the eyebrow is the marketing page's own mark. */
+html.plain .ah-kicker{color:#0C3D82;display:flex;align-items:center;gap:12px}
+html.plain .ah-kicker::before{content:"";width:22px;height:2px;background:#0C3D82;flex:none}
+html.plain .ah-hero h1{font-family:"Libre Franklin",Inter,sans-serif;font-weight:800;
+  color:#061223;letter-spacing:-.028em;font-size:clamp(2rem,4vw,2.9rem);max-width:17ch}
+html.plain .ah-hero h1 em{font-style:normal;color:#0C3D82}
+html.plain .ah-lede{color:#51637A}
+html.plain .ah-btn.gold{background:#0C3D82;color:#fff}
+html.plain .ah-btn.gold:hover{background:#082C5F;filter:none}
+html.plain .ah-btn.ghost{background:#fff;color:#061223;border-color:#DCE3EC}
+html.plain .ah-btn.ghost:hover{background:#F4F7FA;border-color:#C6D2E2}
+html.plain .ah-note{color:#51637A}
+
+/* the rest of the page, in the house palette rather than an agency's */
+html.plain .ah-quote{color:#061223;font-family:"Libre Franklin",Inter,sans-serif;
+  font-style:normal;font-weight:700;letter-spacing:-.024em}
+html.plain .ah-rule{background:#0C3D82}
+html.plain .ah-lab b{color:#0C3D82}
+html.plain .ah-tile.on{border-color:#0C3D82;color:#0C3D82;background:#EAF0F8}

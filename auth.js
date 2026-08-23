@@ -1,5 +1,5 @@
 import { supabase, isConfigured, callbackUrl } from "./supabase.js";
-import { loadTenant, renderUnknownAgency, applyTenantChrome } from "./tenant.js?v=3";
+import { loadTenant, renderUnknownAgency, applyTenantChrome } from "./tenant.js?v=4";
 
 /* LicenseFlow is sold per agency: accounts are created for agents, never
    self-served. This screen therefore has exactly two states -- log in, and
@@ -94,6 +94,33 @@ async function checkPin(pin) {
     if (error) return false;
     return !!data;
   } catch (_) { return false; }
+}
+
+/* Somebody arriving at a sign-in page has come to make a choice. Sending
+   them straight through on a session they may have forgotten about --
+   often one belonging to a different agency's subdomain, since each
+   keeps its own -- takes that choice away and looks like the page
+   ignored them. Offer both doors and let them pick. */
+function showAlreadySignedIn(user) {
+  const box = el("already");
+  if (!box) { location.href = "app.html"; return; }
+  el("title").textContent = "You're already signed in";
+  el("sub").textContent = "";
+  el("alreadyWho").textContent = "as " + (user?.email || "this account");
+  box.style.display = "";
+  ["form", "pinForm", "google", "modeSwitch", "hint"].forEach((id) => {
+    const n = el(id); if (n) n.style.display = "none";
+  });
+  const or = document.querySelector(".or"); if (or) or.style.display = "none";
+  document.querySelectorAll(".no-signup-note, .platform-only").forEach((n) => { n.style.display = "none"; });
+
+  el("alreadyGo").onclick = () => { location.href = "app.html"; };
+  el("alreadyOut").onclick = async () => {
+    el("alreadyOut").disabled = true;
+    el("alreadyOut").textContent = "Signing out\u2026";
+    try { await supabase.auth.signOut(); } catch (_) {}
+    location.replace("login.html");
+  };
 }
 
 function render(keepAlert) {
@@ -205,7 +232,7 @@ document.querySelectorAll("[data-mode-tab]").forEach((b) => {
     return;
   }
   const { data } = await supabase.auth.getSession();
-  if (data.session) location.href = "app.html";
+  if (data.session) { showAlreadySignedIn(data.session.user); return; }
 })();
 
 /* ---------- the PIN step ---------- */

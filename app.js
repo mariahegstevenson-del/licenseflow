@@ -1,7 +1,7 @@
 import { supabase, isConfigured, requireSession } from "./supabase.js";
 import { STATE_LIST, STATES, ceSlots } from "./states.js?v=7";
 import * as F from "./flow.js?v=7";
-import { loadTenant, renderUnknownAgency, applyTenantChrome, urlForAgency } from "./tenant.js?v=3";
+import { loadTenant, renderUnknownAgency, applyTenantChrome, urlForAgency } from "./tenant.js?v=4";
 
 const el = (id) => document.getElementById(id);
 const root = el("root");

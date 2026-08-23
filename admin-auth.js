@@ -14,7 +14,7 @@
    and keep their session.
 ------------------------------------------------------------ */
 import { supabase, isConfigured, callbackUrl } from "./supabase.js";
-import { loadTenant, renderUnknownAgency, applyTenantChrome } from "./tenant.js?v=3";
+import { loadTenant, renderUnknownAgency, applyTenantChrome } from "./tenant.js?v=4";
 
 const el = (id) => document.getElementById(id);
 const A = el("alert");
@@ -63,6 +63,29 @@ async function routeBySession(user) {
   return false;
 }
 
+/* Each agency's portal keeps its own session, so signing out of one
+   leaves the others signed in. Arriving at a sign-in page and being
+   thrown through on a session you had forgotten about is disorienting
+   and, on somebody else's agency, alarming. Ask. */
+function showAlreadySignedIn(user) {
+  const box = el("already");
+  if (!box) { routeBySession(user); return; }
+  el("title").textContent = "You're already signed in";
+  el("sub").textContent = "";
+  el("alreadyWho").textContent = "as " + (user?.email || "this account");
+  box.style.display = "";
+  ["form", "google"].forEach((id) => { const n = el(id); if (n) n.style.display = "none"; });
+  const or = document.querySelector(".or"); if (or) or.style.display = "none";
+
+  el("alreadyGo").onclick = () => routeBySession(user);
+  el("alreadyOut").onclick = async () => {
+    el("alreadyOut").disabled = true;
+    el("alreadyOut").textContent = "Signing out\u2026";
+    try { await supabase.auth.signOut(); } catch (_) {}
+    location.replace("admin-login.html");
+  };
+}
+
 function setMode(next) {
   mode = next;
   const resetting = mode === "reset";
@@ -94,7 +117,7 @@ el("forgot").onclick = (e) => { e.preventDefault(); clear(); setMode("reset"); e
     return;
   }
   const { data } = await supabase.auth.getSession();
-  if (data.session) await routeBySession(data.session.user);
+  if (data.session) showAlreadySignedIn(data.session.user);
 })();
 
 /* ---------- email + password ---------- */

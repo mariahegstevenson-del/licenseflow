@@ -151,9 +151,14 @@ export function applyTheme(theme) {
   if (!theme || typeof theme !== "object") return;
   const root = document.documentElement;
 
+  /* An agency row with an empty theme is not a themed agency. Counting
+     what actually lands is what stops LicenseFlow's own demo wearing
+     another customer's design just because it has a row in the table. */
+  let applied = 0;
   Object.keys(VAR_MAP).forEach((key) => {
     const v = theme[key];
     if (typeof v === "string" && HEX.test(v)) {
+      applied++;
       VAR_MAP[key].forEach((name) => root.style.setProperty(name, v));
     }
   });
@@ -174,5 +179,5 @@ export function applyTheme(theme) {
     root.style.setProperty("--ff-display", '"' + display + '", Georgia, serif');
     root.classList.add("has-agency-display");
   }
-  root.classList.add("themed");
+  root.classList.add(applied ? "themed" : "plain");
 }

@@ -10,7 +10,7 @@
    Everything rendered here comes out of the agencies row. All of it is
    escaped: an agency's own copy is not a reason to let markup through.
 ------------------------------------------------------------ */
-import { loadTenant, renderUnknownAgency, applyTheme } from "./tenant.js?v=3";
+import { loadTenant, renderUnknownAgency, applyTheme } from "./tenant.js?v=4";
 
 const root = document.getElementById("agencyHome");
 const site = document.getElementById("lfSite");
@@ -119,7 +119,9 @@ function render(agency) {
   root.innerHTML = `
   <header class="ah-bar">
     <a class="ah-logo" href="index.html">
-      <span class="ah-mark">${markGlyph()}</span>
+      <!-- The ridge glyph belongs to an agency that asked for scenery.
+           Everyone else gets a plain letter mark. -->
+      <span class="ah-mark">${t.scene ? markGlyph() : esc(String(short).trim().charAt(0).toUpperCase())}</span>
       <span class="ah-word"><b>${esc(short)}</b>${
         t.strapline ? `<span>${esc(t.strapline)}</span>` : ""}</span>
     </a>
@@ -130,9 +132,8 @@ function render(agency) {
     </nav>
   </header>
 
-  <div class="ah-hero">
-    ${scene()}
-    <div class="ah-scrim"></div>
+  <div class="ah-hero${t.scene ? "" : " ah-plain"}">
+    ${t.scene ? scene() + '<div class="ah-scrim"></div>' : ""}
     <div class="ah-in">
       <p class="ah-kicker">Licensing Portal</p>
       <h1>${esc(t.hero_title || "Everything your licence needs,")}
@@ -206,6 +207,11 @@ function render(agency) {
   }
 
   applyTheme(t.agency.theme);
+  /* No theme means no borrowed identity: the page falls back to
+     LicenseFlow's own house style rather than the last agency I drew. */
+  if (!document.documentElement.classList.contains("themed")) {
+    document.documentElement.classList.add("plain");
+  }
   render(t.agency);
   if (site) site.remove();
   if (foot) foot.remove();
