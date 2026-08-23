@@ -74,8 +74,13 @@ async function load() {
 
   const home = S.profile?.agency?.slug || null;
   if (home && home !== (S.tenant?.slug || null)) {
-    window.location.replace(urlForAgency(home));
-    return;
+    /* A platform administrator is not lost -- they are looking. Sending
+       them to whichever agency their own sample profile happens to sit
+       under is how you click "Agent view" on Pacific Ridgeway's console
+       and land on the demo portal wondering what you broke. */
+    const { data: isPlatform } = await settle(supabase.rpc("lf_is_platform_admin"));
+    if (!isPlatform) { window.location.replace(urlForAgency(home)); return; }
+    S.foreignHost = true;
   }
   if (S.profile?.agency) applyTenantChrome(S.profile.agency);
 
@@ -146,6 +151,24 @@ function videoBlock(key, fallbackTitle){
    the side panel was doing badly and in front of people who had not
    earned the context to read it yet.
 ------------------------------------------------------------ */
+/* Says plainly whose portal you are standing in when it isn't your own.
+   Only ever seen by a platform administrator, who is the only person
+   allowed to be here with somebody else's branding around them. */
+function setHostNote(){
+  let n = el("hostnote");
+  if (!S.foreignHost) { if (n) n.remove(); return; }
+  if (!n) {
+    n = document.createElement("div");
+    n.id = "hostnote";
+    document.body.insertBefore(n, el("stepbar") || el("root"));
+  }
+  const here = S.tenant?.agency?.name || S.tenant?.slug || "this portal";
+  const mine = S.profile?.agency?.name || "your own agency";
+  n.innerHTML = `<div class="hn-in"><b>You're on ${esc(here)}'s portal</b>
+    <span>&mdash; this is your own agent record from ${esc(mine)}, not an agent of theirs.</span>
+    <a href="${esc(urlForAgency(S.profile?.agency?.slug || null))}">Go to my portal &rarr;</a></div>`;
+}
+
 function setStepBar(html){
   const n = el("stepbar");
   if (!n) return;
@@ -252,6 +275,7 @@ function route() {
     || (location.hash || "").indexOf("#/welcome") === 0);
   setScene(greeting);
   setStepBar("");            // renderStep puts it back; every other view runs without it
+  setHostNote();
 
   // Couldn't reach the profile at all -- say so and offer a retry. Never
   // fall through to registration on an error; see load().

@@ -872,3 +872,16 @@ html.scene-on .desig{background:rgba(255,255,255,.78);backdrop-filter:blur(3px)}
    disabled one -- the line underneath already says why. */
 #ctaGo .btn:disabled{opacity:1;cursor:not-allowed}
 #ctaGo .btn:disabled:hover{background:#fff;color:var(--faint)}
+
+/* ============================================================
+   UPDATE v19: standing in somebody else's portal
+
+   Only a platform administrator ever sees this. It exists because the
+   app used to silently teleport them to whichever agency their own
+   sample profile belonged to, which looked exactly like a bug.
+   ============================================================ */
+#hostnote{background:var(--warn-050);border-bottom:1px solid #F0DEB8;
+  padding:10px 28px;font-size:.9rem;color:#6E4A05}
+.hn-in{max-width:1060px;margin:0 auto;display:flex;flex-wrap:wrap;gap:6px 10px;align-items:baseline}
+.hn-in b{font-weight:650}
+.hn-in a{margin-left:auto;color:#6E4A05;font-weight:650;text-decoration:underline;white-space:nowrap}
