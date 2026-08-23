@@ -885,3 +885,32 @@ html.scene-on .desig{background:rgba(255,255,255,.78);backdrop-filter:blur(3px)}
 .hn-in{max-width:1060px;margin:0 auto;display:flex;flex-wrap:wrap;gap:6px 10px;align-items:baseline}
 .hn-in b{font-weight:650}
 .hn-in a{margin-left:auto;color:#6E4A05;font-weight:650;text-decoration:underline;white-space:nowrap}
+
+/* ============================================================
+   UPDATE v20: DROP ZONES
+
+   The certificate is nearly always already on someone's desktop, so
+   dragging it in is the shortest path. The hidden input still does the
+   work, so validation and upload are unchanged whichever way it arrives.
+   ============================================================ */
+.drop{position:relative;display:flex;flex-direction:column;align-items:center;gap:4px;
+  text-align:center;padding:26px 20px;margin-top:6px;cursor:pointer;
+  border:1.5px dashed var(--line);border-radius:14px;background:#FAFCFE;
+  transition:border-color .15s,background .15s}
+.drop:hover{border-color:var(--brand-400);background:var(--accent-050)}
+.drop.over{border-color:var(--agency-gold,var(--brand));background:var(--agency-gold-050,var(--accent-050));
+  border-style:solid}
+.drop.has{border-style:solid;border-color:var(--ok);background:var(--ok-050)}
+.drop.bad{border-color:#D89B9B;background:#FDF3F3}
+.drop > b{font-weight:560;color:var(--ink-2);font-size:.98rem}
+.drop-or{font-size:.88rem;color:var(--muted)}
+.lnk-file{background:none;border:0;padding:0;font:inherit;font-weight:600;
+  color:var(--brand);text-decoration:underline;text-underline-offset:2px;cursor:pointer}
+.drop-name{font-size:.88rem;color:var(--ink-2);font-weight:560;margin-top:4px;
+  word-break:break-all;max-width:100%}
+.drop.has .drop-name{color:#0B6B3F}
+.drop.bad .drop-name{color:#A12622}
+.drop-note{font-size:.8rem;color:var(--faint)}
+.drop-sm{padding:18px 14px}
+.drop-sm > b{font-size:.92rem}
+.drop-sm .drop-note{display:none}

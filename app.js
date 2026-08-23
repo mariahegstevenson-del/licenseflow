@@ -228,11 +228,19 @@ function paintNext(r){
   const df = el("docInput");
   const docMissing = !!(r.doc?.required && !docFor(r.key) && !(df && df.files[0]));
 
-  glow("ctaLink", linkPending);
-  (r.fields || []).forEach((f) => glow("w_" + f.name, !linkPending && firstMissing === f));
-  glow("ctaDoc", !linkPending && !firstMissing && docMissing);
+  /* Whether they actually went to the provider's site is guidance, not
+     something we can check -- and on a step like E&O the agent often
+     already has the certificate in hand and never needs to go there at
+     all. So the link steers where the glow sits, but only the real
+     requirements -- the answers and the file -- decide whether the step
+     can be finished. Gating the button on the link trapped people who
+     had done the work already. */
+  const ready = !firstMissing && !docMissing;
+  const steerToLink = linkPending && !ready;
 
-  const ready = !linkPending && !firstMissing && !docMissing;
+  glow("ctaLink", steerToLink);
+  (r.fields || []).forEach((f) => glow("w_" + f.name, !steerToLink && firstMissing === f));
+  glow("ctaDoc", !steerToLink && !firstMissing && docMissing);
   glow("ctaGo", ready);
   go.classList.toggle("ready", ready);
   /* Not just quiet -- shut. The line underneath says what is missing, so
@@ -242,12 +250,80 @@ function paintNext(r){
 
   if (need) {
     let msg = "";
-    if (linkPending) msg = `Open ${esc(r.providerLabel || "the link above")} first &mdash; then come back and record what you did.`;
+    if (steerToLink) msg = `Open ${esc(r.providerLabel || "the link above")} first &mdash; then come back and record what you did.`;
     else if (firstMissing) msg = `Enter your ${esc(String(firstMissing.label).toLowerCase())} to finish this step.`;
     else if (docMissing) msg = `Attach your ${esc(String(r.doc.label).toLowerCase())} to finish this step.`;
     need.innerHTML = msg ? `<span aria-hidden="true">&#9679;</span><span>${msg}</span>` : "";
     need.classList.toggle("hide", !msg);
   }
+}
+
+/* ------------------------------------------------------------
+   Dropping a file on the page.
+
+   The certificate is usually already sitting on someone's desktop, so
+   dragging it straight in is the shortest path. Everything still runs
+   through the same hidden file input, so the rest of the code -- the
+   validation, the upload, the glow -- neither knows nor cares how the
+   file arrived.
+------------------------------------------------------------ */
+const MAX_UPLOAD = 10 * 1024 * 1024;
+
+function wireDrops(after){
+  root.querySelectorAll(".drop").forEach((zone) => {
+    if (zone.dataset.wired) return;
+    zone.dataset.wired = "1";
+    const input = el(zone.dataset.drop);
+    const nameEl = zone.dataset.name ? el(zone.dataset.name) : null;
+    if (!input) return;
+
+    const show = () => {
+      const f = input.files && input.files[0];
+      if (f && f.size > MAX_UPLOAD) {
+        input.value = "";
+        zone.classList.remove("has");
+        if (nameEl) nameEl.textContent = "That file is over 10 MB. Please attach a smaller copy.";
+        zone.classList.add("bad");
+        if (after) after();
+        return;
+      }
+      zone.classList.remove("bad");
+      zone.classList.toggle("has", !!f);
+      if (nameEl) nameEl.textContent = f ? "Attached: " + f.name : "";
+      if (after) after();
+    };
+
+    zone.querySelectorAll("[data-pick]").forEach((b) => {
+      b.addEventListener("click", (e) => { e.stopPropagation(); input.click(); });
+    });
+    zone.addEventListener("click", (e) => {
+      if (e.target.closest("[data-pick]")) return;
+      input.click();
+    });
+
+    ["dragenter", "dragover"].forEach((ev) => zone.addEventListener(ev, (e) => {
+      e.preventDefault(); zone.classList.add("over");
+    }));
+    ["dragleave", "dragend"].forEach((ev) => zone.addEventListener(ev, () => zone.classList.remove("over")));
+
+    zone.addEventListener("drop", (e) => {
+      e.preventDefault();
+      zone.classList.remove("over");
+      const f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+      if (!f) return;
+      /* Put the dropped file into the real input, so every other piece of
+         code sees exactly what it would have seen from the file picker. */
+      try {
+        const dt = new DataTransfer();
+        dt.items.add(f);
+        input.files = dt.files;
+      } catch (_) { return; }
+      show();
+      input.dispatchEvent(new Event("change", { bubbles: true }));
+    });
+
+    input.addEventListener("change", show);
+  });
 }
 
 /* Wire the glow to everything that could change what's still missing. */
@@ -262,6 +338,7 @@ function wireNext(r){
   });
   const df = el("docInput");
   if (df) df.addEventListener("change", () => paintNext(r));
+  wireDrops(() => paintNext(r));
   paintNext(r);
 }
 
@@ -812,9 +889,14 @@ function field(f, meta) {
 }
 function docField(d, existing){
   return `<label style="margin-top:14px">${esc(d.label)}${d.required?" *":""}</label>
-    <div class="upload cta" id="ctaDoc"><label class="btn btn-ghost btn-sm" for="docInput">${existing?"Replace certificate":"Choose file"}</label>
-      <input id="docInput" type="file" style="display:none" accept=".pdf,.png,.jpg,.jpeg,.heic,.webp"/>
-      <span id="docName" class="hint">${existing?`Uploaded: ${esc(existing.note||"certificate")}`:""}</span></div>
+    <div class="drop cta" id="ctaDoc" data-drop="docInput" data-name="docName">
+      <input id="docInput" type="file" hidden accept=".pdf,.png,.jpg,.jpeg,.heic,.webp"/>
+      <b>Drag your ${esc(String(d.label).toLowerCase())} here</b>
+      <span class="drop-or">or <button type="button" class="lnk-file" data-pick="docInput">${
+        existing ? "choose a replacement" : "choose a file"}</button></span>
+      <span id="docName" class="drop-name">${existing?`Uploaded: ${esc(existing.note||"certificate")}`:""}</span>
+      <span class="drop-note">PDF or a photo of it. Up to 10&nbsp;MB.</span>
+    </div>
     ${existing?`<div class="hint">${existing.meta_detected?`Detected: ${esc(existing.meta_detected)} · `:""}Uploaded ${new Date(existing.updated_at).toLocaleDateString()}</div>`:""}`;
 }
 function detectType(fn){ const n=(fn||"").toLowerCase(); if(/e&?o|errors|omission/.test(n))return "E&O certificate"; if(/cert|complet|ce/.test(n))return "Certificate"; return null; }
@@ -971,13 +1053,20 @@ function drawCeRows() {
       </select>
       <div class="row2" style="margin-top:12px">
         <div><label>Purchase date</label><input class="ce-date" data-i="${i}" type="date" value="${esc(row.purchase_date)}"/></div>
-        <div><label>Certificate</label><div class="upload"><label class="btn btn-ghost btn-sm" for="cef_${i}">Choose file</label><input id="cef_${i}" class="ce-file" data-i="${i}" type="file" style="display:none" accept=".pdf,.png,.jpg,.jpeg,.heic,.webp"/><span class="hint" id="cefn_${i}"></span></div></div>
+        <div><label>Certificate</label>
+          <div class="drop drop-sm" data-drop="cef_${i}" data-name="cefn_${i}">
+            <input id="cef_${i}" class="ce-file" data-i="${i}" type="file" hidden accept=".pdf,.png,.jpg,.jpeg,.heic,.webp"/>
+            <b>Drag it here</b>
+            <span class="drop-or">or <button type="button" class="lnk-file" data-pick="cef_${i}">choose a file</button></span>
+            <span class="drop-name" id="cefn_${i}"></span>
+          </div></div>
       </div>
       ${ceRows.length>1?`<button class="btn btn-quiet btn-sm ce-rm" data-i="${i}" style="margin-top:4px">Remove</button>`:""}
     </div>`).join("");
   root.querySelectorAll(".ce-type").forEach(sel=>sel.addEventListener("change",()=>{
     ceRows[Number(sel.dataset.i)].type = sel.value; }));
   root.querySelectorAll(".ce-file").forEach(inp=>inp.addEventListener("change",()=>{ el("cefn_"+inp.dataset.i).textContent = inp.files[0]?`Selected: ${inp.files[0].name}`:""; }));
+  wireDrops();
   root.querySelectorAll(".ce-rm").forEach(b=>b.onclick=()=>{ ceRows.splice(Number(b.dataset.i),1); if(!ceRows.length) ceRows=[{purchase_date:"",file:null}]; drawCeRows(); });
 }
 async function submitCE(r) {
