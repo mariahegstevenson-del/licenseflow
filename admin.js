@@ -1,6 +1,6 @@
 import { supabase, isConfigured, requireSession, hardSignOut } from "./supabase.js?v=2";
-import { STATES } from "./states.js?v=6";
-import * as F from "./flow.js?v=6";
+import { STATES, ceSlots } from "./states.js?v=7";
+import * as F from "./flow.js?v=7";
 import { loadTenant, renderUnknownAgency, applyTenantChrome, urlForAgency } from "./tenant.js?v=4";
 
 const el = (id) => document.getElementById(id);
@@ -84,13 +84,15 @@ const within = (t, from, to) => t != null && t >= from && t < to;
 })();
 
 async function load() {
-  const [p, inst, ex, vids] = await Promise.all([
+  const [p, inst, ex, vids, docs] = await Promise.all([
     supabase.from("licensing_profiles").select("*"),
     supabase.from("requirement_instances").select("*"),
     supabase.from("exceptions").select("*").order("created_at",{ascending:false}),
     supabase.from("step_videos").select("*"),
+    supabase.from("documents").select("*"),
   ]);
   A.profiles=p.data||[]; A.instances=inst.data||[]; A.exceptions=ex.data||[]; A.videos=vids.data||[];
+  A.docs = docs.data || [];
 
   /* An agency administrator is already limited to their own agency by
      the database, so this narrowing does nothing for them. It is for
@@ -103,6 +105,7 @@ async function load() {
     const mine = new Set(A.profiles.map(x => x.user_id));
     A.instances  = A.instances.filter(x => mine.has(x.user_id));
     A.exceptions = A.exceptions.filter(x => mine.has(x.user_id));
+    A.docs       = A.docs.filter(x => mine.has(x.user_id));
   }
 
   render();
@@ -555,14 +558,64 @@ function renderExceptions(){
     </tbody></table></div>`;
 }
 
+/* ------------------------------------------------------------
+   Opening what you are being asked to verify.
+
+   Files live in a private bucket, so there is no permanent URL to link
+   to -- a short-lived signed one is minted per click. Storage applies
+   the same agency rule as every other table: an agency's coordinator
+   can open their own agents' files and nobody else's.
+
+   The blank tab is opened synchronously, before the await, or the
+   browser treats the eventual navigation as an unrequested popup and
+   blocks it. */
+async function openDoc(path, btn) {
+  if (!path) return;
+  const tab = window.open("", "_blank");
+  const label = btn ? btn.textContent : "";
+  if (btn) { btn.disabled = true; btn.textContent = "Opening…"; }
+  try {
+    const { data, error } = await supabase.storage.from("docs").createSignedUrl(path, 300);
+    if (error || !data?.signedUrl) throw error || new Error("No link returned");
+    tab.location = data.signedUrl;
+  } catch (e) {
+    if (tab) tab.close();
+    alert("Couldn't open that file: " + (e.message || e));
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = label; }
+  }
+}
+
+/* What the agent said this certificate was. Older ones carry no type. */
+function certLabel(c, uid){
+  if (!c.type) return "";
+  const slots = ceSlots(prof(uid)?.designated_state);
+  const hit = slots.find(o => o.key === c.type);
+  return hit ? hit.label : "";
+}
+
 /* ---------------- review detail ---------------- */
 function renderReview(id){
   const i = A.instances.find(x=>x.id===id);
   if (!i){ A.view={name:"overview"}; return render(); }
   const r = F.REQ_BY_KEY[i.requirement_key]; const meta=i.meta||{};
+  /* A file you cannot open is not evidence. Every attachment on this
+     screen is a button that mints a signed link and opens it. */
+  const fileBtn = (path, name) => path
+    ? `<button class="btn-file" type="button" data-open="${esc(path)}">${esc(name || "Open file")}</button>`
+    : `<span class="muted">${esc(name || "No file")}</span>`;
+
+  const docRow = (d) => `<div class="hl"><span>${esc(d.label || d.doc_key)}</span>
+    <span>${fileBtn(d.file_url, d.note || "Open file")}
+      <span class="badge ${F.STATUS_CLASS[d.status]||"s-blue"}">${esc(F.STATUS_LABEL[d.status]||"Uploaded")}</span></span></div>`;
+
   const rows = i.requirement_key==="continuing_education"
-    ? (meta.certs||[]).map((c,n)=>`<div class="hl"><span>Certificate ${n+1} — ${esc(c.purchase_date||"—")}</span><span>${esc(c.filename||"file")} <span class="badge ${F.STATUS_CLASS[c.status]||"s-blue"}">${esc(F.STATUS_LABEL[c.status]||"Uploaded")}</span></span></div>`).join("")
-    : Object.entries(meta).filter(([k])=>!k.startsWith("_")&&k!=="certs").map(([k,v])=>`<div class="hl"><span class="muted">${esc(k.replace(/_/g," "))}</span><strong>${esc(v)}</strong></div>`).join("");
+    ? (meta.certs||[]).map((c,n)=>`<div class="hl"><span>${
+        esc(certLabel(c, i.user_id) || ("Certificate " + (n+1)))} — ${esc(c.purchase_date||"—")}</span><span>${
+        fileBtn(c.path, c.filename)} <span class="badge ${F.STATUS_CLASS[c.status]||"s-blue"}">${esc(F.STATUS_LABEL[c.status]||"Uploaded")}</span></span></div>`).join("")
+    : Object.entries(meta).filter(([k])=>!k.startsWith("_")&&k!=="certs").map(([k,v])=>`<div class="hl"><span class="muted">${esc(k.replace(/_/g," "))}</span><strong>${esc(v)}</strong></div>`).join("")
+      /* Steps that take an upload keep it in documents, not in meta. */
+      + (A.docs||[]).filter(d => d.user_id === i.user_id && d.doc_key === i.requirement_key).map(docRow).join("");
   const e = elapsed(ts(i.updated_at));
   root.innerHTML = `
     <div class="cc-h"><div><h1>${esc(r?.label||i.requirement_key)}</h1>
@@ -583,6 +636,8 @@ function renderReview(id){
         </div>
       </div>
     </div>`;
+  root.querySelectorAll("[data-open]").forEach(b =>
+    b.onclick = () => openDoc(b.dataset.open, b));
   el("back").onclick = el("back2").onclick = () => { A.view={name:"overview"}; render(); };
   el("verify").onclick = () => act(i, "admin_verified");
   el("correct").onclick = async () => { const n=prompt("What needs correcting? The agent will see this."); if(n===null)return; if(!n.trim()){alert("Please enter a note.");return;} await act(i,"action_required",n,"correction_requested"); };

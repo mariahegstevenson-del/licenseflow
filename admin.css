@@ -207,3 +207,10 @@ body.cc-locked .cc-nav,body.cc-locked .cc-rail{display:none}
   color:var(--ink-2);border:1px solid var(--line);font-size:.72rem;font-weight:650;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:34ch}
 .cc-agency[hidden]{display:none}
+
+/* An attachment on a review screen is the evidence, so it has to look
+   like something you can open. */
+.btn-file{background:none;border:0;padding:0;font:inherit;color:var(--brand,#0C3D82);
+  font-weight:600;text-decoration:underline;text-underline-offset:2px;cursor:pointer}
+.btn-file:hover{color:var(--brand-600,#082C5F)}
+.btn-file:disabled{opacity:.6;cursor:progress;text-decoration:none}
