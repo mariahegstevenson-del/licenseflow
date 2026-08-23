@@ -214,3 +214,17 @@ body.cc-locked .cc-nav,body.cc-locked .cc-rail{display:none}
   font-weight:600;text-decoration:underline;text-underline-offset:2px;cursor:pointer}
 .btn-file:hover{color:var(--brand-600,#082C5F)}
 .btn-file:disabled{opacity:.6;cursor:progress;text-decoration:none}
+
+/* Notifications: the record that something arrived, as opposed to the
+   queue, which only speaks when somebody is already looking at it. */
+.note-row{display:flex;align-items:flex-start;gap:12px;padding:13px 4px;
+  border-bottom:1px solid var(--line-2,#EDF1F6);cursor:pointer}
+.note-row:last-child{border-bottom:0}
+.note-row:hover{background:var(--soft,#F4F7FA)}
+.note-dot{flex:0 0 8px;width:8px;height:8px;border-radius:50%;margin-top:7px;background:transparent}
+.note-row.unread .note-dot{background:var(--brand,#0C3D82)}
+.note-row b{display:block;font-weight:560;color:var(--ink,#061223)}
+.note-row.unread b{font-weight:700}
+.note-row span{display:block;font-size:.9rem;color:var(--muted,#51637A)}
+.note-when{margin-left:auto;flex:0 0 auto;font-size:.82rem;color:var(--faint,#8293A8);
+  white-space:nowrap;padding-top:2px}

@@ -914,3 +914,33 @@ html.scene-on .desig{background:rgba(255,255,255,.78);backdrop-filter:blur(3px)}
 .drop-sm{padding:18px 14px}
 .drop-sm > b{font-size:.92rem}
 .drop-sm .drop-note{display:none}
+
+/* ============================================================
+   UPDATE v21: THE END OF THE WALKTHROUGH
+   Marks the moment somebody has finished, while being honest that the
+   file is still being checked.
+   ============================================================ */
+.done-wrap .step-body{text-align:center;padding:44px 44px 38px}
+.done-mark{width:60px;height:60px;border-radius:50%;margin:0 auto 18px;display:grid;
+  place-items:center;font-size:1.7rem;font-weight:700;
+  background:var(--ok-050);color:var(--ok);border:1px solid #BFE6CF}
+html.themed .done-mark{background:var(--agency-gold-050,var(--ok-050));
+  color:var(--agency-gold-ink,var(--ok));border-color:transparent}
+.done-h{font-size:2rem;letter-spacing:-.024em;margin:.3rem 0 .5rem}
+.done-lede{color:var(--muted);font-size:1.04rem;max-width:56ch;margin:0 auto 30px}
+.done-lede strong{color:var(--agency-gold-ink,var(--brand));font-weight:650}
+
+.done-next{text-align:left;border-top:1px solid var(--line-2);max-width:640px;
+  margin:0 auto;padding-top:6px}
+.dn-row{display:flex;gap:18px;padding:16px 0;border-bottom:1px solid var(--line-2)}
+.dn-row:last-child{border-bottom:0}
+.dn-n{flex:0 0 56px;font-size:.7rem;letter-spacing:.14em;text-transform:uppercase;
+  font-weight:700;color:var(--agency-gold-ink,var(--brand));padding-top:3px}
+.dn-row b{display:block;font-weight:560;color:var(--ink)}
+.dn-row span{display:block;font-size:.93rem;color:var(--muted);margin-top:2px}
+
+.done-acts{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:28px}
+@media(max-width:560px){
+  .done-wrap .step-body{padding:28px 20px}
+  .dn-row{flex-direction:column;gap:4px}
+}

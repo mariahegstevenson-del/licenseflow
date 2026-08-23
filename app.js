@@ -368,6 +368,7 @@ function route() {
   const h = (location.hash || "#/dashboard").replace("#/", "");
   const [base, arg] = h.split("/");
   if (base === "welcome") { renderWelcome(); return shell(); }
+  if (base === "complete") { renderComplete(); return shell(); }
   if (base === "step") { renderStep(arg); return shell(); }
   renderDashboard(); return shell();
 }
@@ -745,6 +746,63 @@ function confBadge(c){ if(!c) return ""; const m={high:["conf-high","High confid
    DASHBOARD — unified journey, single progress
    ============================================================ */
 function statusText(r, st){ return (F.isDone(st) && r.doneLabel) ? r.doneLabel : F.STATUS_LABEL[st]; }
+/* ------------------------------------------------------------
+   The end of the walkthrough.
+
+   Reached the moment the last requirement is submitted. Two things have
+   to be true at once and the page has to hold both: they have genuinely
+   finished, and the file is not yet cleared. Congratulating them while
+   pretending the review has already happened would be a lie they find
+   out about later; burying the congratulation in a status message wastes
+   the one moment worth marking.
+------------------------------------------------------------ */
+function renderComplete() {
+  const p = S.profile;
+  const pending = (S.journey?.reqs || []).filter(r => F.reqStatus(r.key, S.sm) === F.ST.PENDING);
+  root.innerHTML = `
+  <div class="wt done-wrap">
+    <div class="step-card"><div class="step-body">
+      <div class="done-mark" aria-hidden="true">&#10003;</div>
+      <div class="eyebrow2 center">Licensing complete</div>
+      <h2 class="done-h">Well done, ${esc(firstName())}.</h2>
+      <p class="done-lede">You've finished every step of your
+        <strong>${esc(stateName(p.designated_state))} ${esc(p.license_type)}</strong> licensing.
+        There is nothing further you need to do.</p>
+
+      <div class="done-next">
+        <div class="dn-row">
+          <span class="dn-n">Now</span>
+          <div><b>Your file is with the licensing team</b>
+            <span>${pending.length
+              ? esc(pending.map(r => r.short).join(", ")) + " " + (pending.length > 1 ? "are" : "is") + " being checked."
+              : "The last of your documents is being checked."}
+              You'll see it change here once it's cleared.</span></div>
+        </div>
+        <div class="dn-row">
+          <span class="dn-n">Next</span>
+          <div><b>Contracting begins</b>
+            <span>Once your file is cleared, the licensing and contracting team can start your
+              carrier contracting straight away &mdash; everything they need is already in one
+              place, which is the point of having done it in this order.</span></div>
+        </div>
+        <div class="dn-row">
+          <span class="dn-n">Keep</span>
+          <div><b>Your record stays here</b>
+            <span>Your licence number, NPN, certificates and E&amp;O live in the menu, top left.
+              Come back for them whenever contracting or a carrier asks.</span></div>
+        </div>
+      </div>
+
+      <div class="done-acts">
+        <a class="btn btn-ghost" href="#/dashboard">Back to my journey</a>
+        <button class="btn btn-primary" id="openRec">Open my record</button>
+      </div>
+    </div></div>
+  </div>`;
+  const b = el("openRec");
+  if (b) b.onclick = () => { const o = el("lfOpen"); if (o) o.click(); };
+}
+
 function renderDashboard() {
   if (!S.journey) { root.innerHTML = box("Preparing your journey…"); return; }
   const pr = F.progress(S.journey, S.sm);
@@ -781,7 +839,8 @@ function renderDashboard() {
     </div>
   </div>`;
   root.querySelectorAll(".jrow2[data-key]").forEach(b => b.onclick = () => goto("#/step/"+b.dataset.key));
-  const dn = el("doNext"); if (dn) dn.onclick = () => goto("#/step/"+dn.dataset.key);
+  const dn = el("doNext");
+  if (dn) dn.onclick = () => goto(dn.dataset.key === "__complete" ? "#/complete" : "#/step/"+dn.dataset.key);
 }
 /* What the agent should have to hand before starting a step. Derived from the
    requirement's own required fields and document, so it can never drift from
@@ -795,6 +854,12 @@ function needsFor(r){
 }
 
 function nextCard(ns){
+  if (ns.type === "waiting" && F.allSubmitted(S.journey, S.sm)) return `<div class="next done">
+    <div class="nx-top"><div class="k">Everything submitted</div></div>
+    <h2>Your file is complete</h2>
+    <p>Every step is done and the last of it is with the team. Nothing else is needed from you.</p>
+    <span class="cta-wrap"><button class="btn btn-primary" id="doNext" data-key="__complete">
+      See what happens next <span aria-hidden="true">&#8594;</span></button></span></div>`;
   if (ns.type === "waiting") return `<div class="next waiting"><div class="nx-top"><div class="k">Current status</div></div><h2>You're all set for now</h2><p>There are no actions required from you right now — your ${esc(ns.req.short)} is with the team for review. We'll surface your next step here as soon as it changes.</p></div>`;
   if (ns.type === "done") return `<div class="next done"><div class="nx-top"><div class="k">Complete</div></div><h2>Your licensing journey is complete</h2><p>You've completed every step in your configured licensing journey.</p></div>`;
 
@@ -931,6 +996,9 @@ async function submitGeneric(r) {
     await supabase.from("requirement_instances").upsert({ user_id:S.user.id, requirement_key:r.key, label:r.label, status, meta:clean, completed_at:F.isDone(status)?new Date().toISOString():null, updated_at:new Date().toISOString() }, { onConflict:"user_id,requirement_key" });
     await audit(`requirement:${r.key}`, before, status, { method:r.verify==="admin"?"submitted_for_review":"self_validated" });
     await load();
+    /* If that was the last thing they had to do, say so properly rather
+       than dropping them back on a dashboard of ticks. */
+    if (F.allSubmitted(S.journey, S.sm)) { goto("#/complete"); return; }
     const ns = F.nextStep(S.journey, S.sm);
     if (status===F.ST.PENDING) { goto("#/dashboard"); return; }
     if (ns.type==="do" && ns.req.key!==r.key) goto("#/step/"+ns.req.key); else goto("#/dashboard");

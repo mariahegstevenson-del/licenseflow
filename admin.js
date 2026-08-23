@@ -84,15 +84,17 @@ const within = (t, from, to) => t != null && t >= from && t < to;
 })();
 
 async function load() {
-  const [p, inst, ex, vids, docs] = await Promise.all([
+  const [p, inst, ex, vids, docs, notes] = await Promise.all([
     supabase.from("licensing_profiles").select("*"),
     supabase.from("requirement_instances").select("*"),
     supabase.from("exceptions").select("*").order("created_at",{ascending:false}),
     supabase.from("step_videos").select("*"),
     supabase.from("documents").select("*"),
+    supabase.from("notifications").select("*").order("created_at",{ascending:false}).limit(200),
   ]);
   A.profiles=p.data||[]; A.instances=inst.data||[]; A.exceptions=ex.data||[]; A.videos=vids.data||[];
   A.docs = docs.data || [];
+  A.notes = notes.data || [];
 
   /* An agency administrator is already limited to their own agency by
      the database, so this narrowing does nothing for them. It is for
@@ -106,6 +108,7 @@ async function load() {
     A.instances  = A.instances.filter(x => mine.has(x.user_id));
     A.exceptions = A.exceptions.filter(x => mine.has(x.user_id));
     A.docs       = A.docs.filter(x => mine.has(x.user_id));
+    A.notes      = A.notes.filter(x => mine.has(x.subject_user));
   }
 
   render();
@@ -257,6 +260,7 @@ function counts(){
     agents:    A.profiles.length,
     stuck:     at.stuck,
     videos:    A.videos.filter(v=>v.active).length,
+    unread:    (A.notes||[]).filter(n=>!n.read_at).length,
     overdue:   at.overdue,
     pre:        pipe.pre,
     passedExam: pipe.passedExam,
@@ -269,6 +273,7 @@ function counts(){
 /* ---------------- left nav ---------------- */
 const NAV = [
   {grp:"Queue"},
+  {v:"notices",  label:"Notifications",   c:"unread",   tone:"hot"},
   {v:"overview", label:"Waiting on you",  c:"pending",  tone:"hot"},
   {v:"sentback", label:"Sent back",       c:"sentBack", tone:"crit"},
   {v:"exceptions", label:"Exceptions",    c:"exceptions"},
@@ -410,6 +415,8 @@ function renderRail(){
 /* ---------------- router ---------------- */
 function render(){
   renderNav(); renderRail();
+  /* Re-bound on every render, because the panel is rebuilt each time. */
+  setTimeout(wireNotices, 0);
   const v = A.view;
   if (v.name==="review") return renderReview(v.arg);
   if (v.name==="agent")  return renderAgent(v.arg);
@@ -425,6 +432,7 @@ function render(){
                                    renderAgents(A.profiles.filter(p=>STAGE_BUCKET[currentStage(p.user_id)]==="issued")));
   if (v.name==="compliant")  return shell("Fully compliant","Every requirement is complete, including NPN, continuing education, and E&O.",
                                    renderAgents(A.profiles.filter(p=>STAGE_BUCKET[currentStage(p.user_id)]==="compliant")));
+  if (v.name==="notices")    return shell("Notifications","Every submission that arrived, newest first.", renderNotices());
   if (v.name==="stuck")      return shell(`Stuck ${STUCK_DAYS}+ days`,"No movement for two weeks or more.", renderStuck());
   if (v.name==="sentback")   return shell("Sent back","Waiting on the agent to fix something.", renderQueue(["action_required","rejected"]));
   if (v.name==="exceptions") return shell("Exceptions","Pathway couldn't be determined automatically.", renderExceptions());
@@ -592,6 +600,49 @@ function certLabel(c, uid){
   const slots = ceSlots(prof(uid)?.designated_state);
   const hit = slots.find(o => o.key === c.type);
   return hit ? hit.label : "";
+}
+
+function wireNotices(){
+  const all = el("markAll");
+  if (all) all.onclick = () => markRead((A.notes||[]).filter(n=>!n.read_at).map(n=>n.id));
+  root.querySelectorAll("[data-note]").forEach(rowEl => {
+    rowEl.onclick = async () => {
+      const id = rowEl.dataset.note;
+      const n = (A.notes||[]).find(x=>x.id===id);
+      /* Opening the person it is about is nearly always what you want,
+         so reading it and going there are the same click. */
+      if (n && !n.read_at) await markRead([id]);
+      A.view = { name:"agent", arg: rowEl.dataset.user };
+      render();
+    };
+  });
+}
+
+/* ---------------- notifications ---------------- */
+function renderNotices(){
+  const list = A.notes || [];
+  if (!list.length) return `<div class="cc-panel"><div class="pad">
+    <p class="muted" style="margin:0">Nothing yet. When an agent submits something for review it
+    will appear here, and the count above will tell you before you go looking.</p></div></div>`;
+  const unread = list.filter(n=>!n.read_at).length;
+  return `<div class="cc-panel">
+    <div class="cc-panel-h"><h2>${unread ? unread + " unread" : "All read"}</h2>
+      ${unread ? `<button class="btn btn-ghost btn-sm" id="markAll">Mark all read</button>` : ""}</div>
+    <div class="pad" style="display:flex;flex-direction:column;gap:1px">
+      ${list.map(n=>`<div class="note-row${n.read_at?"":" unread"}" data-note="${esc(n.id)}"
+          data-user="${esc(n.subject_user)}">
+        <span class="note-dot" aria-hidden="true"></span>
+        <div><b>${esc(n.title)}</b><span>${esc(n.body||"")}</span></div>
+        <span class="note-when">${esc(fmtDT(n.created_at))}</span>
+      </div>`).join("")}
+    </div></div>`;
+}
+
+async function markRead(ids){
+  if (!ids.length) return;
+  await supabase.from("notifications")
+    .update({ read_at: new Date().toISOString() }).in("id", ids);
+  await load();
 }
 
 /* ---------------- review detail ---------------- */

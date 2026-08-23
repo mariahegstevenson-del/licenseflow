@@ -134,6 +134,19 @@ export function gate(req, sm){
 }
 
 /* ---------------- next step ---------------- */
+/* Has the agent done everything that is theirs to do? True when every
+   requirement is either finished or sitting with the team for review --
+   the moment their part is over, even though the file is not yet
+   cleared. Worth marking: it is the only point where somebody has
+   genuinely finished, and the product should say so. */
+export function allSubmitted(journey, sm){
+  if (!journey) return false;
+  return journey.reqs.every(r => {
+    const s = reqStatus(r.key, sm);
+    return isDone(s) || s === ST.PENDING;
+  });
+}
+
 export function nextStep(journey, sm){
   for (const r of journey.reqs){
     const s = reqStatus(r.key, sm);
