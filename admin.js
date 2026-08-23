@@ -1,5 +1,5 @@
 import { supabase, isConfigured, requireSession, hardSignOut } from "./supabase.js?v=2";
-import { STATES, ceSlots } from "./states.js?v=7";
+import { STATES, ceSlots } from "./states.js?v=8";
 import * as F from "./flow.js?v=7";
 import { loadTenant, renderUnknownAgency, applyTenantChrome, urlForAgency } from "./tenant.js?v=4";
 
@@ -761,11 +761,235 @@ async function renderAgent(uid){
           : '<p class="muted" style="margin:0">No activity yet.</p>'}
         </div>
       </div>
-    </div>`;
+    </div>
+    ${renderCabinet(uid)}`;
   el("back").onclick = () => { A.view={name:"agents"}; render(); };
   root.querySelectorAll("[data-step]").forEach(b=>b.onclick=()=>{
     const i=A.instances.find(x=>x.user_id===uid&&x.requirement_key===b.dataset.step);
     if(i){A.view={name:"review",arg:i.id};render();} else alert("Not submitted yet."); });
+  wireCabinet(uid);
+}
+
+/* ============================================================
+   FILE CABINET
+
+   The queue answers "what needs me right now". This answers a different
+   question, and the one contracting actually asks: is this person's file
+   complete, and if not, what is missing?
+
+   Two decisions worth keeping:
+
+   - A gap is a row. Listing only the documents that exist makes an
+     incomplete file look finished; the thing a coordinator is hunting
+     for is the absence. Missing required documents are rendered as
+     rows in their own right, in the place they would have been.
+   - Progress and contracting readiness are different numbers. An agent
+     can be six of seven steps through and still be unable to contract
+     because the AML certificate never arrived. Both are shown, and they
+     are allowed to disagree.
+   ============================================================ */
+const DOC_MAX = 10 * 1024 * 1024;
+
+/* What the file should contain for this agent, and what of it is there.
+   Certificates live in two different places for historical reasons --
+   continuing education keeps them inside the requirement's own meta,
+   everything else uses the documents table -- so this reads both and
+   presents one list. */
+function cabinet(uid){
+  const p = prof(uid);
+  const j = agentJourney(uid);
+  const sm = F.statusMap(instFor(uid));
+  const docs = (A.docs || []).filter(d => d.user_id === uid);
+  const out = [];
+
+  (j ? j.reqs : []).forEach(r => {
+    const inst = A.instances.find(x => x.user_id === uid && x.requirement_key === r.key);
+    const status = F.reqStatus(r.key, sm);
+    const files = [], gaps = [];
+
+    if (r.key === "continuing_education") {
+      const certs = (inst?.meta?.certs) || [];
+      const slots = ceSlots(p?.designated_state);
+      const claimed = new Set();
+      certs.forEach((c, n) => {
+        const slot = slots.find(o => o.key === c.type);
+        files.push({
+          name: slot ? slot.label : (c.filename || `Certificate ${n + 1}`),
+          sub: `${c.filename || "file"}${c.purchase_date ? " · " + c.purchase_date : ""}`,
+          path: c.path, status: c.status || "document_uploaded",
+        });
+        const idx = slots.findIndex(o => o.key === c.type);
+        if (idx > -1) claimed.add(idx);
+      });
+      slots.forEach((slot, idx) => {
+        if (!slot.required || claimed.has(idx)) return;
+        gaps.push({ key: r.key, slot: slot.key, label: slot.label,
+          why: "Required before a carrier will appoint them", inst });
+      });
+    } else {
+      docs.filter(d => d.doc_key === r.key).forEach(d => files.push({
+        name: d.label || d.note || "Document", sub: d.note && d.label ? d.note : "",
+        path: d.file_url, status: d.status || "document_uploaded", id: d.id,
+      }));
+      if (r.doc?.required && !files.length) {
+        gaps.push({ key: r.key, slot: null, label: r.doc.label,
+          why: "Required to finish this step", inst });
+      }
+    }
+
+    if (files.length || gaps.length) out.push({ req: r, status, files, gaps, inst });
+  });
+  return out;
+}
+
+function renderCabinet(uid){
+  const secs = cabinet(uid);
+  const gapCount = secs.reduce((n, s) => n + s.gaps.length, 0);
+  const fileCount = secs.reduce((n, s) => n + s.files.length, 0);
+  const sm = F.statusMap(instFor(uid));
+  const j = agentJourney(uid);
+  const stepsLeft = j ? j.reqs.filter(r => !F.isDone(F.reqStatus(r.key, sm))).length : 0;
+  const ready = !gapCount && !stepsLeft;
+
+  const fileRow = (f) => `<div class="fc-row">
+    <span class="fc-ic">${esc((f.name.match(/\.(\w{2,4})$/)?.[1] || "DOC").toUpperCase().slice(0,4))}</span>
+    <span class="fc-t"><b>${esc(f.name)}</b>${f.sub ? `<span>${esc(f.sub)}</span>` : ""}</span>
+    <span class="badge ${F.STATUS_CLASS[f.status] || "s-blue"}">${esc(F.STATUS_LABEL[f.status] || "Uploaded")}</span>
+    <span class="fc-go">${f.path
+      ? `<button class="fc-mini" type="button" data-open="${esc(f.path)}">Open</button>`
+      : `<span class="muted" style="font-size:.8rem">No file</span>`}</span>
+  </div>`;
+
+  const gapRow = (g) => `<div class="fc-row is-gap">
+    <span class="fc-ic">&mdash;</span>
+    <span class="fc-t"><b>${esc(g.label)}</b><span>${esc(g.why)} &middot; nothing on file</span></span>
+    <span class="badge s-red">Missing</span>
+    <span class="fc-go">
+      <label class="fc-mini" for="fcu_${esc(g.key)}_${esc(g.slot || "doc")}">Upload</label>
+      <input id="fcu_${esc(g.key)}_${esc(g.slot || "doc")}" type="file" hidden
+             class="fc-file" data-key="${esc(g.key)}" data-slot="${esc(g.slot || "")}"
+             accept=".pdf,.png,.jpg,.jpeg,.heic,.webp"/>
+      ${g.inst
+        ? `<button class="fc-mini" type="button" data-request="${esc(g.inst.id)}" data-label="${esc(g.label)}">Request</button>`
+        : `<button class="fc-mini" type="button" disabled title="They have not opened this step yet, so there is nothing to send back.">Request</button>`}
+    </span>
+  </div>`;
+
+  return `<div class="cc-panel fc">
+    <div class="cc-panel-h"><h2>Licensing file</h2>
+      <span class="sub">${fileCount} on file${gapCount ? ` &middot; ${gapCount} required outstanding` : ""}</span>
+      <span class="fc-acts">
+        <button class="btn btn-ghost btn-sm" id="fcAll" type="button"${fileCount ? "" : " disabled"}>Download all</button>
+      </span>
+    </div>
+
+    <div class="fc-ready ${ready ? "ok" : "not"}">
+      <span class="fc-dot">${ready ? "&#10003;" : "!"}</span>
+      <div>
+        <b>${ready ? "Ready to contract" : "Not ready to contract"}</b>
+        ${ready
+          ? `<span>Every step is cleared and every required document is on file.</span>`
+          : `<span>${[
+              gapCount ? `${gapCount} required document${gapCount > 1 ? "s" : ""} outstanding` : "",
+              stepsLeft ? `${stepsLeft} step${stepsLeft > 1 ? "s" : ""} not finished` : "",
+            ].filter(Boolean).join(" · ")}.</span>`}
+      </div>
+    </div>
+
+    ${secs.length ? secs.map(s => `
+      <div class="fc-sec">${esc(s.req.label)}</div>
+      ${s.files.map(fileRow).join("")}
+      ${s.gaps.map(gapRow).join("")}
+    `).join("") : `<div class="pad"><p class="muted" style="margin:0">Nothing filed yet.</p></div>`}
+
+    <div id="fcMsg" class="alert"></div>
+  </div>`;
+}
+
+function wireCabinet(uid){
+  root.querySelectorAll(".fc [data-open]").forEach(b => b.onclick = () => openDoc(b.dataset.open, b));
+
+  /* Filing on somebody's behalf. The agent emailed the certificate, or
+     brought it to a meeting -- making them log in and upload it again is
+     the kind of friction that stalls a file for a fortnight. */
+  root.querySelectorAll(".fc-file").forEach(inp => inp.onchange = async () => {
+    const f = inp.files[0]; if (!f) return;
+    const msg = el("fcMsg");
+    const say = (t, cls) => { msg.className = `alert show ${cls}`; msg.textContent = t; };
+    if (f.size > DOC_MAX) { inp.value = ""; return say(`${f.name} is larger than 10 MB. Ask for a smaller scan.`, "alert-error"); }
+    say(`Filing ${f.name}…`, "");
+    try {
+      const key = inp.dataset.key, slot = inp.dataset.slot;
+      const path = `${uid}/${key}/${Date.now()}_${f.name}`.replace(/\s+/g, "_");
+      const up = await supabase.storage.from("docs").upload(path, f, { upsert: true });
+      if (up.error) throw up.error;
+
+      const inst = A.instances.find(x => x.user_id === uid && x.requirement_key === key);
+      if (key === "continuing_education" && inst) {
+        const meta = { ...(inst.meta || {}) };
+        const certs = Array.isArray(meta.certs) ? meta.certs.slice() : [];
+        certs.push({ type: slot || null, filename: f.name, path,
+          status: F.ST.UPLOADED, purchase_date: null, _by: "admin" });
+        meta.certs = certs;
+        await supabase.from("requirement_instances")
+          .update({ meta, status: F.isDone(inst.status) ? inst.status : F.ST.PENDING,
+                    updated_at: new Date().toISOString() }).eq("id", inst.id);
+      } else {
+        await supabase.from("documents").insert({
+          user_id: uid, doc_key: key, label: f.name,
+          status: F.ST.UPLOADED, file_url: path, note: "Filed by coordinator",
+        });
+        if (inst && !F.isDone(inst.status)) {
+          await supabase.from("requirement_instances")
+            .update({ status: F.ST.PENDING, updated_at: new Date().toISOString() }).eq("id", inst.id);
+        }
+      }
+
+      /* Filed by a person, not by the agent -- the trail should say so. */
+      await supabase.from("audit_events").insert({
+        user_id: uid, event: `cabinet:${key}`, status_after: F.ST.UPLOADED, source: "admin",
+        meta: { admin: A.me?.email, action: "uploaded_for_agent", filename: f.name, slot: slot || null },
+      });
+      say(`Filed ${f.name}. It still needs verifying.`, "alert-ok");
+      await load();
+    } catch (e) {
+      say("Couldn't file that: " + (e.message || e), "alert-error");
+    }
+  });
+
+  /* "Request" reuses the correction path the agent already understands:
+     the step reopens on their journey with a note saying what is wanted. */
+  root.querySelectorAll("[data-request]").forEach(b => b.onclick = async () => {
+    const i = A.instances.find(x => x.id === b.dataset.request);
+    if (!i) return;
+    const what = b.dataset.label;
+    const note = prompt(`What should they send? The agent sees this.`, `Please upload your ${what}.`);
+    if (note === null) return;
+    if (!note.trim()) { alert("Please say what you need."); return; }
+    await act(i, F.ST.ACTION, note.trim(), "document_requested");
+  });
+
+  const all = el("fcAll");
+  if (all) all.onclick = async () => {
+    const paths = cabinet(uid).flatMap(s => s.files.map(f => f.path)).filter(Boolean);
+    if (!paths.length) return;
+    all.disabled = true; const label = all.textContent; all.textContent = "Preparing…";
+    try {
+      const { data, error } = await supabase.storage.from("docs").createSignedUrls(paths, 300);
+      if (error) throw error;
+      /* One at a time, with a gap: browsers throttle a burst of downloads
+         fired from a single click and silently drop the tail. */
+      (data || []).filter(d => d.signedUrl).forEach((d, n) => setTimeout(() => {
+        const a = document.createElement("a");
+        a.href = d.signedUrl; a.download = "";
+        document.body.appendChild(a); a.click(); a.remove();
+      }, n * 400));
+    } catch (e) {
+      alert("Couldn't prepare the downloads: " + (e.message || e));
+    } finally {
+      all.disabled = false; all.textContent = label;
+    }
+  };
 }
 
 /* ---------------- videos ---------------- */

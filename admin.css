@@ -228,3 +228,54 @@ body.cc-locked .cc-nav,body.cc-locked .cc-rail{display:none}
 .note-row span{display:block;font-size:.9rem;color:var(--muted,#51637A)}
 .note-when{margin-left:auto;flex:0 0 auto;font-size:.82rem;color:var(--faint,#8293A8);
   white-space:nowrap;padding-top:2px}
+
+/* ============================================================
+   FILE CABINET
+   A gap is a row, not an absence. Missing required documents are
+   rendered where they would have sat, styled so the eye lands on
+   them first -- that is what a coordinator opens this to find.
+   ============================================================ */
+.fc{margin-top:16px}
+.fc .cc-panel-h{gap:10px}
+.fc-acts{margin-left:auto;display:flex;gap:8px}
+
+.fc-ready{display:flex;gap:11px;align-items:flex-start;padding:13px 18px;
+  border-bottom:1px solid var(--line,#DCE3EC);font-size:.9rem}
+.fc-ready.ok{background:#F1F9F4;border-bottom-color:#CBE7D6}
+.fc-ready.not{background:#FDF6EA;border-bottom-color:#EFD9AE}
+.fc-ready b{display:block;font-weight:700;letter-spacing:-.01em}
+.fc-ready span.fc-dot{flex:0 0 19px;width:19px;height:19px;border-radius:50%;
+  display:grid;place-items:center;font-size:.68rem;font-weight:800;margin-top:2px}
+.fc-ready.ok .fc-dot{background:#D6EDDE;color:#0F6F40}
+.fc-ready.not .fc-dot{background:#F2DFB6;color:#8A5A00}
+.fc-ready.ok b{color:#0F6F40}
+.fc-ready.not b{color:#8A5A00}
+.fc-ready div span{display:block;color:var(--muted,#51637A);font-size:.86rem;margin-top:1px}
+
+.fc-sec{font-size:.64rem;letter-spacing:.15em;text-transform:uppercase;font-weight:700;
+  color:var(--faint,#5E7089);padding:12px 18px 6px;background:#F8FAFC;
+  border-bottom:1px solid #EDF1F6}
+
+.fc-row{display:flex;align-items:center;gap:12px;padding:10px 18px;
+  border-bottom:1px solid #EDF1F6}
+.fc-row:hover{background:#F8FAFC}
+.fc-ic{flex:0 0 34px;width:34px;height:34px;border-radius:8px;display:grid;place-items:center;
+  font-size:.58rem;font-weight:800;letter-spacing:.02em;
+  background:#EAF0F8;color:#0C3D82;box-shadow:inset 0 0 0 1px rgba(12,61,130,.14)}
+.fc-t{flex:1;min-width:0}
+.fc-t b{display:block;font-size:.9rem;font-weight:600;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fc-t span{display:block;font-size:.78rem;color:var(--faint,#5E7089)}
+.fc-go{flex:0 0 auto;display:flex;gap:6px;align-items:center}
+.fc-mini{border:1px solid var(--line,#DCE3EC);background:#fff;border-radius:7px;
+  font-size:.75rem;font-weight:600;color:var(--muted,#51637A);padding:5px 10px;
+  cursor:pointer;white-space:nowrap;display:inline-block;line-height:1.3}
+.fc-mini:hover{border-color:#0C3D82;color:#0C3D82;background:#EAF0F8}
+.fc-mini:disabled{opacity:.5;cursor:not-allowed}
+
+.fc-row.is-gap{background:#FEF8F7}
+.fc-row.is-gap:hover{background:#FDF1EF}
+.fc-row.is-gap .fc-ic{background:#FDEEEC;color:#A32019;
+  box-shadow:inset 0 0 0 1px #F5CFCB;border:1px dashed rgba(163,32,25,.4)}
+.fc-row.is-gap .fc-t b{color:#A32019}
+.fc #fcMsg{margin:12px 18px 16px}

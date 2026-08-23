@@ -1,5 +1,5 @@
 import { supabase, isConfigured, requireSession, hardSignOut } from "./supabase.js?v=2";
-import { STATE_LIST, STATES, ceSlots } from "./states.js?v=7";
+import { STATE_LIST, STATES, ceSlots, ceIsConfigured } from "./states.js?v=8";
 import * as F from "./flow.js?v=7";
 import { loadTenant, renderUnknownAgency, applyTenantChrome, urlForAgency } from "./tenant.js?v=4";
 
@@ -1164,6 +1164,8 @@ function renderCE(r, st, head) {
           file is missing these, whatever else is complete.</div>`;
       })()}
 
+      ${ceGuide()}
+
       ${certs.length ? `<div class="section-k" style="margin-top:22px">Your certificates</div>
         <div class="ce-list">${certs.map((c,i)=>`
           <div class="ce-item">
@@ -1324,6 +1326,41 @@ const STUDY_TIPS = [
    now, not from a list hardcoded here -- see states.js. */
 function ceSlotList(){ return ceSlots(S.profile?.designated_state); }
 
+/* A plain reading of what this agent's state asks of them, in the order
+   it matters: what blocks contracting, then what applies only if they
+   sell that product line. Two things are deliberate here. Advisory items
+   are shown rather than hidden, because "nobody told me" is how an agent
+   ends up unable to write an annuity in month three. And where we do not
+   hold checked data for a state we say so, instead of showing a default
+   that reads like an answer. */
+function ceGuide(){
+  const code = S.profile?.designated_state;
+  const slots = ceSlotList().filter(s => s.key !== "other" && s.note);
+  if (!slots.length) return "";
+  const known = ceIsConfigured(code);
+  const stateName = (STATES[code]?.name) || "your state";
+  const tag = (s) => s.required ? { c:"req",  t:"Required to finish" }
+              : s.key === "ethics" ? { c:"pkg", t:"In your CE package" }
+              : { c:"adv", t:"Only if you sell it" };
+  const row = (s) => {
+    const g = tag(s);
+    return `
+    <li class="ceg-row${s.required ? " is-req" : ""}">
+      <div class="ceg-h">
+        <b>${esc(s.label)}</b>
+        <span class="ceg-tag ${g.c}">${esc(g.t)}</span>
+      </div>
+      <p>${esc(s.note)}</p>
+    </li>`;
+  };
+  return `
+    <div class="section-k" style="margin-top:24px">What ${esc(stateName)} asks of you</div>
+    <ul class="ce-guide">${slots.map(row).join("")}</ul>
+    <p class="hint ceg-foot">${known
+      ? `Checked against ${esc(stateName)}&rsquo;s department of insurance in August 2026. Rules change &mdash; if your CE provider tells you something different, believe them and tell your coordinator.`
+      : `We don&rsquo;t yet hold checked requirements for ${esc(stateName)}, so this is general guidance rather than your state&rsquo;s rules. Upload your AML certificate to finish this step, and confirm anything else with your carrier.`}</p>`;
+}
+
 /* Legacy certificates were filed by guessing at the file name, which put
    "AML_and_Ethics_2026.pdf" in one slot and shrugged at "cert3.pdf".
    New ones carry the type the agent chose. These patterns are kept only
@@ -1331,7 +1368,8 @@ function ceSlotList(){ return ceSlots(S.profile?.designated_state); }
 const CE_GUESS = {
   aml:           /aml|money.?launder/i,
   ethics:        /ethic/i,
-  best_interest: /best.?interest|\bbi\b/i,
+  best_interest: /best.?interest|annuity|\bbi\b/i,
+  ltc:           /long.?term|\bltc\b/i,
 };
 
 /* Which of the agent's certificates sits in a given slot: what they said

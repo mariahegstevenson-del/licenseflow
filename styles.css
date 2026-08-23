@@ -994,3 +994,38 @@ html.scene-on .desig{background:rgba(255,255,255,.78);backdrop-filter:blur(3px)}
   .done-wrap.go *{animation:none!important}
   .done-wrap.go .dm-tick{stroke-dashoffset:0}
 }
+
+/* ============================================================
+   UPDATE v23 — continuing education: what the state actually asks
+
+   Ethics turned out to be a renewal requirement in every state we
+   checked, and annuity best-interest training the real gate. Showing
+   both, with the reason, beats a bare list of slots the agent has to
+   interpret. Required items read as required; advisory ones read as
+   advisory, and are not styled to look like failures.
+   ============================================================ */
+.ce-guide{list-style:none;margin:10px 0 0;padding:0;display:flex;flex-direction:column;gap:10px}
+.ceg-row{
+  background:#fff;border:1px solid var(--line,#DCE3EC);border-radius:10px;
+  padding:13px 16px;display:flex;flex-direction:column;gap:5px
+}
+.ceg-row.is-req{border-color:#E3D3AE;background:linear-gradient(180deg,#FEFBF4 0%,#fff 60%)}
+.ceg-h{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.ceg-h b{font-size:.97rem;font-weight:700;letter-spacing:-.01em}
+.ceg-tag{
+  font-size:.66rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;
+  padding:3px 8px;border-radius:99px;white-space:nowrap
+}
+.ceg-tag.req{background:#FAF0D9;color:#7A5A0C}
+.ceg-tag.adv{background:#EDF1F6;color:#51637A}
+.ceg-tag.pkg{background:#E8F1FB;color:#1E5FB4}
+.ceg-row p{margin:0;font-size:.9rem;line-height:1.55;color:var(--muted,#51637A)}
+.ceg-foot{margin-top:10px}
+html.themed .ceg-row.is-req{
+  border-color:color-mix(in srgb,var(--agency-gold,#D4A12B) 42%,#fff);
+  background:linear-gradient(180deg,color-mix(in srgb,var(--agency-gold,#D4A12B) 7%,#fff) 0%,#fff 60%)
+}
+html.themed .ceg-tag.req{
+  background:color-mix(in srgb,var(--agency-gold,#D4A12B) 20%,#fff);
+  color:var(--agency-gold-ink,#7A5A0C)
+}

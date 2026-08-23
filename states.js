@@ -202,28 +202,139 @@ export function buildWalkthrough(code) {
    the one entry marked required by default: a file with no AML
    certificate is not contractable, however complete the rest looks.
 
-   Everything else varies by state and by carrier. Nothing per-state is
-   guessed here. To pin a state down, add a `ce` array to its entry in
-   STATES above, confirmed against that state's department of insurance
-   or the carrier's contracting checklist -- for example:
+   Everything else varies by state. Six states are pinned down below in
+   CE_BY_STATE, each checked against that state's own department of
+   insurance, statute or rule. Every other state falls back to CE_DEFAULT,
+   which says plainly that the state is not configured yet rather than
+   implying an answer we do not have.
 
-     CA: { name:"California", exam:"…", ce:[
-       { key:"aml",    label:"Anti-Money Laundering (AML)", required:true },
-       { key:"ethics", label:"Ethics",                      required:true },
-       { key:"other",  label:"Other",                       required:false },
-     ] },
+   Two findings from that research are worth keeping in view, because both
+   contradict what the product used to imply:
 
-   Until a state carries its own list it uses the default below, which
-   is what the product did before this was configurable.
+     - ETHICS is a renewal requirement, not a starting one. In all six
+       states it sits inside the biennial CE cycle. Telling a brand-new
+       agent they need ethics hours before they can be contracted is
+       wrong and costs them money.
+     - ANNUITY BEST INTEREST training is the real gate. Every one of the
+       six requires a one-time course before the agent may sell an
+       annuity, and the insurer has to see it. California wants 8 hours;
+       the rest want 4.
+
+   To add a state, add an entry to CE_BY_STATE with a source comment.
+   Do not infer one state's rules from its neighbour's.
 ------------------------------------------------------------------ */
+/* Two tiers, and the difference matters. `required` blocks the step: the
+   agent cannot finish continuing education without it, because a carrier
+   will not appoint them without it. `advise` does not block -- it is a
+   real requirement, but only for an agent who sells that product line,
+   and we cannot know from here whether they will. Advisory slots are
+   listed on the screen with their reason so nobody is surprised later. */
+const AML = { key:"aml", label:"Anti-Money Laundering (AML)", required:true,
+  note:"Carriers will not appoint you without it. This is a federal anti-money-laundering rule that applies to the insurer, not a state licensing rule — which is why every state needs it." };
+const OTHER = { key:"other", label:"Other", required:false,
+  note:"Anything else your carrier or agency asks for." };
+/* Ethics appears for every state and always will. The research says it is
+   a renewal-cycle requirement rather than a gate on getting started, and
+   the wording says so -- but it is part of the CE package agents buy, so
+   the slot is always here to upload into. */
+const ETHICS_RENEWAL = (hrs, yrs) => ({ key:"ethics", label:"Ethics", required:false, advise:true,
+  note:`Part of your CE package — take it. The state counts these ${hrs} hours toward your ${yrs}-year renewal cycle rather than requiring them before you start, so it will not hold this step up. Upload the certificate here as soon as you have it.` });
+
 export const CE_DEFAULT = [
-  { key:"aml",           label:"Anti-Money Laundering (AML)", required:true  },
-  { key:"ethics",        label:"Ethics",                      required:false },
-  { key:"best_interest", label:"Best Interest",               required:false },
-  { key:"other",         label:"Other",                       required:false },
+  AML,
+  { key:"best_interest", label:"Annuity Best Interest training", required:false, advise:true,
+    note:"Most states require a one-time annuity training course before you may sell annuities. Your state is not configured here yet — check with your carrier or CE provider before you write annuity business." },
+  { key:"ltc", label:"Long-Term Care training", required:false, advise:true,
+    note:"Required in most states before selling long-term-care policies. Only needed if you will write LTC." },
+  { key:"ethics", label:"Ethics", required:false, advise:true,
+    note:"Part of your CE package — take it. In most states these hours count toward your renewal cycle rather than being required before you start, so it will not hold this step up. Upload the certificate here as soon as you have it." },
+  OTHER,
 ];
 
+/* Per-state lists. Every entry below was checked against that state's own
+   department of insurance, statute or administrative rule in August 2026;
+   sources are named so the next person can re-check them. Nothing here is
+   inferred from a neighbouring state. */
+export const CE_BY_STATE = {
+  /* Ins. Code s1749.8; CDI annuity-training FAQ; CDI 8-hour LTC outline (Mar 2025);
+     DHCS Partnership agent training. Ethics: CDI ethics-CE FAQ -- renewal only. */
+  CA: [
+    AML,
+    { key:"best_interest", label:"Annuity Best Interest training (8 hours)", required:true,
+      note:"California requires an 8-hour Best Interest course before you may sell any annuity, then 4 hours before each renewal. It is the longest of any state — book it early." },
+    { key:"ltc", label:"Long-Term Care training (8 hours)", required:false, advise:true,
+      note:"Needed before you sell long-term care, then 8 hours again each renewal. Partnership policies need a further 8 classroom hours on top." },
+    ETHICS_RENEWAL(3, 2),
+    OTHER,
+  ],
+  /* Fla. Stat. s627.4554 (annuity, best-interest standard in statute);
+     Fla. Admin. Code 69O-157.1155 (LTC before selling); Fla. Stat. s626.2815 (CE). */
+  FL: [
+    AML,
+    { key:"best_interest", label:"Annuity Best Interest training (4 hours)", required:true,
+      note:"Florida requires a one-time 4-hour annuity course, and the insurer has to see it before it will let you sell an annuity." },
+    { key:"ltc", label:"Long-Term Care training", required:false, advise:true,
+      note:"Florida requires training before you sell, solicit or negotiate long-term care. Confirm the hours with your CE provider — the rule states the timing, not a number we could verify." },
+    { key:"ethics", label:"Law & Ethics update", required:false, advise:true,
+      note:"Part of your CE package — take it. Florida folds ethics into a 4-hour Law & Ethics update every 2 years, so it counts toward renewal rather than holding this step up. Upload it here as soon as you have it." },
+    OTHER,
+  ],
+  /* GA OCI continuing-education page and Annuity Best Interest FAQ (Rule 120-2-94,
+     eff. 1 Aug 2023); Ga. Comp. R. & Regs. 120-2-16-.34 (LTC Partnership). */
+  GA: [
+    AML,
+    { key:"best_interest", label:"Annuity Best Interest training (4 hours)", required:true,
+      note:"Georgia has required a one-time 4-hour Annuity Best Interest course since 1 August 2023 before you may sell annuities." },
+    { key:"ltc", label:"Long-Term Care Partnership training (8 hours)", required:false, advise:true,
+      note:"Needed before you sell a Partnership long-term-care policy, then 4 hours every 24 months." },
+    ETHICS_RENEWAL(3, 2),
+    OTHER,
+  ],
+  /* Tex. Ins. Code ch. 1115 (annuity training, best-interest duty);
+     TDI long-term-care certification page; TDI agent CE page. */
+  TX: [
+    AML,
+    { key:"best_interest", label:"Annuity Best Interest training (4 credits)", required:true,
+      note:"Texas requires a one-time 4-credit annuity course, and the insurer must verify it before letting you sell an annuity." },
+    { key:"ltc", label:"Long-Term Care Partnership training (8 hours)", required:false, advise:true,
+      note:"Needed before you act on a Partnership long-term-care policy, then 4 hours each reporting period." },
+    ETHICS_RENEWAL(3, 2),
+    OTHER,
+  ],
+  /* NCDOI CE page and Long-Term Care Partnership FAQ. The annuity best-interest
+     rule is confirmed adopted (the old suitability statute, G.S. 58-60-150 to -180,
+     was repealed effective 1 Jan 2023) but the hour count comes from CE providers
+     rather than a rule we could read -- hence the wording below. */
+  NC: [
+    AML,
+    { key:"best_interest", label:"Annuity Best Interest training", required:true,
+      note:"North Carolina replaced its old annuity suitability rule with a best-interest standard in January 2023. Training is required before you sell annuities — CE providers run it as a one-time 4-hour course; confirm the length with yours." },
+    { key:"ltc", label:"Long-Term Care Partnership training (8 hours)", required:false, advise:true,
+      note:"Needed before you sell a Partnership long-term-care policy, then 4 hours each compliance period." },
+    ETHICS_RENEWAL(3, 2),
+    OTHER,
+  ],
+  /* Ohio DOI annuity-suitability FAQ (eff. 14 Aug 2021); Ohio DOI specialty CE
+     training requirements PDF (LTC); Ohio DOI CE requirements page. */
+  OH: [
+    AML,
+    { key:"best_interest", label:"Annuity Best Interest training (4 credits)", required:true,
+      note:"Ohio has required a one-time 4-credit Annuity Best Interest course since 14 August 2021. Without it you are not eligible to sell annuities at all." },
+    { key:"ltc", label:"Long-Term Care training (8 hours)", required:false, advise:true,
+      note:"Needed before you sell long-term care, then a 4-hour refresher each renewal period." },
+    ETHICS_RENEWAL(3, 2),
+    OTHER,
+  ],
+};
+
 export function ceSlots(code){
+  if (CE_BY_STATE[code]) return CE_BY_STATE[code];
   const s = STATES[code];
   return (s && Array.isArray(s.ce) && s.ce.length) ? s.ce : CE_DEFAULT;
 }
+
+/* True when we hold checked, state-specific requirements rather than the
+   generic fallback. The screen says which of the two the agent is seeing,
+   because "we don't know yet" is useful information to an agent and a
+   silent default is not. */
+export function ceIsConfigured(code){ return !!CE_BY_STATE[code]; }

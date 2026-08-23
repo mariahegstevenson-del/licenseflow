@@ -3,7 +3,7 @@
    The system owns configuration (state, license, exam provider,
    URLs). The agent only provides personal/action data.
    ============================================================ */
-import { STATES, buildWalkthrough, examProvider } from "./states.js?v=6";
+import { STATES, buildWalkthrough, examProvider } from "./states.js?v=8";
 
 /* ---------------- status vocabulary ---------------- */
 export const ST = {
