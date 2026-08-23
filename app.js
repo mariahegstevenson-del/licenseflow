@@ -762,7 +762,12 @@ function renderComplete() {
   root.innerHTML = `
   <div class="wt done-wrap">
     <div class="step-card"><div class="step-body">
-      <div class="done-mark" aria-hidden="true">&#10003;</div>
+      <div class="done-mark" aria-hidden="true">
+        <svg viewBox="0 0 52 52" focusable="false">
+          <circle class="dm-ring" cx="26" cy="26" r="23"/>
+          <path class="dm-tick" d="M15 27.5 L22.5 35 L37.5 19"/>
+        </svg>
+      </div>
       <div class="eyebrow2 center">Licensing complete</div>
       <h2 class="done-h">Well done, ${esc(firstName())}.</h2>
       <p class="done-lede">You've finished every step of your
@@ -801,6 +806,90 @@ function renderComplete() {
   </div>`;
   const b = el("openRec");
   if (b) b.onclick = () => { const o = el("lfOpen"); if (o) o.click(); };
+  const stage = root.querySelector(".done-wrap");
+  /* Animations are switched on here, not in the stylesheet, so the page
+     is readable even if this never runs. */
+  if (stage) requestAnimationFrame(() => stage.classList.add("go"));
+  celebrate(stage);
+}
+
+/* ------------------------------------------------------------
+   Confetti.
+
+   Drawn on a canvas rather than pulled from a library: it is forty
+   lines, it costs no download, and it takes the agency's own colours so
+   the moment still looks like their agency rather than a generic party.
+   It runs once, for three seconds, and cleans itself up -- and it does
+   not run at all for anyone who has asked their system for less motion.
+------------------------------------------------------------ */
+function celebrate(host){
+  if (!host) return;
+  try { if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return; } catch (_) {}
+
+  const css = getComputedStyle(document.documentElement);
+  const pick = (name, fallback) => (css.getPropertyValue(name) || "").trim() || fallback;
+  const COLOURS = ["#12A05C", "#3ECC85", "#0F7A4A",
+    pick("--agency-gold", "#D4A12B"), pick("--brand", "#0C3D82"), "#FFFFFF"];
+
+  const cv = document.createElement("canvas");
+  cv.className = "confetti";
+  host.appendChild(cv);
+  const ctx = cv.getContext("2d");
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+
+  const size = () => {
+    cv.width  = host.clientWidth  * dpr;
+    cv.height = host.clientHeight * dpr;
+    cv.style.width  = host.clientWidth + "px";
+    cv.style.height = host.clientHeight + "px";
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  };
+  size();
+
+  const W = () => host.clientWidth, H = () => host.clientHeight;
+  const bits = [];
+  for (let i = 0; i < 130; i++) {
+    bits.push({
+      x: W() * (0.5 + (Math.random() - 0.5) * 0.7),
+      y: H() * 0.16 + Math.random() * 40,
+      vx: (Math.random() - 0.5) * 6.5,
+      vy: -3 - Math.random() * 7,
+      w: 5 + Math.random() * 6,
+      h: 8 + Math.random() * 8,
+      rot: Math.random() * Math.PI,
+      vr: (Math.random() - 0.5) * 0.3,
+      c: COLOURS[(Math.random() * COLOURS.length) | 0],
+      life: 0,
+    });
+  }
+
+  const START = performance.now();
+  const RUN = 3000, FADE = 900;
+  let raf = 0;
+
+  function frame(t){
+    const age = t - START;
+    ctx.clearRect(0, 0, W(), H());
+    const fade = age > RUN - FADE ? Math.max(0, (RUN - age) / FADE) : 1;
+
+    for (const b of bits) {
+      b.vy += 0.16;            // gravity
+      b.vx *= 0.995;           // a little air
+      b.x += b.vx; b.y += b.vy; b.rot += b.vr;
+      if (b.y > H() + 20) continue;
+      ctx.save();
+      ctx.globalAlpha = fade;
+      ctx.translate(b.x, b.y);
+      ctx.rotate(b.rot);
+      ctx.fillStyle = b.c;
+      ctx.fillRect(-b.w / 2, -b.h / 2, b.w, b.h * (0.6 + 0.4 * Math.abs(Math.cos(b.rot))));
+      ctx.restore();
+    }
+
+    if (age < RUN) raf = requestAnimationFrame(frame);
+    else { cancelAnimationFrame(raf); cv.remove(); }
+  }
+  raf = requestAnimationFrame(frame);
 }
 
 function renderDashboard() {
