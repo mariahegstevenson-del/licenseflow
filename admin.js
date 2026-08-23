@@ -1,5 +1,5 @@
 import { supabase, isConfigured, requireSession, hardSignOut } from "./supabase.js?v=2";
-import { STATES, ceSlots } from "./states.js?v=8";
+import { STATES, ceSlots } from "./states.js?v=9";
 import * as F from "./flow.js?v=7";
 import { loadTenant, renderUnknownAgency, applyTenantChrome, urlForAgency } from "./tenant.js?v=4";
 
@@ -809,7 +809,7 @@ function cabinet(uid){
 
     if (r.key === "continuing_education") {
       const certs = (inst?.meta?.certs) || [];
-      const slots = ceSlots(p?.designated_state);
+      const slots = ceSlots(p?.designated_state, p?.license_type);
       const claimed = new Set();
       certs.forEach((c, n) => {
         const slot = slots.find(o => o.key === c.type);

@@ -244,7 +244,7 @@ export const CE_DEFAULT = [
   AML,
   { key:"best_interest", label:"Annuity Best Interest training", required:false, advise:true,
     note:"Most states require a one-time annuity training course before you may sell annuities. Your state is not configured here yet — check with your carrier or CE provider before you write annuity business." },
-  { key:"ltc", label:"Long-Term Care training", required:false, advise:true,
+  { key:"ltc", lines:"health", label:"Long-Term Care training", required:false, advise:true,
     note:"Required in most states before selling long-term-care policies. Only needed if you will write LTC." },
   { key:"ethics", label:"Ethics", required:false, advise:true,
     note:"Part of your CE package — take it. In most states these hours count toward your renewal cycle rather than being required before you start, so it will not hold this step up. Upload the certificate here as soon as you have it." },
@@ -262,7 +262,7 @@ export const CE_BY_STATE = {
     AML,
     { key:"best_interest", label:"Annuity Best Interest training (8 hours)", required:true,
       note:"California requires an 8-hour Best Interest course before you may sell any annuity, then 4 hours before each renewal. It is the longest of any state — book it early." },
-    { key:"ltc", label:"Long-Term Care training (8 hours)", required:false, advise:true,
+    { key:"ltc", lines:"health", label:"Long-Term Care training (8 hours)", required:false, advise:true,
       note:"Needed before you sell long-term care, then 8 hours again each renewal. Partnership policies need a further 8 classroom hours on top." },
     ETHICS_RENEWAL(3, 2),
     OTHER,
@@ -273,7 +273,7 @@ export const CE_BY_STATE = {
     AML,
     { key:"best_interest", label:"Annuity Best Interest training (4 hours)", required:true,
       note:"Florida requires a one-time 4-hour annuity course, and the insurer has to see it before it will let you sell an annuity." },
-    { key:"ltc", label:"Long-Term Care training", required:false, advise:true,
+    { key:"ltc", lines:"health", label:"Long-Term Care training", required:false, advise:true,
       note:"Florida requires training before you sell, solicit or negotiate long-term care. Confirm the hours with your CE provider — the rule states the timing, not a number we could verify." },
     { key:"ethics", label:"Law & Ethics update", required:false, advise:true,
       note:"Part of your CE package — take it. Florida folds ethics into a 4-hour Law & Ethics update every 2 years, so it counts toward renewal rather than holding this step up. Upload it here as soon as you have it." },
@@ -285,7 +285,7 @@ export const CE_BY_STATE = {
     AML,
     { key:"best_interest", label:"Annuity Best Interest training (4 hours)", required:true,
       note:"Georgia has required a one-time 4-hour Annuity Best Interest course since 1 August 2023 before you may sell annuities." },
-    { key:"ltc", label:"Long-Term Care Partnership training (8 hours)", required:false, advise:true,
+    { key:"ltc", lines:"health", label:"Long-Term Care Partnership training (8 hours)", required:false, advise:true,
       note:"Needed before you sell a Partnership long-term-care policy, then 4 hours every 24 months." },
     ETHICS_RENEWAL(3, 2),
     OTHER,
@@ -296,7 +296,7 @@ export const CE_BY_STATE = {
     AML,
     { key:"best_interest", label:"Annuity Best Interest training (4 credits)", required:true,
       note:"Texas requires a one-time 4-credit annuity course, and the insurer must verify it before letting you sell an annuity." },
-    { key:"ltc", label:"Long-Term Care Partnership training (8 hours)", required:false, advise:true,
+    { key:"ltc", lines:"health", label:"Long-Term Care Partnership training (8 hours)", required:false, advise:true,
       note:"Needed before you act on a Partnership long-term-care policy, then 4 hours each reporting period." },
     ETHICS_RENEWAL(3, 2),
     OTHER,
@@ -309,7 +309,7 @@ export const CE_BY_STATE = {
     AML,
     { key:"best_interest", label:"Annuity Best Interest training", required:true,
       note:"North Carolina replaced its old annuity suitability rule with a best-interest standard in January 2023. Training is required before you sell annuities — CE providers run it as a one-time 4-hour course; confirm the length with yours." },
-    { key:"ltc", label:"Long-Term Care Partnership training (8 hours)", required:false, advise:true,
+    { key:"ltc", lines:"health", label:"Long-Term Care Partnership training (8 hours)", required:false, advise:true,
       note:"Needed before you sell a Partnership long-term-care policy, then 4 hours each compliance period." },
     ETHICS_RENEWAL(3, 2),
     OTHER,
@@ -320,17 +320,28 @@ export const CE_BY_STATE = {
     AML,
     { key:"best_interest", label:"Annuity Best Interest training (4 credits)", required:true,
       note:"Ohio has required a one-time 4-credit Annuity Best Interest course since 14 August 2021. Without it you are not eligible to sell annuities at all." },
-    { key:"ltc", label:"Long-Term Care training (8 hours)", required:false, advise:true,
+    { key:"ltc", lines:"health", label:"Long-Term Care training (8 hours)", required:false, advise:true,
       note:"Needed before you sell long-term care, then a 4-hour refresher each renewal period." },
     ETHICS_RENEWAL(3, 2),
     OTHER,
   ],
 };
 
-export function ceSlots(code){
-  if (CE_BY_STATE[code]) return CE_BY_STATE[code];
-  const s = STATES[code];
-  return (s && Array.isArray(s.ce) && s.ce.length) ? s.ce : CE_DEFAULT;
+/* Long-term care is a health product line. An agent licensed Life only
+   cannot sell it at all, so putting the training in front of them is
+   noise at best and a wasted course fee at worst. Slots carrying
+   lines:"health" are dropped unless the licence includes health.
+   Called without a licence type -- as the admin console does when it is
+   just resolving a label for a certificate already on file -- nothing is
+   filtered, so old certificates never lose their names. */
+const hasHealth = (lt) => /health/i.test(String(lt || ""));
+
+export function ceSlots(code, licenseType){
+  const base = CE_BY_STATE[code]
+    || ((STATES[code] && Array.isArray(STATES[code].ce) && STATES[code].ce.length)
+          ? STATES[code].ce : CE_DEFAULT);
+  if (licenseType == null) return base;
+  return base.filter(s => s.lines !== "health" || hasHealth(licenseType));
 }
 
 /* True when we hold checked, state-specific requirements rather than the

@@ -1,5 +1,5 @@
 import { supabase, isConfigured, requireSession, hardSignOut } from "./supabase.js?v=2";
-import { STATE_LIST, STATES, ceSlots, ceIsConfigured } from "./states.js?v=8";
+import { STATE_LIST, STATES, ceSlots, ceIsConfigured } from "./states.js?v=9";
 import * as F from "./flow.js?v=7";
 import { loadTenant, renderUnknownAgency, applyTenantChrome, urlForAgency } from "./tenant.js?v=4";
 
@@ -1324,7 +1324,7 @@ const STUDY_TIPS = [
 
 /* Which certificates this agent needs comes from their licensing state
    now, not from a list hardcoded here -- see states.js. */
-function ceSlotList(){ return ceSlots(S.profile?.designated_state); }
+function ceSlotList(){ return ceSlots(S.profile?.designated_state, S.profile?.license_type); }
 
 /* A plain reading of what this agent's state asks of them, in the order
    it matters: what blocks contracting, then what applies only if they
