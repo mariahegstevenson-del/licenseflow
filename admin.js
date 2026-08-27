@@ -1122,6 +1122,20 @@ function pbOwner(){
 const pbAgencyName = (id) => (A.agencies || []).find(a => a.id === id)?.name
   || A.agency?.name || A.tenant?.agency?.name || "your agency";
 
+/* The two rows that may exist for a state, and the answer they resolve to.
+   Deleted by accident in an earlier edit, which is what produced
+   "pbMineRow is not defined" -- the error screen caught it. */
+const pbMasterRow = (code) => (A.pbMaster || []).find(r => r.state_code === code) || null;
+const pbAgencyRow = (code, forAgency) => {
+  const own = forAgency !== undefined ? forAgency : pbOwner();
+  return own ? (A.pbAgency || []).find(r => r.agency_id === own && r.state_code === code) || null : null;
+};
+/* What an agent in this state will actually be shown. */
+const pbResolved = (code) =>
+  resolvePlaybook(code, pbMasterRow(code)?.data, pbAgencyRow(code)?.data);
+/* The layer this admin is editing, if a row exists for it yet. */
+const pbMineRow = (code) => pbScope() === "master" ? pbMasterRow(code) : pbAgencyRow(code);
+
 /* A readout, not a second control. The tabs above already set the layer;
    repeating that as a dropdown gave two ways to answer one question. */
 function pbScopeBar(){
@@ -1193,7 +1207,160 @@ function renderPlaybookGrid(){
   }
 }
 
+/* ============================================================
+   ONE STATE, THREE WAYS TO LOOK AT IT
+
+   Steps    the run-through at a glance -- what this state asks of an
+            agent, in order, in plain words
+   Agent    what the agent actually sees on each screen, built from the
+            same journey code the portal runs. This is the answer to
+            "I want to check placement without making 51 accounts".
+   Edit     change it
+
+   The preview is rendered from F.buildJourney() with this agency's
+   resolved playbook, so it is not a mock-up that can drift -- change a
+   vendor in Edit and the preview changes with it.
+   ============================================================ */
 function renderPlaybook(code){
+  const st = STATES[code];
+  if (!st) { A.view = { name:"playbooks" }; return render(); }
+  const pane = A.pbPane || "steps";
+  const scope = pbScope();
+  const owner = scope === "master" ? "the LicenseFlow master" : pbAgencyName(pbOwner()) + "'s copy";
+  const tab = (k, label) =>
+    `<button class="pb-pt${pane === k ? " on" : ""}" data-pane="${k}" type="button">${esc(label)}</button>`;
+
+  root.innerHTML = `
+    <div class="cc-h"><div><h1>${esc(st.name)}</h1>
+      <p>Showing ${esc(owner)}. ${scope === "master"
+        ? "Agencies that haven't overridden this state see exactly this."
+        : "Only their agents see this."}</p></div></div>
+    <button class="btn btn-ghost btn-sm" id="pbBack" style="margin-bottom:14px">&larr; All states</button>
+    <div class="pb-panes">
+      ${tab("steps", "Steps at a glance")}
+      ${tab("agent", "What the agent sees")}
+      ${tab("edit",  "Edit")}
+    </div>
+    <div id="pbPane"></div>`;
+
+  el("pbBack").onclick = () => { A.view = { name:"playbooks" }; render(); };
+  root.querySelectorAll("[data-pane]").forEach(b =>
+    b.onclick = () => { A.pbPane = b.dataset.pane; render(); });
+
+  if (pane === "edit")  return renderPlaybookEdit(code);
+  if (pane === "agent") return renderPlaybookAgent(code);
+  return renderPlaybookSteps(code);
+}
+
+/* The quick highlight: every step this state asks for, in order. */
+function renderPlaybookSteps(code){
+  const r = pbResolved(code);
+  const j = F.buildJourney(code, r);
+  const host = el("pbPane");
+  if (!j) { host.innerHTML = `<p class="muted">No journey for this state.</p>`; return; }
+
+  const row = (req, n) => {
+    const steps = req.instructions || [];
+    return `<div class="pv-step">
+      <span class="pv-n">${n}</span>
+      <div class="pv-body">
+        <div class="pv-h"><b>${esc(req.label)}</b>
+          ${req.providerLabel ? `<span class="pv-vendor">${esc(req.providerLabel)}</span>` : ""}
+          <span class="pv-who">${req.verify === "auto" ? "Clears itself" : "You verify it"}</span></div>
+        ${req.key === "exam" && req.examName
+          ? `<div class="pv-exam">Books as: <b>${esc(req.examName)}</b></div>`
+          : req.key === "exam"
+            ? `<div class="pv-exam warn">No exam name recorded &mdash; the agent has to work out which exam to book.</div>` : ""}
+        ${req.lead ? `<p>${esc(req.lead)}</p>` : ""}
+        ${req.link ? `<a class="pv-link" href="${esc(req.link)}" target="_blank" rel="noopener">${esc(req.link)}</a>` : ""}
+        ${steps.length
+          ? `<ol class="pv-ol">${steps.map(x => `<li>${esc(x)}</li>`).join("")}</ol>`
+          : `<p class="pv-none">No step-by-step instructions written for this one yet.</p>`}
+        ${req.stateNote ? `<div class="pv-note">${esc(req.stateNote)}</div>` : ""}
+      </div>
+    </div>`;
+  };
+
+  host.innerHTML = `<div class="cc-panel"><div class="pad">
+      ${j.reqs.map((q, i) => row(q, i + 1)).join("")}
+      ${r.misc ? `<div class="pv-note" style="margin-top:6px"><b>State note:</b> ${esc(r.misc)}</div>` : ""}
+      ${r.fingerprinting?.url || r.fingerprinting?.note
+        ? `<div class="pv-note"><b>Fingerprinting:</b> ${esc(r.fingerprinting.note || r.fingerprinting.url)}</div>` : ""}
+      ${r.affidavit?.url ? `<div class="pv-note"><b>Affidavit:</b> ${esc(r.affidavit.url)}</div>` : ""}
+    </div></div>`;
+}
+
+/* What the agent actually sees, screen by screen -- built from the same
+   journey the portal builds, wearing the agent app's own stylesheet. */
+function renderPlaybookAgent(code){
+  const r = pbResolved(code);
+  const j = F.buildJourney(code, r);
+  const host = el("pbPane");
+  if (!j) { host.innerHTML = `<p class="muted">No journey for this state.</p>`; return; }
+
+  const pick = A.pbStep && j.reqs.some(q => q.key === A.pbStep) ? A.pbStep : j.reqs[0].key;
+  const req = j.reqs.find(q => q.key === pick);
+
+  const chip = (q) => `<button class="pv-chip${q.key === pick ? " on" : ""}" data-step="${esc(q.key)}"
+      type="button">${esc(q.short || q.label)}</button>`;
+
+  /* The agent's own components, so spacing and placement are the real
+     thing rather than an approximation. */
+  const screen = `
+    <div class="pv-frame">
+      <div class="pv-bar"><span class="pv-dot"></span><span class="pv-dot"></span><span class="pv-dot"></span>
+        <span class="pv-url">${esc(pbAgencySlug())}/app.html</span></div>
+      <div class="pv-page">
+        <div class="step-card"><div class="step-body">
+          <div class="step-top"><span></span><span class="badge s-gray">Not started</span></div>
+          <h2 style="margin-top:.4rem">${esc(req.heading || req.label)}</h2>
+          ${req.lead ? `<p class="step-desc">${esc(req.lead)}</p>` : ""}
+          ${req.help ? `<div class="callout"><span class="lab">${esc(req.help.title)}</span>${esc(req.help.body)}</div>` : ""}
+          <div class="section-k center-k">Watch this step</div>
+          <div class="video is-soon"><div class="ph"><div class="pi"></div>
+            <b>Walkthrough coming soon</b><span>A short screen recording of this step is being made.</span></div></div>
+          ${req.providerLabel ? `<div class="syscard"><span class="sys-k">${
+              req.key === "exam" ? "Scheduled through" : "Your provider"}</span><strong>${esc(req.providerLabel)}</strong></div>` : ""}
+          ${req.key === "exam" && req.examName
+            ? `<div class="syscard exam-name"><span class="sys-k">Search for this exam</span><strong>${esc(req.examName)}</strong></div>` : ""}
+          ${req.link ? `<div class="link-row"><a class="btn btn-accent btn-lg" href="${esc(req.link)}"
+              target="_blank" rel="noopener">Open ${esc(req.providerLabel || "the site")}</a></div>
+              <div class="link-note">Opens in a new tab. When you're done there, come back and record it below.</div>` : ""}
+          ${req.instructions ? `<details class="inst" style="margin-top:16px" open><summary>Step-by-step instructions</summary>
+              <ol>${req.instructions.map(i => `<li>${esc(i)}</li>`).join("")}</ol></details>` : ""}
+          <div class="form-block">
+            <h3 style="margin:22px 0 6px;font-size:1.02rem">${req.render === "eo" ? "Upload your certificate" : "Record what you did"}</h3>
+            ${(req.fields || []).map(f => `<label>${esc(f.label)}${f.required ? " *" : ""}</label>
+              <input type="${esc(f.type || "text")}" disabled/>`).join("")}
+            ${req.doc?.label ? `<label>${esc(req.doc.label)}</label>
+              <div class="drop drop-sm"><b>Drag it here</b><span class="drop-or">or choose a file</span></div>` : ""}
+            <div class="wt-nav" style="margin-top:18px">
+              <span class="btn btn-ghost">Save for later</span>
+              <span class="btn btn-primary">Save &amp; continue</span>
+            </div>
+          </div>
+        </div></div>
+      </div>
+    </div>`;
+
+  host.innerHTML = `
+    <p class="pv-lead">Every screen this state's agents get, without signing in as one.
+      ${pbScope() === "master" ? "" : "Links and vendors are " + esc(pbAgencyName(pbOwner())) + "'s."}</p>
+    <div class="pv-chips">${j.reqs.map(chip).join("")}</div>
+    ${screen}`;
+
+  host.querySelectorAll("[data-step]").forEach(b =>
+    b.onclick = () => { A.pbStep = b.dataset.step; renderPlaybookAgent(code); });
+}
+
+/* The address the preview is standing in for. On the master there is no
+   one agency, so the main domain is the honest answer. */
+function pbAgencySlug(){
+  const found = (A.agencies || []).find(a => a.id === pbOwner());
+  return found ? found.slug + ".lifelicenseflow.com" : "lifelicenseflow.com";
+}
+
+function renderPlaybookEdit(code){
   const st = STATES[code];
   if (!st) { A.view = { name:"playbooks" }; return render(); }
   const r = pbResolved(code);
@@ -1228,13 +1395,8 @@ function renderPlaybook(code){
       </div>
     </div>`;
 
-  root.innerHTML = `
-    <div class="cc-h"><div><h1>${esc(st.name)}</h1>
-      <p>${scope === "master"
-          ? "You are editing the LicenseFlow master. Agencies that haven't overridden this state will see these changes."
-          : `You are editing ${esc(pbAgencyName(pbOwner()))}'s copy. Only their agents see it.`}</p></div></div>
-    <button class="btn btn-ghost btn-sm" id="pbBack" style="margin-bottom:14px">&larr; All states</button>
-
+  const host = el("pbPane");
+  host.innerHTML = `
     <div class="pb-state ${mineRow ? "forked" : "inherited"}">
       ${mineRow
         ? `<b>Your own version</b><span>Last edited ${esc(fmtDT(mineRow.updated_at))}. Reset it to go back to ${scope === "master" ? "the built-in default" : "the LicenseFlow master"}.</span>`
@@ -1262,8 +1424,7 @@ function renderPlaybook(code){
       <button class="btn btn-quiet" id="pbCancel">Cancel</button>
     </div>`;
 
-  el("pbBack").onclick = el("pbCancel").onclick =
-    () => { A.view = { name:"playbooks" }; render(); };
+  el("pbCancel").onclick = () => { A.view = { name:"playbooks" }; render(); };
 
   el("pbSave").onclick = async () => {
     const msg = el("pbAlert");
@@ -1275,7 +1436,7 @@ function renderPlaybook(code){
       ? playbookDefaults(code)
       : resolvePlaybook(code, pbMasterRow(code)?.data, null);
     const next = {};
-    root.querySelectorAll("[data-sec]").forEach(n => {
+    host.querySelectorAll("[data-sec]").forEach(n => {
       const sec = n.dataset.sec, key = n.dataset.key;
       let v = n.value;
       if (key === "steps") v = v.split("\n").map(x => x.trim()).filter(Boolean);
