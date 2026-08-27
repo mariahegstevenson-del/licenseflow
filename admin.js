@@ -1298,9 +1298,13 @@ function renderPlaybookAgent(code){
   const host = el("pbPane");
   if (!j) { host.innerHTML = `<p class="muted">No journey for this state.</p>`; return; }
 
-  /* The finish screen is the eighth thing an agent sees, so it belongs in
-     the walk-through rather than hidden somewhere separate. */
-  const seq  = j.reqs.concat([{ key:"__done", short:"Finish", label:"Finish" }]);
+  /* The whole thing an agent walks, front to back: the form they fill in
+     to join, the welcome page, the seven steps, and the finish. Anything
+     they see belongs here -- checking placement is the point. */
+  const seq = [{ key:"__reg",  short:"Register", label:"Register" },
+               { key:"__welc", short:"Welcome",  label:"Welcome" }]
+    .concat(j.reqs)
+    .concat([{ key:"__done", short:"Finish", label:"Finish" }]);
   const pick = A.pbStep && seq.some(q => q.key === A.pbStep) ? A.pbStep : seq[0].key;
   const at   = seq.findIndex(q => q.key === pick);
   const req  = seq[at];
@@ -1312,11 +1316,11 @@ function renderPlaybookAgent(code){
 
   /* The agent's own components, so spacing and placement are the real
      thing rather than an approximation. */
-  const screen = req.key === "__done" ? doneScreen(pbResolved(code)) : `
-    <div class="pv-frame">
-      <div class="pv-bar"><span class="pv-dot"></span><span class="pv-dot"></span><span class="pv-dot"></span>
-        <span class="pv-url">${esc(pbAgencySlug())}/app.html</span></div>
-      <div class="pv-page">
+  const screen =
+    req.key === "__done" ? doneScreen(pbResolved(code)) :
+    req.key === "__reg"  ? regScreen(code) :
+    req.key === "__welc" ? welcomeScreen(code, j) :
+    pvFrame(`/app.html#/step/${req.key}`, `
         <div class="step-card"><div class="step-body">
           <div class="step-top"><span></span><span class="badge s-gray">Not started</span></div>
           <h2 style="margin-top:.4rem">${esc(req.heading || req.label)}</h2>
@@ -1345,9 +1349,7 @@ function renderPlaybookAgent(code){
               <span class="btn btn-primary">Save &amp; continue</span>
             </div>
           </div>
-        </div></div>
-      </div>
-    </div>`;
+        </div></div>`);
 
   /* Both ends of the screen can move you on. The step list sticks to the
      top of the pane, and Next sits under the preview -- scrolling through
@@ -1385,6 +1387,93 @@ function renderPlaybookAgent(code){
 
 /* The address the preview is standing in for. On the master there is no
    one agency, so the main domain is the honest answer. */
+/* A frame around any preview body, so all four kinds of screen sit in
+   the same browser chrome. */
+function pvFrame(path, body, foot){
+  return `
+    <div class="pv-frame">
+      <div class="pv-bar"><span class="pv-dot"></span><span class="pv-dot"></span><span class="pv-dot"></span>
+        <span class="pv-url">${esc(pbAgencySlug())}${esc(path)}</span></div>
+      <div class="pv-page">${body}
+        ${foot ? `<p class="pv-foot">${foot}</p>` : ""}</div>
+    </div>`;
+}
+
+/* The form a recruit fills in to join. Fields are inert here -- this is
+   for checking what is asked and in what order, not for filling in. */
+function regScreen(code){
+  const st = STATES[code];
+  const row = (a, b) => `<div class="row2"><div>${a}</div><div>${b}</div></div>`;
+  const fld = (label, extra) => `<label>${esc(label)}</label><input disabled ${extra || ""}/>`;
+  return pvFrame("/login.html", `
+    <div class="reg-wrap">
+      <h1 style="font-size:1.9rem">Agent registration</h1>
+      <p class="muted" style="margin-top:-2px">A few details so we can tailor your licensing steps.
+        Takes about a minute.</p>
+      <div class="card pad" style="margin-top:18px">
+        ${row(fld("First name"), fld("Last name"))}
+        ${fld("Date of birth", 'type="date"')}
+        <label>Resident state (match your ID)</label>
+        <select disabled><option>${esc(st?.name || "Choose a state")}</option></select>
+        <label>Are you currently active-duty military?</label>
+        <div class="seg"><button type="button" class="on">No</button>
+          <button type="button">Yes, I'm active-duty military</button></div>
+        <label>Lines of authority</label>
+        <div class="seg"><button type="button" class="on">Life &amp; Health</button>
+          <button type="button">Life</button></div>
+        <label>Who is your agency representative / trainer?</label><input disabled/>
+        <span class="cta-wrap" style="margin-top:20px">
+          <span class="btn btn-primary btn-lg btn-block">Continue</span></span>
+      </div>
+    </div>`,
+    `Before this they enter your registration PIN. Choosing <b>${esc(st?.name || "a state")}</b> here
+     is what selects this state&rsquo;s guide for everything that follows.`);
+}
+
+/* The first screen after registering: what we understood, what is coming,
+   and the button that starts the journey. */
+function welcomeScreen(code, j){
+  const st = STATES[code];
+  const agency = pbScope() === "master" ? "your agency" : pbAgencyName(pbOwner());
+  const expect = j.reqs.map((q, i) => `
+    <div class="ex"><div class="ex-n">${String(i + 1).padStart(2, "0")}</div>
+      <div><div class="ex-t">${esc(q.short || q.label)}</div>
+        <div class="ex-d">${esc((q.lead || q.heading || "").split(".")[0] + ".")}</div></div></div>`).join("");
+
+  return pvFrame("/app.html#/welcome", `
+    <div class="welcome">
+      <div class="welcome-hero">
+        <div class="eyebrow2">Welcome to the team</div>
+        <h1>Welcome to the team, Jordan.</h1>
+        <p class="lead">We're glad you're here. Your licensing journey has been prepared for your
+          <strong>${esc(st?.name || "")} Life &amp; Health license</strong>.</p>
+        <div class="desig">
+          <div><span class="desig-k">Name</span><strong>Jordan Reyes</strong></div>
+          <div><span class="desig-k">Licensing state</span><strong>${esc(st?.name || "—")}</strong></div>
+          <div><span class="desig-k">Lines of authority</span>Life &amp; Health</div>
+          <div><span class="desig-k">Your trainer</span>${esc(agency)}</div>
+        </div>
+        <p class="hint" style="margin:9px 0 20px">Something not right? Tell your licensing coordinator
+          before you start &mdash; these details follow you onto your state application.</p>
+        <p class="muted" style="max-width:60ch">We'll guide you through the steps required to become
+          properly licensed. The state regulator ultimately decides whether a license is issued &mdash;
+          our job is to get your file properly prepared at every stage.</p>
+      </div>
+      <div class="card pad" style="margin-bottom:18px">
+        <h3 style="margin-top:0">What to expect</h3>
+        <div class="expect">${expect}</div>
+      </div>
+      <div class="card pad launch">
+        <div class="eyebrow2">Ready?</div>
+        <h2 style="margin:.2rem 0 .4rem">Let's get your license started.</h2>
+        <p class="muted">We'll take you straight to your first step &mdash; no guessing where to go.</p>
+        <span class="cta-wrap"><span class="btn btn-primary btn-lg">Launch my licensing journey</span></span>
+      </div>
+    </div>`,
+    `&ldquo;Jordan&rdquo; stands in for whoever is reading it. The what-to-expect list is built from
+     this state&rsquo;s own steps, so it changes when you change them.`);
+}
+
 /* The finish screen, rendered from the agency's own wording with the
    tokens filled in the way an agent would see them. Same components and
    stylesheet as the live one, so this is a true preview and not a mock. */
@@ -1398,14 +1487,10 @@ function doneScreen(pb){
     <div class="dn-row"><span class="dn-n">${esc(n)}</span>
       <div><b>${esc(title || "")}</b><span>${esc(body || "")}</span></div></div>`;
 
-  return `
-    <div class="pv-frame">
-      <div class="pv-bar"><span class="pv-dot"></span><span class="pv-dot"></span><span class="pv-dot"></span>
-        <span class="pv-url">${esc(pbAgencySlug())}/app.html#/complete</span></div>
-      <div class="pv-page">
-        <!-- No "go" class: that gates the entrance animations, which start
-             from opacity 0. A preview should show the finished state the
-             moment it opens rather than replay a reveal every time. -->
+  /* No "go" class below: that gates the entrance animations, which start
+     from opacity 0. A preview should show the finished state the moment
+     it opens rather than replay a reveal every time. */
+  return pvFrame("/app.html#/complete", `
         <div class="wt done-wrap">
           <div class="step-card"><div class="step-body">
             <div class="done-mark" aria-hidden="true">
@@ -1427,11 +1512,9 @@ function doneScreen(pb){
               <span class="btn btn-primary">Open my record</span>
             </div>
           </div></div>
-        </div>
-        <p class="pv-foot">&ldquo;Jordan&rdquo; and the state stand in for whoever is reading it.
-          Confetti and the tick animate on the real thing.</p>
-      </div>
-    </div>`;
+        </div>`,
+    `&ldquo;Jordan&rdquo; and the state stand in for whoever is reading it.
+     Confetti and the tick animate on the real thing.`);
 }
 
 function pbAgencySlug(){
