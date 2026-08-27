@@ -3,7 +3,7 @@
    The system owns configuration (state, license, exam provider,
    URLs). The agent only provides personal/action data.
    ============================================================ */
-import { STATES, buildWalkthrough, examProvider } from "./states.js?v=9";
+import { STATES, buildWalkthrough, examProvider, PROVIDER_LABEL } from "./states.js?v=10";
 
 /* ---------------- status vocabulary ---------------- */
 export const ST = {
@@ -99,20 +99,44 @@ const WALK_KEY = { study_material:"study_material", exam:"exam_registration",
 export function examInfo(code, license) {
   const s = STATES[code]; if (!s) return null;
   const prov = examProvider(s.exam);
-  const label = { pearson:"Pearson VUE", psi:"PSI", prometric:"Prometric" }[prov] || "your exam provider";
+  const label = PROVIDER_LABEL[prov] || "your exam provider";
   return { url:s.exam, providerLabel:label, provider:prov, examTitle:`${s.name} ${license} Insurance Examination` };
 }
 
-export function buildJourney(code) {
+/* Which playbook section supplies each agent-facing requirement. */
+const PLAYBOOK_KEY = {
+  study_material:"study", exam:"exam", nipr_application:"state_app",
+  continuing_education:"ce", eo:"eo",
+};
+
+/* `playbook` is the resolved state playbook -- the agency's overrides on
+   top of the LicenseFlow master on top of the built-in defaults. Passing
+   nothing gives exactly the old behaviour, which is what keeps the
+   registration screens working before a profile has an agency. */
+export function buildJourney(code, playbook) {
   const w = buildWalkthrough(code);
   if (!w) return null;
   const links = {};
   w.steps.forEach(s => { links[s.key] = { link:s.link, instructions:s.instructions||null, video:s.video||null }; });
   const reqs = REQS.map(r => {
     const wk = WALK_KEY[r.key]; const ex = wk && links[wk] ? links[wk] : {};
-    return { ...r, link:ex.link||null, instructions:ex.instructions||null, video:(ex.video!==undefined?ex.video:null) };
+    const out = { ...r, link:ex.link||null, instructions:ex.instructions||null,
+                  video:(ex.video!==undefined?ex.video:null) };
+
+    const pb = playbook && playbook[PLAYBOOK_KEY[r.key]];
+    if (pb) {
+      /* Only override what the playbook actually carries. An agency that
+         changed one link keeps every other default, including the
+         provider-specific instructions. */
+      if (pb.url) out.link = pb.url;
+      if (pb.vendor) out.providerLabel = pb.vendor;
+      if (Array.isArray(pb.steps) && pb.steps.length) out.instructions = pb.steps;
+      if (pb.note) out.stateNote = pb.note;
+      if (r.key === "exam" && pb.exam_name) out.examName = pb.exam_name;
+    }
+    return out;
   });
-  return { state:w.state, code, reqs };
+  return { state:w.state, code, reqs, playbook: playbook || null };
 }
 
 /* ---------------- status computation ---------------- */
@@ -187,6 +211,6 @@ export function determinePathway(p){
 }
 export function militaryTestingNote(code){
   const w=buildWalkthrough(code); const prov=w?.provider; if(!prov) return null;
-  const label={pearson:"Pearson VUE",psi:"PSI",prometric:"Prometric"}[prov]||"your exam provider";
+  const label = PROVIDER_LABEL[prov] || "your exam provider";
   return `Active-duty service members may have access to on-base or alternative testing options through ${label}. This does not change your licensing state — confirm eligibility with your exam provider and installation.`;
 }

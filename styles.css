@@ -1029,3 +1029,13 @@ html.themed .ceg-tag.req{
   background:color-mix(in srgb,var(--agency-gold,#D4A12B) 20%,#fff);
   color:var(--agency-gold-ink,#7A5A0C)
 }
+
+/* The exam's name in the vendor's own catalogue. Called out separately
+   because it is the single most common way somebody books the wrong
+   paper -- states name the same exam half a dozen different ways. */
+.syscard.exam-name{border-color:#E3D3AE;background:linear-gradient(180deg,#FEFBF4,#fff 70%)}
+.syscard.exam-name strong{font-size:1.02rem;letter-spacing:-.01em}
+html.themed .syscard.exam-name{
+  border-color:color-mix(in srgb,var(--agency-gold,#D4A12B) 45%,#fff);
+  background:linear-gradient(180deg,color-mix(in srgb,var(--agency-gold,#D4A12B) 8%,#fff),#fff 70%)
+}

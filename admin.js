@@ -1,5 +1,6 @@
 import { supabase, isConfigured, requireSession, hardSignOut } from "./supabase.js?v=2";
-import { STATES, ceSlots } from "./states.js?v=9";
+import { STATES, STATE_LIST, ceSlots, PLAYBOOK_SECTIONS, playbookDefaults,
+         resolvePlaybook } from "./states.js?v=10";
 import * as F from "./flow.js?v=7";
 import { loadTenant, renderUnknownAgency, applyTenantChrome, urlForAgency } from "./tenant.js?v=4";
 
@@ -84,17 +85,22 @@ const within = (t, from, to) => t != null && t >= from && t < to;
 })();
 
 async function load() {
-  const [p, inst, ex, vids, docs, notes] = await Promise.all([
+  const [p, inst, ex, vids, docs, notes, pb] = await Promise.all([
     supabase.from("licensing_profiles").select("*"),
     supabase.from("requirement_instances").select("*"),
     supabase.from("exceptions").select("*").order("created_at",{ascending:false}),
     supabase.from("step_videos").select("*"),
     supabase.from("documents").select("*"),
     supabase.from("notifications").select("*").order("created_at",{ascending:false}).limit(200),
+    supabase.from("state_playbooks").select("*"),
   ]);
   A.profiles=p.data||[]; A.instances=inst.data||[]; A.exceptions=ex.data||[]; A.videos=vids.data||[];
   A.docs = docs.data || [];
   A.notes = notes.data || [];
+  /* Two layers arrive together. RLS already decides which agency rows this
+     admin may see, so no filtering is needed here beyond splitting them. */
+  A.pbMaster = (pb.data || []).filter(r => r.agency_id === null);
+  A.pbAgency = (pb.data || []).filter(r => r.agency_id !== null);
 
   /* An agency administrator is already limited to their own agency by
      the database, so this narrowing does nothing for them. It is for
@@ -260,6 +266,7 @@ function counts(){
     agents:    A.profiles.length,
     stuck:     at.stuck,
     videos:    A.videos.filter(v=>v.active).length,
+    playbooks: pbEditedCount(),
     unread:    (A.notes||[]).filter(n=>!n.read_at).length,
     overdue:   at.overdue,
     pre:        pipe.pre,
@@ -287,6 +294,7 @@ const NAV = [
   {v:"compliant",   label:"Fully compliant", c:"compliant"},
   {grp:"Content"},
   {v:"videos",   label:"Step videos",     c:"videos"},
+  {v:"playbooks",label:"State playbooks", c:"playbooks"},
 ];
 function renderNav(){
   const c = counts(), cur = A.view.name;
@@ -421,6 +429,8 @@ function render(){
   if (v.name==="review") return renderReview(v.arg);
   if (v.name==="agent")  return renderAgent(v.arg);
   if (v.name==="videos")     return shell("Step videos","Paste a link; agents see it on that step.", renderVideos());
+  if (v.name==="playbooks")  return renderPlaybookGrid();
+  if (v.name==="playbook")   return renderPlaybook(v.arg);
   if (v.name==="agents")     return shell("All agents","Everyone enrolled, whatever stage they're at.", renderAgents(A.profiles));
   if (v.name==="pre")        return shell("Pre-licensing","Working through study material, or registered for the exam but hasn't passed it yet.",
                                    renderAgents(A.profiles.filter(p=>STAGE_BUCKET[currentStage(p.user_id)]==="pre")));
@@ -989,6 +999,200 @@ function wireCabinet(uid){
     } finally {
       all.disabled = false; all.textContent = label;
     }
+  };
+}
+
+/* ============================================================
+   STATE PLAYBOOKS
+
+   Fifty-one states, and for each one: which vendor, which link, what the
+   exam is called there, and the steps an agent follows.
+
+   Whose copy you are editing depends on who you are, and the screen says
+   so rather than leaving you to guess:
+
+     LicenseFlow staff  edit the master. Every agency inherits it.
+     An agency admin    edits their agency's own copy, because vendors are
+                        an agency's choice -- one buys courses from Xcel,
+                        the next does not. Their edit forks that one state
+                        for that one agency and touches nobody else.
+
+   A state nobody has edited has no row at all. It answers from the
+   defaults compiled into states.js, so nothing is ever blank and there
+   was never anything to seed.
+   ============================================================ */
+
+/* Which layer this admin's edits land in. */
+const pbScope = () => (A.platform && !A.agency) ? "master" : "agency";
+const pbOwner = () => pbScope() === "master" ? null : (A.agency?.id || A.tenant?.agency?.id || null);
+
+const pbMasterRow = (code) => (A.pbMaster || []).find(r => r.state_code === code) || null;
+const pbAgencyRow = (code) => {
+  const own = pbOwner();
+  return own ? (A.pbAgency || []).find(r => r.agency_id === own && r.state_code === code) || null : null;
+};
+/* What the agent in this state will actually be shown. */
+const pbResolved = (code) =>
+  resolvePlaybook(code, pbMasterRow(code)?.data, pbAgencyRow(code)?.data);
+/* The layer this admin is editing, if it exists yet. */
+const pbMineRow = (code) => pbScope() === "master" ? pbMasterRow(code) : pbAgencyRow(code);
+
+function pbEditedCount(){
+  return (pbScope() === "master" ? (A.pbMaster || [])
+                                 : (A.pbAgency || []).filter(r => r.agency_id === pbOwner())).length;
+}
+
+function renderPlaybookGrid(){
+  const mine = pbScope();
+  const sub = mine === "master"
+    ? "The LicenseFlow master. Every agency starts from this, and inherits any change you make here unless they have overridden that state themselves."
+    : `${esc(A.agency?.name || "Your agency")}'s own copy. Edit a state to change what your agents are told — vendors, links, the exam's name, and the steps. Anything you don't touch follows the LicenseFlow default.`;
+
+  const btn = (st) => {
+    const edited = !!pbMineRow(st.code);
+    const r = pbResolved(st.code);
+    const named = !!(r?.exam?.exam_name || "").trim();
+    return `<button class="pb-b${edited ? " edited" : ""}" data-pb="${esc(st.code)}" type="button">
+      <span class="pb-code">${esc(st.code)}</span>
+      <span class="pb-name">${esc(st.name)}</span>
+      <span class="pb-meta">${esc(r?.exam?.vendor || "No vendor set")}</span>
+      <span class="pb-flags">
+        ${edited ? `<i class="pb-dot ed" title="You have edited this state"></i>` : ""}
+        ${named ? "" : `<i class="pb-dot no" title="No exam name recorded"></i>`}
+      </span>
+    </button>`;
+  };
+
+  const missing = STATE_LIST.filter(st => !(pbResolved(st.code)?.exam?.exam_name || "").trim()).length;
+
+  root.innerHTML = `
+    <div class="cc-h"><div><h1>State playbooks</h1><p>${sub}</p></div></div>
+    <div class="pb-legend">
+      <span><i class="pb-dot ed"></i> Edited by ${mine === "master" ? "LicenseFlow" : "you"}</span>
+      <span><i class="pb-dot no"></i> No exam name recorded${missing ? ` &mdash; ${missing} states` : ""}</span>
+    </div>
+    <div class="pb-grid">${STATE_LIST.map(btn).join("")}</div>`;
+  root.querySelectorAll("[data-pb]").forEach(b =>
+    b.onclick = () => { A.view = { name:"playbook", arg:b.dataset.pb }; render(); });
+}
+
+function renderPlaybook(code){
+  const st = STATES[code];
+  if (!st) { A.view = { name:"playbooks" }; return render(); }
+  const r = pbResolved(code);
+  const mineRow = pbMineRow(code);
+  const scope = pbScope();
+
+  const field = (sec, key, label, ph = "") => `
+    <label for="pb_${sec}_${key}">${esc(label)}</label>
+    <input id="pb_${sec}_${key}" data-sec="${sec}" data-key="${key}"
+           value="${esc((r[sec] || {})[key] || "")}" placeholder="${esc(ph)}"/>`;
+
+  const steps = (sec) => {
+    const list = ((r[sec] || {}).steps) || [];
+    return `<label for="pb_${sec}_steps">Steps the agent follows</label>
+      <textarea id="pb_${sec}_steps" data-sec="${sec}" data-key="steps" rows="${Math.max(4, list.length + 1)}"
+        placeholder="One step per line.">${esc(list.join("\n"))}</textarea>
+      <span class="hint">One step per line. These appear on the step screen under &ldquo;Step-by-step instructions&rdquo;.</span>`;
+  };
+
+  const section = (s) => `
+    <div class="cc-panel pb-sec">
+      <div class="cc-panel-h"><h2>${esc(s.label)}</h2></div>
+      <div class="pad">
+        ${field(s.key, "vendor", "Vendor", "e.g. Pearson VUE")}
+        ${field(s.key, "url", "Link", "https://…")}
+        ${s.key === "exam" ? field("exam", "exam_name", "What this exam is called here",
+            "e.g. Producer Combined Life and Health") : ""}
+        ${s.key === "exam" ? `<span class="hint">This is the name an agent searches for in the vendor's
+            catalogue. It varies state by state &mdash; leave it blank rather than guessing.</span>` : ""}
+        ${field(s.key, "note", "Note (optional)", "Anything specific to this state")}
+        ${steps(s.key)}
+      </div>
+    </div>`;
+
+  root.innerHTML = `
+    <div class="cc-h"><div><h1>${esc(st.name)}</h1>
+      <p>${scope === "master"
+          ? "You are editing the LicenseFlow master. Agencies that haven't overridden this state will see these changes."
+          : `You are editing ${esc(A.agency?.name || "your agency")}'s copy. Only your agents see it.`}</p></div></div>
+    <button class="btn btn-ghost btn-sm" id="pbBack" style="margin-bottom:14px">&larr; All states</button>
+
+    <div class="pb-state ${mineRow ? "forked" : "inherited"}">
+      ${mineRow
+        ? `<b>Your own version</b><span>Last edited ${esc(fmtDT(mineRow.updated_at))}. Reset it to go back to ${scope === "master" ? "the built-in default" : "the LicenseFlow master"}.</span>`
+        : `<b>Following the ${scope === "master" ? "built-in default" : "LicenseFlow master"}</b><span>Nothing has been overridden for ${esc(st.name)} yet. Saving any change here creates your own version of this state.</span>`}
+    </div>
+
+    ${PLAYBOOK_SECTIONS.map(section).join("")}
+
+    <div class="cc-panel pb-sec">
+      <div class="cc-panel-h"><h2>Other requirements</h2></div>
+      <div class="pad">
+        ${field("fingerprinting", "url", "Fingerprinting link")}
+        ${field("fingerprinting", "note", "Fingerprinting note")}
+        ${field("affidavit", "url", "Affidavit / extra requirement link")}
+        <label for="pb_misc">State note</label>
+        <input id="pb_misc" data-sec="" data-key="misc" value="${esc(r.misc || "")}"
+               placeholder="Anything else agents in this state need to know"/>
+      </div>
+    </div>
+
+    <div id="pbAlert" class="alert"></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin:14px 0 40px">
+      <button class="btn btn-primary" id="pbSave">Save ${esc(st.name)}</button>
+      ${mineRow ? `<button class="btn btn-ghost" id="pbReset">Reset to ${scope === "master" ? "default" : "master"}</button>` : ""}
+      <button class="btn btn-quiet" id="pbCancel">Cancel</button>
+    </div>`;
+
+  el("pbBack").onclick = el("pbCancel").onclick =
+    () => { A.view = { name:"playbooks" }; render(); };
+
+  el("pbSave").onclick = async () => {
+    const msg = el("pbAlert");
+    const say = (t, c) => { msg.className = `alert show ${c}`; msg.textContent = t; };
+    /* Only what actually differs from the layer underneath is stored, so
+       an agency that changed one link keeps inheriting everything else --
+       including later improvements to the master. */
+    const base = scope === "master"
+      ? playbookDefaults(code)
+      : resolvePlaybook(code, pbMasterRow(code)?.data, null);
+    const next = {};
+    root.querySelectorAll("[data-sec]").forEach(n => {
+      const sec = n.dataset.sec, key = n.dataset.key;
+      let v = n.value;
+      if (key === "steps") v = v.split("\n").map(x => x.trim()).filter(Boolean);
+      const was = sec ? ((base[sec] || {})[key]) : base[key];
+      const same = Array.isArray(v)
+        ? JSON.stringify(v) === JSON.stringify(was || [])
+        : String(v || "") === String(was || "");
+      if (same) return;
+      if (sec) { (next[sec] = next[sec] || {})[key] = v; } else { next[key] = v; }
+    });
+
+    if (!Object.keys(next).length) {
+      return say("Nothing changed — this state still follows the layer beneath it.", "alert-ok");
+    }
+    say("Saving…", "");
+    const row = { agency_id: pbOwner(), state_code: code,
+                  data: next, updated_at: new Date().toISOString(), updated_by: A.me?.id };
+    const existing = pbMineRow(code);
+    const q = existing
+      ? supabase.from("state_playbooks").update(row).eq("id", existing.id)
+      : supabase.from("state_playbooks").insert(row);
+    const { error } = await q;
+    if (error) return say("Couldn't save: " + error.message, "alert-error");
+    A.view = { name:"playbooks" };
+    await load();
+  };
+
+  const reset = el("pbReset");
+  if (reset) reset.onclick = async () => {
+    if (!confirm(`Reset ${st.name} to the ${scope === "master" ? "built-in default" : "LicenseFlow master"}? Your version of this state is removed.`)) return;
+    const { error } = await supabase.from("state_playbooks").delete().eq("id", mineRow.id);
+    if (error) { alert("Couldn't reset: " + error.message); return; }
+    A.view = { name:"playbooks" };
+    await load();
   };
 }
 

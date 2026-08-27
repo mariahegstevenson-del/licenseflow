@@ -58,6 +58,17 @@ export const PROVIDER_STEPS = {
     "Proceed to checkout.",
     "Send your agency your name, state, test date and time.",
   ],
+  /* Alabama contracts its producer testing to the University of Alabama's
+     continuing-education arm, so the path is a city page rather than a
+     national catalogue. Source: aldoi.gov/licensing/examsites.aspx */
+  ua: [
+    "Click the link for Alabama insurance testing.",
+    "Choose the city you want to test in — Birmingham, Huntsville, Mobile, Tuscaloosa or Montgomery.",
+    'Select "Register Today", then "Registration".',
+    'Choose the "Producer Combined Life and Health" exam and pick a date.',
+    "Pay the exam fee and save your confirmation.",
+    "Send your agency your name, state, test date and time.",
+  ],
   prometric: [
     "Click your state-specific link.",
     'Scroll down under "Test Center Exams" and select "Schedule".',
@@ -71,7 +82,7 @@ export const PROVIDER_STEPS = {
 // state code -> { name, exam, fp, affidavit?, misc?, order? }
 // order: overrides sequence of core steps for the starred states.
 export const STATES = {
-  AL: { name: "Alabama", exam: "https://www.enrole.com/ua/jsp/index.jsp?categoryId=80211EE0", fp: "https://fieldprintalabama.com/individuals", affidavit: "https://aldoi.gov/LicenseeCZ/Initial.aspx" },
+  AL: { name: "Alabama", exam: "https://www.enrole.com/ua/jsp/index.jsp?categoryId=80211EE0", examName: "Producer Combined Life and Health", fp: "https://fieldprintalabama.com/individuals", affidavit: "https://aldoi.gov/LicenseeCZ/Initial.aspx" },
   AK: { name: "Alaska", exam: "https://www.pearsonvue.com/us/en/ak/insurance.html", fp: "https://pearsonwest.ibtfingerprint.com/" },
   AZ: { name: "Arizona", exam: "https://test-takers.psiexams.com/anzins", fp: "https://docs.google.com/document/d/1JpuV0S7YKeLG5pvMB4a1ssCpOlzkLXdZOPSLRjeMUOA/edit?usp=sharing", affidavit: "https://aldoi.gov/LicenseeCZ/Initial.aspx" },
   AR: { name: "Arkansas", exam: "https://test-takers.psiexams.com/arins", fp: "https://www.ark.org/background-check/index.php/home/index/aid", order: { fingerprinting: 2, exam_registration: 3 } },
@@ -92,7 +103,7 @@ export const STATES = {
   ME: { name: "Maine", exam: "https://home.pearsonvue.com/me/insurance", fp: null },
   MD: { name: "Maryland", exam: "https://www.prometric.com/maryland/insurance", fp: null },
   MA: { name: "Massachusetts", exam: "https://www.prometric.com/massachusetts/insurance", fp: null },
-  MI: { name: "Michigan", exam: "https://test-takers.psiexams.com/midifs", fp: null, misc: "State exam #60731." },
+  MI: { name: "Michigan", exam: "https://test-takers.psiexams.com/midifs", examName: "State exam #60731", fp: null },
   MN: { name: "Minnesota", exam: "https://test-takers.psiexams.com/mnins/", fp: "https://proctor2.psionline.com/programs/MN%20INS%20Fingerprint%20hours.pdf" },
   MS: { name: "Mississippi", exam: "http://www.pearsonvue.com/ms/insurance", fp: null },
   MO: { name: "Missouri", exam: "http://www.pearsonvue.com/mo/insurance", fp: null },
@@ -128,21 +139,36 @@ export const STATE_LIST = Object.entries(STATES)
   .map(([code, s]) => ({ code, name: s.name }))
   .sort((a, b) => a.name.localeCompare(b.name));
 
+/* Not every state uses one of the three national vendors, and pretending
+   otherwise strands people. Alabama contracts its testing to the
+   University of Alabama and Kentucky runs registration through its own
+   DOI portal; both were previously answered as "Pearson VUE" or as
+   nothing at all, which meant an Alabama candidate was handed Pearson's
+   click-path for a site that looks nothing like it. */
 export function examProvider(url) {
   if (!url) return null;
   if (url.includes("pearsonvue")) return "pearson";
   if (url.includes("psiexams") || url.includes("psionline")) return "psi";
   if (url.includes("prometric")) return "prometric";
-  if (url.includes("enrole")) return "pearson";
+  if (url.includes("enrole")) return "ua";
+  if (url.includes("insurance.ky.gov")) return "kydoi";
   return null;
 }
+
+export const PROVIDER_LABEL = {
+  pearson: "Pearson VUE",
+  psi: "PSI",
+  prometric: "Prometric",
+  ua: "The University of Alabama",
+  kydoi: "the Kentucky Department of Insurance",
+};
 
 // Build the ordered, tailored walkthrough for a given state code.
 export function buildWalkthrough(code) {
   const s = STATES[code];
   if (!s) return null;
   const provider = examProvider(s.exam);
-  const providerLabel = { pearson: "Pearson VUE", psi: "PSI", prometric: "Prometric" }[provider] || "your exam provider";
+  const providerLabel = PROVIDER_LABEL[provider] || "your exam provider";
 
   const core = [];
   const def = { exam_registration: 1, fingerprinting: 2, state_app: 3, affidavit: 4 };
@@ -349,3 +375,83 @@ export function ceSlots(code, licenseType){
    because "we don't know yet" is useful information to an agent and a
    silent default is not. */
 export function ceIsConfigured(code){ return !!CE_BY_STATE[code]; }
+
+/* ============================================================
+   STATE PLAYBOOKS
+
+   What an agent is told to do in a given state: vendor, link, what the
+   exam is actually called there, and the click-by-click steps.
+
+   Three layers, resolved most-specific-first:
+
+     1. the agency's own row   (they changed vendors)
+     2. the LicenseFlow master (Mariah improved the default)
+     3. the defaults below     (compiled in, always present)
+
+   Layer 3 is why no seeding was needed and why nothing is ever blank:
+   a state nobody has touched still answers completely. A row only comes
+   into existence the moment somebody edits that state, and it carries
+   only that state, for only that owner.
+   ============================================================ */
+
+/* The five steps that carry a vendor and a link. Fingerprinting and the
+   affidavit are links without a vendor; misc is a free note. */
+export const PLAYBOOK_SECTIONS = [
+  { key:"study",     label:"Study material",       req:"study_material" },
+  { key:"exam",      label:"Exam registration",    req:"exam" },
+  { key:"state_app", label:"State application",    req:"nipr_application" },
+  { key:"ce",        label:"Continuing education", req:"continuing_education" },
+  { key:"eo",        label:"Errors & Omissions",   req:"eo" },
+];
+
+export function playbookDefaults(code){
+  const s = STATES[code];
+  if (!s) return null;
+  const prov = examProvider(s.exam);
+  const fpHttp = !!(s.fp && s.fp.startsWith("http"));
+  return {
+    exam: {
+      vendor: PROVIDER_LABEL[prov] || "",
+      url: s.exam || "",
+      /* Deliberately empty except where it has been checked. The exam's
+         name in the vendor's own catalogue varies state by state -- and
+         guessing it sends somebody to sit the wrong paper. Blank reads
+         as "nobody has filled this in", which is true and safe. */
+      exam_name: s.examName || "",
+      note: "",
+      steps: (PROVIDER_STEPS[prov] || []).slice(),
+    },
+    study:     { vendor:"Xcel Solutions", url:CONSTANTS.study, note:"", steps:PROVIDER_STEPS.xcel.slice() },
+    state_app: { vendor:"NIPR", url:CONSTANTS.nipr, note:"", steps:[] },
+    ce:        { vendor:"Success CE", url:`https://successce.com/insurance-ce-requirements-${code}/`, note:"", steps:[] },
+    eo:        { vendor:"360 Coverage Pros", url:CONSTANTS.eo, note:"", steps:[] },
+    fingerprinting: { url: fpHttp ? s.fp : "", note: s.fpNote || (s.fp && !fpHttp ? s.fp : "") },
+    affidavit: { url: s.affidavit || "", note:"" },
+    misc: s.misc || "",
+  };
+}
+
+/* Section-by-section, field-by-field. A layer that omits a field leaves
+   the one underneath showing, so an agency that only changed its E&O
+   carrier keeps every improvement made to the other four sections. An
+   explicitly emptied field is still an edit and does override -- clearing
+   a step list has to mean something. */
+export function mergePlaybook(...layers){
+  const out = {};
+  for (const layer of layers) {
+    if (!layer || typeof layer !== "object") continue;
+    for (const [k, v] of Object.entries(layer)) {
+      if (v == null) continue;
+      if (Array.isArray(v) || typeof v !== "object") { out[k] = v; continue; }
+      out[k] = mergePlaybook(out[k], v);
+    }
+  }
+  return out;
+}
+
+/* The resolved answer for one state, for one agency. */
+export function resolvePlaybook(code, masterRow, agencyRow){
+  const base = playbookDefaults(code);
+  if (!base) return null;
+  return mergePlaybook(base, masterRow || null, agencyRow || null);
+}

@@ -279,3 +279,45 @@ body.cc-locked .cc-nav,body.cc-locked .cc-rail{display:none}
   box-shadow:inset 0 0 0 1px #F5CFCB;border:1px dashed rgba(163,32,25,.4)}
 .fc-row.is-gap .fc-t b{color:#A32019}
 .fc #fcMsg{margin:12px 18px 16px}
+
+/* ============================================================
+   STATE PLAYBOOKS
+   Fifty-one buttons have to be scannable, so each one carries the two
+   facts you came for: who the vendor is, and whether anyone has filled
+   in the exam name yet.
+   ============================================================ */
+.pb-legend{display:flex;gap:18px;flex-wrap:wrap;align-items:center;
+  font-size:.82rem;color:var(--muted,#51637A);margin:0 0 14px}
+.pb-legend span{display:flex;align-items:center;gap:7px}
+.pb-dot{width:8px;height:8px;border-radius:50%;display:inline-block;flex:0 0 8px}
+.pb-dot.ed{background:#0F6F40}
+.pb-dot.no{background:#C9922A}
+
+.pb-grid{display:grid;gap:10px;grid-template-columns:repeat(auto-fill,minmax(178px,1fr));
+  margin-bottom:36px}
+.pb-b{position:relative;text-align:left;background:#fff;border:1px solid var(--line,#DCE3EC);
+  border-radius:11px;padding:12px 14px;cursor:pointer;display:grid;gap:2px;
+  box-shadow:0 1px 1px rgba(6,18,35,.04);transition:border-color .12s, box-shadow .12s, transform .08s}
+.pb-b:hover{border-color:#0C3D82;box-shadow:0 2px 10px rgba(12,61,130,.12);transform:translateY(-1px)}
+.pb-code{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:.66rem;font-weight:700;
+  letter-spacing:.12em;color:#5E7089}
+.pb-name{font-weight:700;font-size:.95rem;letter-spacing:-.015em;color:#061223;line-height:1.25}
+.pb-meta{font-size:.78rem;color:var(--muted,#51637A);white-space:nowrap;
+  overflow:hidden;text-overflow:ellipsis}
+.pb-flags{position:absolute;top:11px;right:12px;display:flex;gap:5px}
+.pb-b.edited{border-color:#C2E4CE;background:linear-gradient(180deg,#F5FBF7,#fff 60%)}
+
+.pb-state{display:flex;flex-direction:column;gap:2px;padding:13px 18px;border-radius:11px;
+  margin-bottom:16px;font-size:.9rem}
+.pb-state b{font-weight:700;letter-spacing:-.01em}
+.pb-state span{color:var(--muted,#51637A);font-size:.86rem}
+.pb-state.forked{background:#F1F9F4;border:1px solid #CBE7D6}
+.pb-state.forked b{color:#0F6F40}
+.pb-state.inherited{background:#F5F8FC;border:1px solid var(--line,#DCE3EC)}
+
+.pb-sec{margin-bottom:14px}
+.pb-sec textarea{width:100%;font:inherit;font-size:.9rem;line-height:1.55;padding:10px 12px;
+  border:1px solid var(--line,#DCE3EC);border-radius:9px;background:#fff;color:#061223;
+  resize:vertical;box-sizing:border-box}
+.pb-sec textarea:focus{outline:2px solid #0C3D82;outline-offset:1px;border-color:#0C3D82}
+.pb-sec .hint{display:block;margin:5px 0 12px}

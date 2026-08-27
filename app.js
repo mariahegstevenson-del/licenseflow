@@ -1,5 +1,5 @@
 import { supabase, isConfigured, requireSession, hardSignOut } from "./supabase.js?v=2";
-import { STATE_LIST, STATES, ceSlots, ceIsConfigured } from "./states.js?v=9";
+import { STATE_LIST, STATES, ceSlots, ceIsConfigured, resolvePlaybook } from "./states.js?v=10";
 import * as F from "./flow.js?v=7";
 import { loadTenant, renderUnknownAgency, applyTenantChrome, urlForAgency } from "./tenant.js?v=4";
 
@@ -85,9 +85,34 @@ async function load() {
   if (S.profile?.agency) applyTenantChrome(S.profile.agency);
 
   el("who").textContent = S.profile?.full_name || S.user.email;
-  if (S.profile?.designated_state) S.journey = F.buildJourney(S.profile.designated_state);
+  await loadPlaybooks();
+  if (S.profile?.designated_state) S.journey = F.buildJourney(S.profile.designated_state, playbookFor(S.profile.designated_state));
   route();
 }
+/* ------------------------------------------------------------
+   State playbooks.
+
+   What this agent is told to do in their state: which vendor, which
+   link, what their exam is actually called, and the steps. Two rows may
+   exist for a state -- the LicenseFlow master and this agency's own
+   override -- and RLS already limits what comes back to those two. If
+   neither exists, resolvePlaybook falls through to the defaults compiled
+   into states.js, so a state nobody has configured still answers.
+------------------------------------------------------------- */
+async function loadPlaybooks(){
+  try {
+    const { data } = await supabase.from("state_playbooks").select("agency_id,state_code,data");
+    S.pb = data || [];
+  } catch (_) { S.pb = []; }   /* a missing playbook is not a broken app */
+}
+function playbookFor(code){
+  if (!code) return null;
+  const rows = S.pb || [];
+  const master = rows.find(r => r.agency_id === null && r.state_code === code);
+  const mine   = rows.find(r => r.agency_id !== null && r.state_code === code);
+  return resolvePlaybook(code, master?.data, mine?.data);
+}
+
 /* ------------------------------------------------------------
    The trainer's registration key.
 
@@ -561,12 +586,12 @@ async function submitReg() {
   delete payload.join_key;
   S.profile = { ...payload };
   el("who").textContent = payload.full_name;
-  if (S.profile.designated_state) S.journey = F.buildJourney(S.profile.designated_state);
+  if (S.profile.designated_state) S.journey = F.buildJourney(S.profile.designated_state, playbookFor(S.profile.designated_state));
   route();
 }
 async function persistPathway(path){
   await supabase.from("licensing_profiles").update({ designated_state:path.designated, pathway_confidence:path.confidence, updated_at:new Date().toISOString() }).eq("user_id",S.user.id);
-  S.profile.designated_state=path.designated; S.profile.pathway_confidence=path.confidence; S.journey=F.buildJourney(path.designated);
+  S.profile.designated_state=path.designated; S.profile.pathway_confidence=path.confidence; S.journey=F.buildJourney(path.designated, playbookFor(path.designated));
 }
 async function createException(type, detail, confidence){ await supabase.from("exceptions").insert({ user_id:S.user.id, type, detail, confidence, status:"open" }); }
 
@@ -588,7 +613,7 @@ function renderPathwayQuestion(path){
     if (code && STATES[code]) {
       await supabase.from("licensing_profiles").update({ intended_state:code, designated_state:code, pathway_confidence:"high", updated_at:new Date().toISOString() }).eq("user_id",S.user.id);
       await audit("pathway_resolved","medium","high",{ designated:code });
-      S.profile.intended_state=code; S.profile.designated_state=code; S.profile.pathway_confidence="high"; S.journey=F.buildJourney(code); route();
+      S.profile.intended_state=code; S.profile.designated_state=code; S.profile.pathway_confidence="high"; S.journey=F.buildJourney(code, playbookFor(code)); route();
     } else {
       await supabase.from("licensing_profiles").update({ pathway_confidence:"low", updated_at:new Date().toISOString() }).eq("user_id",S.user.id);
       await createException("ambiguous_military_pathway","Agent unsure which state to license in (duty vs domicile).","low");
@@ -1099,6 +1124,10 @@ function renderExam(r, st, head) {
   const info = F.examInfo(S.profile.designated_state, S.profile.license_type);
   const meta = S.sm[r.key]?.meta || {};
   const scheduled = F.isDone(st);
+  /* The playbook wins where it has an answer: an agency may test through
+     a vendor the built-in data has never heard of. */
+  const vendor = r.providerLabel || info.providerLabel;
+  const url    = r.link || info.url;
   root.innerHTML = `
   <div class="wt">${head}
     <div class="step-card"><div class="step-body">
@@ -1109,9 +1138,12 @@ function renderExam(r, st, head) {
       ${videoBlock("exam","Watch before you schedule") || `<div class="section-k center-k">Watch before you schedule</div><div class="video">${videoEmbed(null)}</div><p class="link-note" style="margin-top:-12px">Learn how to schedule your licensing examination.</p>`}
 
       <div class="section-k" style="margin-top:22px">Your examination platform</div>
-      <div class="syscard"><span class="sys-k">Scheduled through</span><strong>${esc(info.providerLabel)}</strong></div>
-      <div class="link-row"><a class="btn btn-accent btn-lg" href="${esc(info.url)}" target="_blank" rel="noopener">Open ${esc(info.providerLabel)}</a></div>
+      <div class="syscard"><span class="sys-k">Scheduled through</span><strong>${esc(vendor)}</strong></div>
+      ${r.examName ? `<div class="syscard exam-name"><span class="sys-k">Search for this exam</span><strong>${esc(r.examName)}</strong></div>
+        <p class="link-note" style="margin-top:-6px">Exams are named differently in every state. This is the one to book &mdash; if you can't find it, stop and ask your coordinator rather than booking something that looks close.</p>` : ""}
+      <div class="link-row"><a class="btn btn-accent btn-lg" href="${esc(url)}" target="_blank" rel="noopener">Open ${esc(vendor)}</a></div>
       <div class="link-note">This opens the official scheduling platform in a new tab.</div>
+      ${r.stateNote ? `<div class="callout"><span class="lab">For ${esc(stateName(S.profile.designated_state))}</span>${esc(r.stateNote)}</div>` : ""}
       ${r.instructions ? `<details class="inst" style="margin-top:16px"><summary>Step-by-step instructions</summary><ol>${r.instructions.map(i=>`<li>${linkify(i)}</li>`).join("")}</ol></details>` : ""}
 
       <div class="form-block">
@@ -1132,7 +1164,7 @@ function renderExam(r, st, head) {
     if(!d){ A.className="alert show alert-error"; A.textContent="Please enter your exam date."; return; }
     el("submitStep").disabled=true; el("submitStep").textContent="Saving…";
     const before=F.reqStatus(r.key,S.sm);
-    await supabase.from("requirement_instances").upsert({ user_id:S.user.id, requirement_key:r.key, label:r.label, status:F.ST.COMPLETE, meta:{ exam_date:d, provider:info.providerLabel, exam_type:S.profile.license_type }, completed_at:new Date().toISOString(), updated_at:new Date().toISOString() }, { onConflict:"user_id,requirement_key" });
+    await supabase.from("requirement_instances").upsert({ user_id:S.user.id, requirement_key:r.key, label:r.label, status:F.ST.COMPLETE, meta:{ exam_date:d, provider:vendor, exam_name:r.examName||null, exam_type:S.profile.license_type }, completed_at:new Date().toISOString(), updated_at:new Date().toISOString() }, { onConflict:"user_id,requirement_key" });
     await audit("requirement:exam", before, "scheduled", { exam_date:d });
     await load();
     const ns=F.nextStep(S.journey,S.sm);
