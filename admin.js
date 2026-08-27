@@ -85,7 +85,7 @@ const within = (t, from, to) => t != null && t >= from && t < to;
 })();
 
 async function load() {
-  const [p, inst, ex, vids, docs, notes, pb] = await Promise.all([
+  const [p, inst, ex, vids, docs, notes, pb, ags] = await Promise.all([
     supabase.from("licensing_profiles").select("*"),
     supabase.from("requirement_instances").select("*"),
     supabase.from("exceptions").select("*").order("created_at",{ascending:false}),
@@ -93,6 +93,7 @@ async function load() {
     supabase.from("documents").select("*"),
     supabase.from("notifications").select("*").order("created_at",{ascending:false}).limit(200),
     supabase.from("state_playbooks").select("*"),
+    supabase.from("agencies").select("id,slug,name").order("name"),
   ]);
   A.profiles=p.data||[]; A.instances=inst.data||[]; A.exceptions=ex.data||[]; A.videos=vids.data||[];
   A.docs = docs.data || [];
@@ -101,6 +102,7 @@ async function load() {
      admin may see, so no filtering is needed here beyond splitting them. */
   A.pbMaster = (pb.data || []).filter(r => r.agency_id === null);
   A.pbAgency = (pb.data || []).filter(r => r.agency_id !== null);
+  A.agencies = ags.data || [];
 
   /* An agency administrator is already limited to their own agency by
      the database, so this narrowing does nothing for them. It is for
@@ -1022,13 +1024,47 @@ function wireCabinet(uid){
    was never anything to seed.
    ============================================================ */
 
-/* Which layer this admin's edits land in. */
-const pbScope = () => (A.platform && !A.agency) ? "master" : "agency";
-const pbOwner = () => pbScope() === "master" ? null : (A.agency?.id || A.tenant?.agency?.id || null);
+/* Which layer this admin's edits land in.
+
+   An agency administrator has no choice to make: their own agency, always.
+   LicenseFlow staff do have a choice -- the master, or any one agency's
+   copy -- so it is made explicit and shown at the top of the screen rather
+   than inferred from which address they happened to arrive on. A.pbAs
+   holds it: null means the master. */
+const pbScope = () => pbOwner() === null ? "master" : "agency";
+function pbOwner(){
+  if (A.platform) {
+    /* Undefined means "not chosen yet". Standing on an agency's own
+       address is a strong hint they mean that agency, so default to it;
+       on the main domain the master is the sensible default. */
+    if (A.pbAs === undefined) A.pbAs = A.tenant?.agency?.id || null;
+    return A.pbAs;
+  }
+  return A.agency?.id || A.tenant?.agency?.id || null;
+}
+const pbAgencyName = (id) => (A.agencies || []).find(a => a.id === id)?.name
+  || A.agency?.name || A.tenant?.agency?.name || "your agency";
+
+/* The switch itself. Only LicenseFlow staff see it -- for everyone else
+   there is exactly one answer and a control offering one option is
+   clutter. */
+function pbScopeBar(){
+  if (!A.platform) return "";
+  const opts = [`<option value=""${pbOwner() === null ? " selected" : ""}>LicenseFlow master &mdash; every agency inherits this</option>`]
+    .concat((A.agencies || []).map(a =>
+      `<option value="${esc(a.id)}"${pbOwner() === a.id ? " selected" : ""}>${esc(a.name)} &mdash; only their agents</option>`));
+  return `<div class="pb-scope">
+    <label for="pbAs">Editing</label>
+    <select id="pbAs">${opts.join("")}</select>
+    <span class="hint">${pbOwner() === null
+      ? "Changes here reach every agency that hasn't overridden the state."
+      : `Changes here reach ${esc(pbAgencyName(pbOwner()))} only.`}</span>
+  </div>`;
+}
 
 const pbMasterRow = (code) => (A.pbMaster || []).find(r => r.state_code === code) || null;
-const pbAgencyRow = (code) => {
-  const own = pbOwner();
+const pbAgencyRow = (code, forAgency) => {
+  const own = forAgency !== undefined ? forAgency : pbOwner();
   return own ? (A.pbAgency || []).find(r => r.agency_id === own && r.state_code === code) || null : null;
 };
 /* What the agent in this state will actually be shown. */
@@ -1046,7 +1082,7 @@ function renderPlaybookGrid(){
   const mine = pbScope();
   const sub = mine === "master"
     ? "The LicenseFlow master. Every agency starts from this, and inherits any change you make here unless they have overridden that state themselves."
-    : `${esc(A.agency?.name || "Your agency")}'s own copy. Edit a state to change what your agents are told — vendors, links, the exam's name, and the steps. Anything you don't touch follows the LicenseFlow default.`;
+    : `${esc(pbAgencyName(pbOwner()))}'s own copy. Edit a state to change what their agents are told — vendors, links, the exam's name, and the steps. Anything left untouched follows the LicenseFlow master.`;
 
   const btn = (st) => {
     const edited = !!pbMineRow(st.code);
@@ -1067,13 +1103,16 @@ function renderPlaybookGrid(){
 
   root.innerHTML = `
     <div class="cc-h"><div><h1>State playbooks</h1><p>${sub}</p></div></div>
+    ${pbScopeBar()}
     <div class="pb-legend">
-      <span><i class="pb-dot ed"></i> Edited by ${mine === "master" ? "LicenseFlow" : "you"}</span>
+      <span><i class="pb-dot ed"></i> ${mine === "master" ? "Edited on the master" : "Overridden for " + esc(pbAgencyName(pbOwner()))}</span>
       <span><i class="pb-dot no"></i> No exam name recorded${missing ? ` &mdash; ${missing} states` : ""}</span>
     </div>
     <div class="pb-grid">${STATE_LIST.map(btn).join("")}</div>`;
   root.querySelectorAll("[data-pb]").forEach(b =>
     b.onclick = () => { A.view = { name:"playbook", arg:b.dataset.pb }; render(); });
+  const sw = el("pbAs");
+  if (sw) sw.onchange = () => { A.pbAs = sw.value || null; render(); };
 }
 
 function renderPlaybook(code){
@@ -1115,7 +1154,7 @@ function renderPlaybook(code){
     <div class="cc-h"><div><h1>${esc(st.name)}</h1>
       <p>${scope === "master"
           ? "You are editing the LicenseFlow master. Agencies that haven't overridden this state will see these changes."
-          : `You are editing ${esc(A.agency?.name || "your agency")}'s copy. Only your agents see it.`}</p></div></div>
+          : `You are editing ${esc(pbAgencyName(pbOwner()))}'s copy. Only their agents see it.`}</p></div></div>
     <button class="btn btn-ghost btn-sm" id="pbBack" style="margin-bottom:14px">&larr; All states</button>
 
     <div class="pb-state ${mineRow ? "forked" : "inherited"}">

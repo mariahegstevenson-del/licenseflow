@@ -321,3 +321,16 @@ body.cc-locked .cc-nav,body.cc-locked .cc-rail{display:none}
   resize:vertical;box-sizing:border-box}
 .pb-sec textarea:focus{outline:2px solid #0C3D82;outline-offset:1px;border-color:#0C3D82}
 .pb-sec .hint{display:block;margin:5px 0 12px}
+
+/* Which layer you are editing. Shown, never inferred -- the whole point
+   of two layers is lost if you cannot tell which one you are in. */
+.pb-scope{display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+  background:#fff;border:1px solid var(--line,#DCE3EC);border-radius:11px;
+  padding:12px 16px;margin:0 0 14px;box-shadow:0 1px 1px rgba(6,18,35,.04)}
+.pb-scope label{font-size:.7rem;font-weight:700;letter-spacing:.13em;
+  text-transform:uppercase;color:var(--faint,#5E7089);margin:0}
+.pb-scope select{font:inherit;font-size:.92rem;font-weight:600;padding:7px 11px;
+  border:1px solid var(--line,#DCE3EC);border-radius:8px;background:#fff;color:#061223;
+  max-width:100%}
+.pb-scope select:focus{outline:2px solid #0C3D82;outline-offset:1px}
+.pb-scope .hint{margin:0;flex:1 1 240px;min-width:0}
