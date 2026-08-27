@@ -1299,10 +1299,13 @@ function renderPlaybookAgent(code){
   if (!j) { host.innerHTML = `<p class="muted">No journey for this state.</p>`; return; }
 
   const pick = A.pbStep && j.reqs.some(q => q.key === A.pbStep) ? A.pbStep : j.reqs[0].key;
-  const req = j.reqs.find(q => q.key === pick);
+  const at   = j.reqs.findIndex(q => q.key === pick);
+  const req  = j.reqs[at];
+  const prev = at > 0 ? j.reqs[at - 1] : null;
+  const next = at < j.reqs.length - 1 ? j.reqs[at + 1] : null;
 
-  const chip = (q) => `<button class="pv-chip${q.key === pick ? " on" : ""}" data-step="${esc(q.key)}"
-      type="button">${esc(q.short || q.label)}</button>`;
+  const chip = (q, i) => `<button class="pv-chip${q.key === pick ? " on" : ""}" data-step="${esc(q.key)}"
+      type="button"><span class="pv-cn">${i + 1}</span>${esc(q.short || q.label)}</button>`;
 
   /* The agent's own components, so spacing and placement are the real
      thing rather than an approximation. */
@@ -1343,14 +1346,38 @@ function renderPlaybookAgent(code){
       </div>
     </div>`;
 
+  /* Both ends of the screen can move you on. The step list sticks to the
+     top of the pane, and Next sits under the preview -- scrolling through
+     one long step used to leave you with no way forward without scrolling
+     all the way back up. */
+  const nav = (where) => `
+    <div class="pv-nav ${where}">
+      ${prev ? `<button class="pv-move" data-step="${esc(prev.key)}" type="button">
+          &larr; <span>${esc(prev.short || prev.label)}</span></button>`
+             : `<span class="pv-move is-off">&larr; Start of the journey</span>`}
+      <span class="pv-count">Step ${at + 1} of ${j.reqs.length}</span>
+      ${next ? `<button class="pv-move next" data-step="${esc(next.key)}" type="button">
+          <span>${esc(next.short || next.label)}</span> &rarr;</button>`
+             : `<span class="pv-move is-off">End of the journey &rarr;</span>`}
+    </div>`;
+
   host.innerHTML = `
     <p class="pv-lead">Every screen this state's agents get, without signing in as one.
       ${pbScope() === "master" ? "" : "Links and vendors are " + esc(pbAgencyName(pbOwner())) + "'s."}</p>
-    <div class="pv-chips">${j.reqs.map(chip).join("")}</div>
-    ${screen}`;
+    <div class="pv-chipwrap"><div class="pv-chips">${j.reqs.map(chip).join("")}</div></div>
+    ${nav("top")}
+    ${screen}
+    ${nav("bottom")}`;
 
   host.querySelectorAll("[data-step]").forEach(b =>
-    b.onclick = () => { A.pbStep = b.dataset.step; renderPlaybookAgent(code); });
+    b.onclick = () => {
+      A.pbStep = b.dataset.step;
+      renderPlaybookAgent(code);
+      /* Land at the top of the new step rather than wherever you happened
+         to be in the last one. */
+      const top = el("pbPane");
+      if (top) top.scrollIntoView({ block: "start", behavior: "smooth" });
+    });
 }
 
 /* The address the preview is standing in for. On the master there is no

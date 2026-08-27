@@ -437,3 +437,32 @@ body.cc-locked .cc-nav,body.cc-locked .cc-rail{display:none}
 .pv-page .step-card{max-width:620px;margin:0 auto}
 .pv-page input,.pv-page .btn{pointer-events:none}
 .pv-page .drop{pointer-events:none}
+
+/* Moving between the seven steps. The chip row sticks to the top of the
+   pane and Next repeats under the preview: one step is taller than the
+   window, so reaching the bottom used to mean scrolling all the way back
+   up to get anywhere. */
+.pv-chipwrap{position:sticky;top:0;z-index:3;background:#F2F5F9;
+  padding:8px 0 10px;margin:0 0 2px;border-bottom:1px solid var(--line,#DCE3EC)}
+.pv-chips{display:flex;gap:6px;flex-wrap:wrap;margin:0;overflow-x:auto}
+.pv-chip{display:inline-flex;align-items:center;gap:7px}
+.pv-cn{display:inline-grid;place-items:center;width:17px;height:17px;border-radius:50%;
+  background:#EAF0F8;color:#0C3D82;font-size:.66rem;font-weight:700;flex:0 0 17px}
+.pv-chip.on .pv-cn{background:rgba(255,255,255,.22);color:#fff}
+
+.pv-nav{display:flex;align-items:center;justify-content:space-between;gap:12px;
+  flex-wrap:wrap;padding:12px 0}
+.pv-nav.top{padding-top:10px}
+.pv-nav.bottom{padding-bottom:34px}
+.pv-move{appearance:none;background:#fff;border:1px solid var(--line,#DCE3EC);border-radius:9px;
+  padding:9px 15px;font:inherit;font-size:.88rem;font-weight:600;color:var(--muted,#51637A);
+  cursor:pointer;display:inline-flex;align-items:center;gap:7px;max-width:46%}
+.pv-move span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pv-move:hover{border-color:#0C3D82;color:#0C3D82;background:#F2F7FE}
+.pv-move.next{background:#0C3D82;border-color:#0C3D82;color:#fff}
+.pv-move.next:hover{background:#09336E}
+.pv-move.is-off{background:none;border-color:transparent;color:var(--faint,#5E7089);
+  cursor:default;font-weight:500}
+.pv-move:focus-visible{outline:2px solid #0C3D82;outline-offset:2px}
+.pv-count{font-size:.76rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--faint,#5E7089);font-variant-numeric:tabular-nums}
