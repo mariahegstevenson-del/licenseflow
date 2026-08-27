@@ -7,8 +7,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Libre+Franklin:wght@600;700;800&display=swap"/>
-<link rel="stylesheet" href="styles.css?v=27"/>
-<link rel="stylesheet" href="admin.css?v=9"/>
+<link rel="stylesheet" href="styles.css?v=28"/>
+<link rel="stylesheet" href="admin.css?v=10"/>
 <script src="config.js"></script>
 </head>
 <body>
@@ -23,12 +23,17 @@
   </div>
 </div>
 
+<!-- Filled by renderTabs() for LicenseFlow staff only: one tab per
+     agency, so switching between them never means changing domain or
+     signing in as somebody else. -->
+<div class="cc-tabs" id="tabs" hidden></div>
+
 <div class="cc-body">
   <nav class="cc-nav" id="nav"></nav>
   <main class="cc-main" id="root"><p class="muted">Loading…</p></main>
   <aside class="cc-rail" id="rail"></aside>
 </div>
 
-<script type="module" src="admin.js?v=21"></script>
+<script type="module" src="admin.js?v=22"></script>
 </body>
 </html>

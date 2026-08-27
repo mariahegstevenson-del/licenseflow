@@ -334,3 +334,35 @@ body.cc-locked .cc-nav,body.cc-locked .cc-rail{display:none}
   max-width:100%}
 .pb-scope select:focus{outline:2px solid #0C3D82;outline-offset:1px}
 .pb-scope .hint{margin:0;flex:1 1 240px;min-width:0}
+
+/* ============================================================
+   AGENCY TABS
+   Switching agency used to mean changing domain; seeing their agent
+   portal used to mean having an account there. Both are a click now.
+   ============================================================ */
+.cc-tabs{background:#fff;border-bottom:1px solid var(--line,#DCE3EC)}
+.cc-tabs[hidden]{display:none}
+.cc-tabs-in{display:flex;align-items:center;gap:16px;flex-wrap:wrap;
+  padding:0 22px;max-width:1600px;margin:0 auto}
+.cc-tab-row{display:flex;gap:2px;flex-wrap:wrap;flex:1;min-width:0}
+.cc-tab{appearance:none;background:none;border:0;border-bottom:2px solid transparent;
+  padding:11px 15px 9px;cursor:pointer;text-align:left;display:grid;gap:1px;
+  border-radius:8px 8px 0 0;transition:background .12s,border-color .12s}
+.cc-tab:hover{background:#F5F8FC}
+.cc-tab .t-name{font-size:.92rem;font-weight:600;color:var(--muted,#51637A);
+  letter-spacing:-.01em;white-space:nowrap}
+.cc-tab .t-sub{font-size:.72rem;color:var(--faint,#5E7089);white-space:nowrap}
+.cc-tab.on{border-bottom-color:#0C3D82;background:#F2F7FE}
+.cc-tab.on .t-name{color:#0C3D82;font-weight:700}
+.cc-tab:focus-visible{outline:2px solid #0C3D82;outline-offset:-2px}
+.cc-tab-agent{font-size:.84rem;font-weight:600;color:#0C3D82;text-decoration:none;
+  white-space:nowrap;padding:6px 0}
+.cc-tab-agent:hover{text-decoration:underline}
+.cc-tab-note{font-size:.82rem;color:var(--faint,#5E7089);white-space:nowrap}
+
+/* The playbook scope is now a readout of the tab, not a second control. */
+.pb-scope.is-master{border-left:3px solid #0C3D82}
+.pb-scope.is-agency{border-left:3px solid #C9922A}
+.pb-scope-k{font-size:.66rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--faint,#5E7089)}
+.pb-scope b{font-size:.98rem;font-weight:700;letter-spacing:-.01em;color:#061223}

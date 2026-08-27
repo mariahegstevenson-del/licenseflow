@@ -1,11 +1,11 @@
 import { supabase, isConfigured, requireSession, hardSignOut } from "./supabase.js?v=2";
 import { STATES, STATE_LIST, ceSlots, PLAYBOOK_SECTIONS, playbookDefaults,
          resolvePlaybook } from "./states.js?v=10";
-import * as F from "./flow.js?v=7";
+import * as F from "./flow.js?v=8";
 import { loadTenant, renderUnknownAgency, applyTenantChrome, urlForAgency } from "./tenant.js?v=4";
 
 const el = (id) => document.getElementById(id);
-const root = el("root"), navEl = el("nav"), railEl = el("rail");
+const root = el("root"), navEl = el("nav"), railEl = el("rail"), tabsEl = el("tabs");
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;" }[c]));
 const stateName = (c) => STATES[c]?.name || c || "—";
 const fmtDT = (t) => t ? new Date(t).toLocaleString(undefined,{month:"short",day:"numeric",hour:"numeric",minute:"2-digit"}) : "—";
@@ -74,12 +74,11 @@ const within = (t, from, to) => t != null && t >= from && t < to;
     return;
   }
   if (A.agency) applyTenantChrome(A.agency);
-  else if (A.platform) {
-    document.querySelectorAll("[data-agency-name]").forEach((n) => {
-      n.textContent = A.tenant?.agency ? A.tenant.agency.name : "All agencies";
-      n.removeAttribute("hidden");
-    });
-  }
+
+  /* Which agency the console is pointed at. For staff this is a choice
+     they make with the tabs; for an agency's own admin there is only one
+     answer and the tabs never appear. */
+  A.only = A.platform ? (A.tenant?.agency?.id || null) : (A.agency?.id || null);
 
   await load();
 })();
@@ -103,14 +102,14 @@ async function load() {
   A.pbMaster = (pb.data || []).filter(r => r.agency_id === null);
   A.pbAgency = (pb.data || []).filter(r => r.agency_id !== null);
   A.agencies = ags.data || [];
+  A.allProfiles = p.data || [];   /* unfiltered, for the tab counts */
 
   /* An agency administrator is already limited to their own agency by
      the database, so this narrowing does nothing for them. It is for
-     LicenseFlow staff, who can read every agency: standing on an
-     agency's own address should show that agency's console, not the
-     whole platform's. The main domain still shows everything. */
-  if (A.platform && A.tenant?.agency) {
-    const only = A.tenant.agency.id;
+     LicenseFlow staff, who can read every agency: picking an agency's tab
+     shows that agency's console. "All agencies" shows the lot. */
+  if (A.platform && A.only) {
+    const only = A.only;
     A.profiles = A.profiles.filter(x => x.agency_id === only);
     const mine = new Set(A.profiles.map(x => x.user_id));
     A.instances  = A.instances.filter(x => mine.has(x.user_id));
@@ -279,6 +278,68 @@ function counts(){
   };
 }
 
+
+/* ============================================================
+   AGENCY TABS
+
+   Before this, seeing an agency's console meant changing domain, and
+   seeing their agent portal meant having an account there. Both are now
+   a click. Only LicenseFlow staff get the strip -- an agency's own
+   administrator has exactly one agency and a tab bar of one is clutter.
+
+   The tab is also the scope for State playbooks: "All agencies" edits the
+   master, an agency's tab edits that agency's copy. One control, so the
+   question "whose does this change?" always has the same answer as
+   "whose console am I looking at?".
+   ============================================================ */
+function renderTabs(){
+  if (!tabsEl) return;
+  if (!A.platform) { tabsEl.hidden = true; return; }
+  const picked = (A.agencies || []).find(a => a.id === A.only);
+  document.querySelectorAll("[data-agency-name]").forEach((n) => {
+    n.textContent = picked ? picked.name : "All agencies";
+    n.removeAttribute("hidden");
+  });
+  tabsEl.hidden = false;
+
+  const list = A.agencies || [];
+  const cur  = A.only;
+  const tab = (id, label, sub) => `
+    <button class="cc-tab${cur === id ? " on" : ""}" data-only="${id === null ? "" : esc(id)}" type="button">
+      <span class="t-name">${esc(label)}</span>
+      <span class="t-sub">${esc(sub)}</span>
+    </button>`;
+
+  const here = list.find(a => a.id === cur);
+  tabsEl.innerHTML = `
+    <div class="cc-tabs-in">
+      <div class="cc-tab-row">
+        ${tab(null, "All agencies", `${list.length} ${list.length === 1 ? "agency" : "agencies"} \u00b7 master playbook`)}
+        ${list.map(a => { const n = agentCountFor(a.id);
+              return tab(a.id, a.name, `${n} ${n === 1 ? "agent" : "agents"}`); }).join("")}
+      </div>
+      ${here ? `<a class="cc-tab-agent" href="${esc(urlForAgency(here.slug, "/app.html"))}"
+           target="_blank" rel="noopener">Open ${esc(here.name)}&rsquo;s agent view &rarr;</a>`
+             : `<span class="cc-tab-note">Pick an agency to see its console, or open its agent view.</span>`}
+    </div>`;
+
+  tabsEl.querySelectorAll("[data-only]").forEach(b => b.onclick = async () => {
+    A.only = b.dataset.only || null;
+    /* Going back to a queue view: an agency-specific screen makes no
+       sense once you have switched to a different agency. */
+    if (A.view.name === "review" || A.view.name === "agent" || A.view.name === "playbook") {
+      A.view = { name: A.view.name === "playbook" ? "playbooks" : "overview" };
+    }
+    await load();
+  });
+}
+
+/* Agent counts have to come from the unfiltered set, or every tab but the
+   selected one would read zero. */
+function agentCountFor(id){
+  return (A.allProfiles || A.profiles || []).filter(p => p.agency_id === id).length;
+}
+
 /* ---------------- left nav ---------------- */
 const NAV = [
   {grp:"Queue"},
@@ -424,7 +485,7 @@ function renderRail(){
 
 /* ---------------- router ---------------- */
 function render(){
-  renderNav(); renderRail();
+  renderTabs(); renderNav(); renderRail();
   /* Re-bound on every render, because the panel is rebuilt each time. */
   setTimeout(wireNotices, 0);
   const v = A.view;
@@ -1028,50 +1089,32 @@ function wireCabinet(uid){
 
    An agency administrator has no choice to make: their own agency, always.
    LicenseFlow staff do have a choice -- the master, or any one agency's
-   copy -- so it is made explicit and shown at the top of the screen rather
-   than inferred from which address they happened to arrive on. A.pbAs
-   holds it: null means the master. */
+   copy -- and they make it with the agency tabs, which scope the whole
+   console at once. */
 const pbScope = () => pbOwner() === null ? "master" : "agency";
 function pbOwner(){
-  if (A.platform) {
-    /* Undefined means "not chosen yet". Standing on an agency's own
-       address is a strong hint they mean that agency, so default to it;
-       on the main domain the master is the sensible default. */
-    if (A.pbAs === undefined) A.pbAs = A.tenant?.agency?.id || null;
-    return A.pbAs;
-  }
+  /* The tab you are on is the layer you are editing. One control rather
+     than two, so "whose console is this?" and "whose playbook am I
+     changing?" can never drift apart. */
+  if (A.platform) return A.only || null;
   return A.agency?.id || A.tenant?.agency?.id || null;
 }
 const pbAgencyName = (id) => (A.agencies || []).find(a => a.id === id)?.name
   || A.agency?.name || A.tenant?.agency?.name || "your agency";
 
-/* The switch itself. Only LicenseFlow staff see it -- for everyone else
-   there is exactly one answer and a control offering one option is
-   clutter. */
+/* A readout, not a second control. The tabs above already set the layer;
+   repeating that as a dropdown gave two ways to answer one question. */
 function pbScopeBar(){
   if (!A.platform) return "";
-  const opts = [`<option value=""${pbOwner() === null ? " selected" : ""}>LicenseFlow master &mdash; every agency inherits this</option>`]
-    .concat((A.agencies || []).map(a =>
-      `<option value="${esc(a.id)}"${pbOwner() === a.id ? " selected" : ""}>${esc(a.name)} &mdash; only their agents</option>`));
-  return `<div class="pb-scope">
-    <label for="pbAs">Editing</label>
-    <select id="pbAs">${opts.join("")}</select>
-    <span class="hint">${pbOwner() === null
-      ? "Changes here reach every agency that hasn't overridden the state."
-      : `Changes here reach ${esc(pbAgencyName(pbOwner()))} only.`}</span>
+  const master = pbOwner() === null;
+  return `<div class="pb-scope ${master ? "is-master" : "is-agency"}">
+    <span class="pb-scope-k">Editing</span>
+    <b>${master ? "the LicenseFlow master" : esc(pbAgencyName(pbOwner()))}</b>
+    <span class="hint">${master
+      ? "Reaches every agency that hasn't overridden the state. Switch with the tabs at the top."
+      : `Reaches ${esc(pbAgencyName(pbOwner()))}'s agents only. Choose "All agencies" above to edit the master.`}</span>
   </div>`;
 }
-
-const pbMasterRow = (code) => (A.pbMaster || []).find(r => r.state_code === code) || null;
-const pbAgencyRow = (code, forAgency) => {
-  const own = forAgency !== undefined ? forAgency : pbOwner();
-  return own ? (A.pbAgency || []).find(r => r.agency_id === own && r.state_code === code) || null : null;
-};
-/* What the agent in this state will actually be shown. */
-const pbResolved = (code) =>
-  resolvePlaybook(code, pbMasterRow(code)?.data, pbAgencyRow(code)?.data);
-/* The layer this admin is editing, if it exists yet. */
-const pbMineRow = (code) => pbScope() === "master" ? pbMasterRow(code) : pbAgencyRow(code);
 
 function pbEditedCount(){
   return (pbScope() === "master" ? (A.pbMaster || [])
@@ -1111,8 +1154,6 @@ function renderPlaybookGrid(){
     <div class="pb-grid">${STATE_LIST.map(btn).join("")}</div>`;
   root.querySelectorAll("[data-pb]").forEach(b =>
     b.onclick = () => { A.view = { name:"playbook", arg:b.dataset.pb }; render(); });
-  const sw = el("pbAs");
-  if (sw) sw.onchange = () => { A.pbAs = sw.value || null; render(); };
 }
 
 function renderPlaybook(code){

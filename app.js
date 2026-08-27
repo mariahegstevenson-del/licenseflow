@@ -1,6 +1,6 @@
 import { supabase, isConfigured, requireSession, hardSignOut } from "./supabase.js?v=2";
 import { STATE_LIST, STATES, ceSlots, ceIsConfigured, resolvePlaybook } from "./states.js?v=10";
-import * as F from "./flow.js?v=7";
+import * as F from "./flow.js?v=8";
 import { loadTenant, renderUnknownAgency, applyTenantChrome, urlForAgency } from "./tenant.js?v=4";
 
 const el = (id) => document.getElementById(id);
@@ -187,10 +187,16 @@ function setHostNote(){
     n.id = "hostnote";
     document.body.insertBefore(n, el("stepbar") || el("root"));
   }
-  const here = S.tenant?.agency?.name || S.tenant?.slug || "this portal";
+  const here = S.tenant?.agency?.name || null;
   const mine = S.profile?.agency?.name || "your own agency";
-  n.innerHTML = `<div class="hn-in"><b>You're on ${esc(here)}'s portal</b>
-    <span>&mdash; this is your own agent record from ${esc(mine)}, not an agent of theirs.</span>
+  /* On the main domain there is no agency to name, and the old copy read
+     "You're on this portal's portal". Say what is actually true instead. */
+  const lead = here
+    ? `<b>You're on ${esc(here)}'s portal</b>
+       <span>&mdash; this is your own agent record from ${esc(mine)}, not an agent of theirs.</span>`
+    : `<b>You're on the main LicenseFlow domain</b>
+       <span>&mdash; showing your own agent record from ${esc(mine)}.</span>`;
+  n.innerHTML = `<div class="hn-in">${lead}
     <a href="${esc(urlForAgency(S.profile?.agency?.slug || null))}">Go to my portal &rarr;</a></div>`;
 }
 
@@ -932,9 +938,17 @@ function renderDashboard() {
         <div class="muted" style="font-size:.92rem">${esc(firstName())} · ${esc(stateName(p.designated_state))} · ${esc(p.license_type)}</div>
         ${milSub}
       </div>
-      <div class="dash-overall"><div class="big">${pr.overall}%</div><div class="muted">complete</div></div>
+      <div class="dash-overall"><div class="big">${pr.submittedPct}%</div><div class="muted">${
+        pr.waiting ? "submitted" : "complete"}</div></div>
     </div>
-    <div class="progress" style="margin:2px 0 22px"><i style="width:${pr.overall}%"></i></div>
+    <!-- Two segments: what the team has verified, and what the agent has
+         handed over and is waiting on. The bar used to show only the
+         first, so a file with everything submitted read as unfinished. -->
+    <div class="progress dual" style="margin:2px 0 ${pr.waiting ? "8px" : "22px"}">
+      <i style="width:${pr.submittedPct}%"></i>
+      <b style="width:${pr.overall}%"></b>
+    </div>
+    ${pr.waiting ? `<p class="dash-waiting">${pr.waiting} ${pr.waiting===1?"step is":"steps are"} with the licensing team &mdash; nothing further is needed from you on ${pr.waiting===1?"it":"them"}.</p>` : ""}
     ${nextCard(ns)}
     <div class="card pad" style="margin-top:20px">
       <h3 style="margin-top:0">Your steps</h3>
@@ -1534,10 +1548,10 @@ function railHTML(){
   const p  = S.profile;
   return `<div class="rail-card">
     <div class="rail-head">
-      <div class="rail-pct">${pr.overall}<span>%</span></div>
+      <div class="rail-pct">${pr.submittedPct}<span>%</span></div>
       <div class="rail-sub"><b>Your record</b><span>${esc(stateName(p.designated_state))} &#183; ${esc(p.license_type)}</span></div>
     </div>
-    <div class="progress"><i style="width:${pr.overall}%"></i></div>
+    <div class="progress dual"><i style="width:${pr.submittedPct}%"></i><b style="width:${pr.overall}%"></b></div>
     ${recordGroups("rl")}
     <button class="rail-tips" type="button" id="railTips">Study tips <span aria-hidden="true">&#8594;</span></button>
   </div>`;

@@ -1039,3 +1039,15 @@ html.themed .syscard.exam-name{
   border-color:color-mix(in srgb,var(--agency-gold,#D4A12B) 45%,#fff);
   background:linear-gradient(180deg,color-mix(in srgb,var(--agency-gold,#D4A12B) 8%,#fff),#fff 70%)
 }
+
+/* Progress, told honestly in two parts. The outer fill is everything the
+   agent has finished with; the inner, darker fill is what the team has
+   actually verified. Before this the bar showed only the verified part,
+   so somebody who had submitted every single step still saw 71% sitting
+   above a card that said their file was complete. */
+.progress.dual{position:relative}
+.progress.dual > i{opacity:.45}
+.progress.dual > b{position:absolute;left:0;top:0;bottom:0;display:block;
+  background:var(--brand,#0C3D82);border-radius:inherit;transition:width .4s ease}
+html.themed .progress.dual > b{background:var(--brand)}
+.dash-waiting{margin:0 0 20px;font-size:.9rem;color:var(--muted,#51637A)}

@@ -185,10 +185,28 @@ export function nextStep(journey, sm){
 }
 
 /* ---------------- progress (single, real) ---------------- */
+/* Two different numbers, and conflating them is what made the agent
+   dashboard say "71%" directly above a card saying "your file is
+   complete".
+
+     done      requirements the team has actually verified
+     submitted requirements the agent has finished with -- verified, or
+               handed over and waiting on review
+
+   The agent's screen should lead with `submitted`, because that is the
+   part they control and the part they can finish. `done` still drives
+   the coordinator's console, where the distinction is the job. */
 export function progress(journey, sm){
-  const keys = journey.reqs.map(r=>r.key);
-  const done = keys.filter(k=>isDone(reqStatus(k,sm))).length;
-  return { overall: keys.length ? Math.round(done/keys.length*100) : 0, done, total: keys.length };
+  const keys = journey.reqs.map(r => r.key);
+  const done = keys.filter(k => isDone(reqStatus(k, sm))).length;
+  const submitted = keys.filter(k => {
+    const s = reqStatus(k, sm);
+    return isDone(s) || s === ST.PENDING;
+  }).length;
+  const pct = (n) => keys.length ? Math.round(n / keys.length * 100) : 0;
+  return { overall: pct(done), done, total: keys.length,
+           submitted, submittedPct: pct(submitted),
+           waiting: submitted - done };
 }
 
 /* ============================================================
