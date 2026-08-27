@@ -466,3 +466,5 @@ body.cc-locked .cc-nav,body.cc-locked .cc-rail{display:none}
 .pv-move:focus-visible{outline:2px solid #0C3D82;outline-offset:2px}
 .pv-count{font-size:.76rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
   color:var(--faint,#5E7089);font-variant-numeric:tabular-nums}
+.pv-foot{max-width:620px;margin:14px auto 0;font-size:.8rem;color:var(--faint,#5E7089);
+  text-align:center;line-height:1.5}

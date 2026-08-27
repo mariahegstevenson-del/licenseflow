@@ -1,6 +1,6 @@
 import { supabase, isConfigured, requireSession, hardSignOut } from "./supabase.js?v=2";
 import { STATES, STATE_LIST, ceSlots, PLAYBOOK_SECTIONS, playbookDefaults,
-         resolvePlaybook } from "./states.js?v=11";
+         resolvePlaybook, COMPLETE_FIELDS, fillTokens } from "./states.js?v=12";
 import * as F from "./flow.js?v=8";
 import { loadTenant, renderUnknownAgency, applyTenantChrome, urlForAgency } from "./tenant.js?v=4";
 
@@ -1298,18 +1298,21 @@ function renderPlaybookAgent(code){
   const host = el("pbPane");
   if (!j) { host.innerHTML = `<p class="muted">No journey for this state.</p>`; return; }
 
-  const pick = A.pbStep && j.reqs.some(q => q.key === A.pbStep) ? A.pbStep : j.reqs[0].key;
-  const at   = j.reqs.findIndex(q => q.key === pick);
-  const req  = j.reqs[at];
-  const prev = at > 0 ? j.reqs[at - 1] : null;
-  const next = at < j.reqs.length - 1 ? j.reqs[at + 1] : null;
+  /* The finish screen is the eighth thing an agent sees, so it belongs in
+     the walk-through rather than hidden somewhere separate. */
+  const seq  = j.reqs.concat([{ key:"__done", short:"Finish", label:"Finish" }]);
+  const pick = A.pbStep && seq.some(q => q.key === A.pbStep) ? A.pbStep : seq[0].key;
+  const at   = seq.findIndex(q => q.key === pick);
+  const req  = seq[at];
+  const prev = at > 0 ? seq[at - 1] : null;
+  const next = at < seq.length - 1 ? seq[at + 1] : null;
 
   const chip = (q, i) => `<button class="pv-chip${q.key === pick ? " on" : ""}" data-step="${esc(q.key)}"
       type="button"><span class="pv-cn">${i + 1}</span>${esc(q.short || q.label)}</button>`;
 
   /* The agent's own components, so spacing and placement are the real
      thing rather than an approximation. */
-  const screen = `
+  const screen = req.key === "__done" ? doneScreen(pbResolved(code)) : `
     <div class="pv-frame">
       <div class="pv-bar"><span class="pv-dot"></span><span class="pv-dot"></span><span class="pv-dot"></span>
         <span class="pv-url">${esc(pbAgencySlug())}/app.html</span></div>
@@ -1355,7 +1358,7 @@ function renderPlaybookAgent(code){
       ${prev ? `<button class="pv-move" data-step="${esc(prev.key)}" type="button">
           &larr; <span>${esc(prev.short || prev.label)}</span></button>`
              : `<span class="pv-move is-off">&larr; Start of the journey</span>`}
-      <span class="pv-count">Step ${at + 1} of ${j.reqs.length}</span>
+      <span class="pv-count">${at + 1} of ${seq.length}</span>
       ${next ? `<button class="pv-move next" data-step="${esc(next.key)}" type="button">
           <span>${esc(next.short || next.label)}</span> &rarr;</button>`
              : `<span class="pv-move is-off">End of the journey &rarr;</span>`}
@@ -1364,7 +1367,7 @@ function renderPlaybookAgent(code){
   host.innerHTML = `
     <p class="pv-lead">Every screen this state's agents get, without signing in as one.
       ${pbScope() === "master" ? "" : "Links and vendors are " + esc(pbAgencyName(pbOwner())) + "'s."}</p>
-    <div class="pv-chipwrap"><div class="pv-chips">${j.reqs.map(chip).join("")}</div></div>
+    <div class="pv-chipwrap"><div class="pv-chips">${seq.map(chip).join("")}</div></div>
     ${nav("top")}
     ${screen}
     ${nav("bottom")}`;
@@ -1382,6 +1385,55 @@ function renderPlaybookAgent(code){
 
 /* The address the preview is standing in for. On the master there is no
    one agency, so the main domain is the honest answer. */
+/* The finish screen, rendered from the agency's own wording with the
+   tokens filled in the way an agent would see them. Same components and
+   stylesheet as the live one, so this is a true preview and not a mock. */
+function doneScreen(pb){
+  const C = {};
+  const src = (pb && pb.complete) || {};
+  const vals = { name: "Jordan", state: STATES[A.view.arg]?.name || "your state", license: "Life & Health" };
+  for (const [k, v] of Object.entries(src)) C[k] = fillTokens(v, vals);
+
+  const row = (n, title, body) => `
+    <div class="dn-row"><span class="dn-n">${esc(n)}</span>
+      <div><b>${esc(title || "")}</b><span>${esc(body || "")}</span></div></div>`;
+
+  return `
+    <div class="pv-frame">
+      <div class="pv-bar"><span class="pv-dot"></span><span class="pv-dot"></span><span class="pv-dot"></span>
+        <span class="pv-url">${esc(pbAgencySlug())}/app.html#/complete</span></div>
+      <div class="pv-page">
+        <!-- No "go" class: that gates the entrance animations, which start
+             from opacity 0. A preview should show the finished state the
+             moment it opens rather than replay a reveal every time. -->
+        <div class="wt done-wrap">
+          <div class="step-card"><div class="step-body">
+            <div class="done-mark" aria-hidden="true">
+              <svg viewBox="0 0 52 52" focusable="false">
+                <circle class="dm-ring" cx="26" cy="26" r="23"/>
+                <path class="dm-tick" d="M15 27.5 L22.5 35 L37.5 19"/>
+              </svg>
+            </div>
+            <div class="eyebrow2 center">${esc(C.eyebrow || "")}</div>
+            <h2 class="done-h">${esc(C.heading || "")}</h2>
+            <p class="done-lede">${esc(C.lead || "")}</p>
+            <div class="done-next">
+              ${row("Now",  C.now_title,  "E&O is being checked. " + (C.now_body || ""))}
+              ${row("Next", C.next_title, C.next_body)}
+              ${row("Keep", C.keep_title, C.keep_body)}
+            </div>
+            <div class="done-acts">
+              <span class="btn btn-ghost">Back to my journey</span>
+              <span class="btn btn-primary">Open my record</span>
+            </div>
+          </div></div>
+        </div>
+        <p class="pv-foot">&ldquo;Jordan&rdquo; and the state stand in for whoever is reading it.
+          Confetti and the tick animate on the real thing.</p>
+      </div>
+    </div>`;
+}
+
 function pbAgencySlug(){
   const found = (A.agencies || []).find(a => a.id === pbOwner());
   return found ? found.slug + ".lifelicenseflow.com" : "lifelicenseflow.com";
@@ -1431,6 +1483,24 @@ function renderPlaybookEdit(code){
     </div>
 
     ${PLAYBOOK_SECTIONS.map(section).join("")}
+
+    <div class="cc-panel pb-sec">
+      <div class="cc-panel-h"><h2>Finish screen</h2>
+        <span class="sub">what they see when their part is done</span></div>
+      <div class="pad">
+        <p class="hint" style="margin:0 0 12px">Use <code>{name}</code>, <code>{state}</code> and
+        <code>{license}</code> and they are filled in for whoever is reading it.</p>
+        ${COMPLETE_FIELDS.map(f => {
+          const v = (r.complete || {})[f.key] || "";
+          return f.kind === "text"
+            ? `<label for="pb_complete_${f.key}">${esc(f.label)}</label>
+               <textarea id="pb_complete_${f.key}" data-sec="complete" data-key="${f.key}"
+                 rows="3">${esc(v)}</textarea>`
+            : `<label for="pb_complete_${f.key}">${esc(f.label)}</label>
+               <input id="pb_complete_${f.key}" data-sec="complete" data-key="${f.key}" value="${esc(v)}"/>`;
+        }).join("")}
+      </div>
+    </div>
 
     <div class="cc-panel pb-sec">
       <div class="cc-panel-h"><h2>Other requirements</h2></div>

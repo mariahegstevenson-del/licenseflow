@@ -1,5 +1,6 @@
 import { supabase, isConfigured, requireSession, hardSignOut } from "./supabase.js?v=2";
-import { STATE_LIST, STATES, ceSlots, ceIsConfigured, resolvePlaybook } from "./states.js?v=11";
+import { STATE_LIST, STATES, ceSlots, ceIsConfigured, resolvePlaybook,
+         fillTokens } from "./states.js?v=12";
 import * as F from "./flow.js?v=8";
 import { loadTenant, renderUnknownAgency, applyTenantChrome, urlForAgency } from "./tenant.js?v=4";
 
@@ -787,9 +788,26 @@ function statusText(r, st){ return (F.isDone(st) && r.doneLabel) ? r.doneLabel :
    out about later; burying the congratulation in a status message wastes
    the one moment worth marking.
 ------------------------------------------------------------ */
+/* Fills {name}, {state} and {license} into every line of the completion
+   screen's copy. Kept out of renderComplete so the admin preview can
+   render exactly the same words. */
+function completeCopy(playbook, vals){
+  const c = (playbook && playbook.complete) || {};
+  const out = {};
+  for (const [k, v] of Object.entries(c)) out[k] = fillTokens(v, vals);
+  return out;
+}
+
 function renderComplete() {
   const p = S.profile;
   const pending = (S.journey?.reqs || []).filter(r => F.reqStatus(r.key, S.sm) === F.ST.PENDING);
+  /* Wording comes from the agency's state guide, so an agency whose next
+     step is a call rather than contracting can say so. */
+  const C = completeCopy(S.journey?.playbook, {
+    name: firstName(),
+    state: stateName(p.designated_state),
+    license: p.license_type,
+  });
   root.innerHTML = `
   <div class="wt done-wrap">
     <div class="step-card"><div class="step-body">
@@ -799,33 +817,25 @@ function renderComplete() {
           <path class="dm-tick" d="M15 27.5 L22.5 35 L37.5 19"/>
         </svg>
       </div>
-      <div class="eyebrow2 center">Licensing complete</div>
-      <h2 class="done-h">Well done, ${esc(firstName())}.</h2>
-      <p class="done-lede">You've finished every step of your
-        <strong>${esc(stateName(p.designated_state))} ${esc(p.license_type)}</strong> licensing.
-        There is nothing further you need to do.</p>
+      <div class="eyebrow2 center">${esc(C.eyebrow)}</div>
+      <h2 class="done-h">${esc(C.heading)}</h2>
+      <p class="done-lede">${esc(C.lead)}</p>
 
       <div class="done-next">
         <div class="dn-row">
           <span class="dn-n">Now</span>
-          <div><b>Your file is with the licensing team</b>
+          <div><b>${esc(C.now_title)}</b>
             <span>${pending.length
-              ? esc(pending.map(r => r.short).join(", ")) + " " + (pending.length > 1 ? "are" : "is") + " being checked."
-              : "The last of your documents is being checked."}
-              You'll see it change here once it's cleared.</span></div>
+              ? esc(pending.map(r => r.short).join(", ")) + " " + (pending.length > 1 ? "are" : "is") + " being checked. "
+              : "The last of your documents is being checked. "}${esc(C.now_body)}</span></div>
         </div>
         <div class="dn-row">
           <span class="dn-n">Next</span>
-          <div><b>Contracting begins</b>
-            <span>Once your file is cleared, the licensing and contracting team can start your
-              carrier contracting straight away &mdash; everything they need is already in one
-              place, which is the point of having done it in this order.</span></div>
+          <div><b>${esc(C.next_title)}</b><span>${esc(C.next_body)}</span></div>
         </div>
         <div class="dn-row">
           <span class="dn-n">Keep</span>
-          <div><b>Your record stays here</b>
-            <span>Your licence number, NPN, certificates and E&amp;O live in the menu, top left.
-              Come back for them whenever contracting or a carrier asks.</span></div>
+          <div><b>${esc(C.keep_title)}</b><span>${esc(C.keep_body)}</span></div>
         </div>
       </div>
 

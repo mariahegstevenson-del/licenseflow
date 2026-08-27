@@ -407,6 +407,26 @@ export const PLAYBOOK_SECTIONS = [
   { key:"eo",        label:"Errors & Omissions",   req:"eo" },
 ];
 
+/* The completion screen's editable fields, in the order they appear on it. */
+export const COMPLETE_FIELDS = [
+  { key:"eyebrow",    label:"Small label above the heading", kind:"line" },
+  { key:"heading",    label:"Heading",                       kind:"line" },
+  { key:"lead",       label:"Opening sentence",              kind:"text" },
+  { key:"now_title",  label:"NOW \u2014 heading",            kind:"line" },
+  { key:"now_body",   label:"NOW \u2014 wording",            kind:"text" },
+  { key:"next_title", label:"NEXT \u2014 heading",           kind:"line" },
+  { key:"next_body",  label:"NEXT \u2014 wording",           kind:"text" },
+  { key:"keep_title", label:"KEEP \u2014 heading",           kind:"line" },
+  { key:"keep_body",  label:"KEEP \u2014 wording",           kind:"text" },
+];
+
+/* {name}, {state} and {license} are the only substitutions. Anything else
+   in braces is left exactly as typed rather than silently emptied. */
+export function fillTokens(str, vals){
+  return String(str || "").replace(/\{(name|state|license)\}/g, (m, k) =>
+    vals[k] != null && vals[k] !== "" ? vals[k] : m);
+}
+
 export function playbookDefaults(code){
   const s = STATES[code];
   if (!s) return null;
@@ -438,6 +458,21 @@ export function playbookDefaults(code){
                    "Apply online. Coverage and proof of it come through in minutes.",
                    "Save the certificate, then come back and upload it here.",
                  ] },
+    /* The screen an agent sees when their part is over. Editable because
+       what happens next is an agency's own process: one hands straight to
+       contracting, another books a call first. {name}, {state} and
+       {license} are filled in for the agent reading it. */
+    complete: {
+      eyebrow: "Licensing complete",
+      heading: "Well done, {name}.",
+      lead:    "You've finished every step of your {state} {license} licensing. There is nothing further you need to do.",
+      now_title: "Your file is with the licensing team",
+      now_body:  "You'll see it change here once it's cleared.",
+      next_title: "Contracting begins",
+      next_body:  "Once your file is cleared, the licensing and contracting team can start your carrier contracting straight away \u2014 everything they need is already in one place, which is the point of having done it in this order.",
+      keep_title: "Your record stays here",
+      keep_body:  "Your licence number, NPN, certificates and E&O live in the menu, top left. Come back for them whenever contracting or a carrier asks.",
+    },
     fingerprinting: { url: fpHttp ? s.fp : "", note: s.fpNote || (s.fp && !fpHttp ? s.fp : "") },
     affidavit: { url: s.affidavit || "", note:"" },
     misc: s.misc || "",
