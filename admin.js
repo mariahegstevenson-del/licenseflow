@@ -1,6 +1,8 @@
 import { supabase, isConfigured, requireSession, hardSignOut } from "./supabase.js?v=2";
 import { STATES, STATE_LIST, ceSlots, PLAYBOOK_SECTIONS, playbookDefaults,
-         resolvePlaybook, COMPLETE_FIELDS, fillTokens } from "./states.js?v=12";
+         resolvePlaybook, COMPLETE_FIELDS, fillTokens } from "./states.js?v=13";
+import { WALKTHROUGH_REQS, resolveWalkthrough, vendorKeyFor, videoSource,
+         fmtDuration, RECORDING_STANDARD } from "./walkthrough.js?v=1";
 import * as F from "./flow.js?v=8";
 import { loadTenant, renderUnknownAgency, applyTenantChrome, urlForAgency } from "./tenant.js?v=4";
 
@@ -84,7 +86,7 @@ const within = (t, from, to) => t != null && t >= from && t < to;
 })();
 
 async function load() {
-  const [p, inst, ex, vids, docs, notes, pb, ags] = await Promise.all([
+  const [p, inst, ex, vids, docs, notes, pb, ags, wtl, wta, wtv] = await Promise.all([
     supabase.from("licensing_profiles").select("*"),
     supabase.from("requirement_instances").select("*"),
     supabase.from("exceptions").select("*").order("created_at",{ascending:false}),
@@ -93,6 +95,9 @@ async function load() {
     supabase.from("notifications").select("*").order("created_at",{ascending:false}).limit(200),
     supabase.from("state_playbooks").select("*"),
     supabase.from("agencies").select("id,slug,name").order("name"),
+    supabase.from("walkthroughs").select("*").order("requirement_key"),
+    supabase.from("walkthrough_assignments").select("*"),
+    supabase.from("walkthrough_views").select("walkthrough_id,user_id,completed_at"),
   ]);
   A.profiles=p.data||[]; A.instances=inst.data||[]; A.exceptions=ex.data||[]; A.videos=vids.data||[];
   A.docs = docs.data || [];
@@ -103,6 +108,9 @@ async function load() {
   A.pbAgency = (pb.data || []).filter(r => r.agency_id !== null);
   A.agencies = ags.data || [];
   A.allProfiles = p.data || [];   /* unfiltered, for the tab counts */
+  A.wtLib    = wtl.data || [];
+  A.wtAssign = wta.data || [];
+  A.wtViews  = wtv.data || [];
 
   /* An agency administrator is already limited to their own agency by
      the database, so this narrowing does nothing for them. It is for
@@ -268,6 +276,7 @@ function counts(){
     stuck:     at.stuck,
     videos:    A.videos.filter(v=>v.active).length,
     playbooks: pbEditedCount(),
+    walk:      (A.wtLib || []).filter(w => w.status === "active").length,
     unread:    (A.notes||[]).filter(n=>!n.read_at).length,
     overdue:   at.overdue,
     pre:        pipe.pre,
@@ -357,6 +366,7 @@ const NAV = [
   {v:"compliant",   label:"Fully compliant", c:"compliant"},
   {grp:"Content"},
   {v:"videos",   label:"Step videos",     c:"videos"},
+  {v:"walk",     label:"Walkthroughs",    c:"walk"},
   {v:"playbooks",label:"State guide",     c:"playbooks"},
 ];
 function renderNav(){
@@ -512,6 +522,8 @@ function renderView(){
   if (v.name==="review") return renderReview(v.arg);
   if (v.name==="agent")  return renderAgent(v.arg);
   if (v.name==="videos")     return shell("Step videos","Paste a link; agents see it on that step.", renderVideos());
+  if (v.name==="walk")       return renderWalkLibrary();
+  if (v.name==="walkedit")   return renderWalkEdit(v.arg);
   if (v.name==="playbooks")  return renderPlaybookGrid();
   if (v.name==="playbook")   return renderPlaybook(v.arg);
   if (v.name==="agents")     return shell("All agents","Everyone enrolled, whatever stage they're at.", renderAgents(A.profiles));
@@ -1650,6 +1662,281 @@ function renderPlaybookEdit(code){
     const { error } = await supabase.from("state_playbooks").delete().eq("id", mineRow.id);
     if (error) { alert("Couldn't reset: " + error.message); return; }
     A.view = { name:"playbooks" };
+    await load();
+  };
+}
+
+/* ============================================================
+   WALKTHROUGH LIBRARY
+
+   Assets are shared, not copied. One Pearson VUE exam recording serves
+   every agency and every Pearson state; an agency that uses a different
+   vendor picks a different asset rather than getting a duplicate of this
+   one. That is the difference between a library that stays manageable at
+   fifty states and one that becomes six hundred near-identical files.
+
+   Scope is the only thing that decides who gets which recording:
+     universal  one asset, everybody
+     vendor     matched on the vendor key in the state guide
+     state      only where a state genuinely differs
+   ============================================================ */
+const WT_SCOPES = [
+  { k:"universal", label:"Universal", hint:"Same procedure everywhere" },
+  { k:"vendor",    label:"By vendor", hint:"Differs by who they do it with" },
+  { k:"state",     label:"One state", hint:"Only where a state is genuinely different" },
+];
+const WT_STATUS = ["draft", "active", "retired"];
+
+/* Vendor keys that appear anywhere in the resolved guides, so the editor
+   offers real options rather than asking somebody to remember them. */
+function wtVendorOptions(requirementKey){
+  const seen = new Map();
+  STATE_LIST.forEach((st) => {
+    const pb = resolvePlaybook(st.code, pbMasterRow(st.code)?.data, pbAgencyRow(st.code)?.data);
+    const key = vendorKeyFor(pb, requirementKey);
+    if (!key) return;
+    const sec = pb[({ study_material:"study", exam:"exam", nipr_application:"state_app",
+                      continuing_education:"ce", eo:"eo" })[requirementKey]] || {};
+    if (!seen.has(key)) seen.set(key, { key, label: sec.vendor || key, states: [] });
+    seen.get(key).states.push(st.code);
+  });
+  return [...seen.values()].sort((a, b) => b.states.length - a.states.length);
+}
+
+const wtOwner = () => pbOwner();     /* the agency tab decides whose shelf */
+const wtMine  = () => (A.wtLib || []).filter(w =>
+  wtOwner() === null ? w.agency_id === null : w.agency_id === wtOwner());
+
+/* How many states a walkthrough actually serves, so the value of one
+   asset is visible rather than assumed. */
+function wtReach(w){
+  if (w.scope === "state")  return w.state_code ? 1 : 0;
+  if (w.scope === "universal") return STATE_LIST.length;
+  return wtVendorOptions(w.requirement_key).find(v => v.key === w.vendor_key)?.states.length || 0;
+}
+
+function renderWalkLibrary(){
+  const mine = wtMine();
+  const owner = wtOwner() === null ? "the shared LicenseFlow library" : pbAgencyName(wtOwner()) + "'s own shelf";
+  const views = A.wtViews || [];
+
+  const card = (w) => {
+    const reach = wtReach(w);
+    const watched = views.filter(v => v.walkthrough_id === w.id).length;
+    const done = views.filter(v => v.walkthrough_id === w.id && v.completed_at).length;
+    return `<button class="wl-card s-${esc(w.status)}" data-wt="${esc(w.id)}" type="button">
+      <span class="wl-top">
+        <span class="wl-scope sc-${esc(w.scope)}">${esc(
+          w.scope === "vendor" ? (w.vendor_key || "vendor")
+          : w.scope === "state" ? (w.state_code || "state") : "universal")}</span>
+        <span class="wl-status st-${esc(w.status)}">${esc(w.status)}</span>
+      </span>
+      <span class="wl-title">${esc(w.title)}</span>
+      <span class="wl-sub">${esc(reqLabel(w.requirement_key))}${
+        w.duration_seconds ? " &middot; " + esc(fmtDuration(w.duration_seconds)) : ""}</span>
+      <span class="wl-foot">
+        <span>${reach} ${reach === 1 ? "state" : "states"}</span>
+        <span>${watched} started &middot; ${done} finished</span>
+      </span>
+    </button>`;
+  };
+
+  const group = (req) => {
+    const list = mine.filter(w => w.requirement_key === req.key);
+    return `<div class="wl-group">
+      <div class="wl-gh"><h2>${esc(req.label)}</h2>
+        <button class="btn btn-ghost btn-sm" data-new="${esc(req.key)}" type="button">Add a walkthrough</button></div>
+      ${list.length
+        ? `<div class="wl-grid">${list.map(card).join("")}</div>`
+        : `<p class="wl-empty">Nothing recorded for this yet. One universal walkthrough covers all
+             ${STATE_LIST.length} states &mdash; start there.</p>`}
+    </div>`;
+  };
+
+  root.innerHTML = `
+    <div class="cc-h"><div><h1>Walkthroughs</h1>
+      <p>Short screen recordings that replace the walk-me-through call. The recording teaches the
+      procedure; the agent's own screen supplies the state's current details, so renaming an exam
+      never means recording again.</p></div></div>
+    ${pbScopeBar()}
+    <details class="wl-std"><summary>How to record one</summary>
+      <ol>${RECORDING_STANDARD.map(r =>
+        `<li><b>${esc(r.t)}</b><span>${esc(r.d)}</span></li>`).join("")}</ol>
+      <p class="hint">Two to three minutes. No face, no voice needed &mdash; captions carry it, and a
+        voiceover can be added later without touching any of this.</p>
+    </details>
+    <p class="wl-owner">Adding to <b>${esc(owner)}</b>.</p>
+    ${WALKTHROUGH_REQS.map(group).join("")}`;
+
+  root.querySelectorAll("[data-wt]").forEach(b =>
+    b.onclick = () => { A.view = { name:"walkedit", arg:b.dataset.wt }; render(); });
+  root.querySelectorAll("[data-new]").forEach(b =>
+    b.onclick = () => { A.view = { name:"walkedit", arg:"new:" + b.dataset.new }; render(); });
+}
+
+const reqLabel = (k) => WALKTHROUGH_REQS.find(r => r.key === k)?.label || k;
+
+function renderWalkEdit(arg){
+  const isNew = String(arg).startsWith("new:");
+  const w = isNew
+    ? { requirement_key: arg.slice(4), scope:"universal", status:"draft", version:1,
+        agency_id: wtOwner(), title:"", video_kind:"auto" }
+    : (A.wtLib || []).find(x => x.id === arg);
+  if (!w) { A.view = { name:"walk" }; return render(); }
+
+  const vendors = wtVendorOptions(w.requirement_key);
+  const f = (id, label, val, ph, type) => `
+    <label for="w_${id}">${esc(label)}</label>
+    <input id="w_${id}" type="${type || "text"}" value="${esc(val || "")}" placeholder="${esc(ph || "")}"/>`;
+  const ta = (id, label, val, ph, rows) => `
+    <label for="w_${id}">${esc(label)}</label>
+    <textarea id="w_${id}" rows="${rows || 3}" placeholder="${esc(ph || "")}">${esc(val || "")}</textarea>`;
+
+  const usedBy = (A.wtAssign || []).filter(a => a.walkthrough_id === w.id);
+  const views  = (A.wtViews || []).filter(v => v.walkthrough_id === w.id);
+
+  root.innerHTML = `
+    <div class="cc-h"><div><h1>${isNew ? "New walkthrough" : esc(w.title || "Walkthrough")}</h1>
+      <p>${esc(reqLabel(w.requirement_key))}${isNew ? "" : ` &middot; version ${esc(String(w.version || 1))}`}</p></div></div>
+    <button class="btn btn-ghost btn-sm" id="wBack" style="margin-bottom:14px">&larr; All walkthroughs</button>
+
+    <div class="cc-panel pb-sec"><div class="cc-panel-h"><h2>Who gets it</h2></div><div class="pad">
+      <label for="w_scope">Applies to</label>
+      <select id="w_scope">${WT_SCOPES.map(o =>
+        `<option value="${o.k}"${w.scope === o.k ? " selected" : ""}>${esc(o.label)} &mdash; ${esc(o.hint)}</option>`).join("")}</select>
+
+      <div id="wVendorWrap" style="${w.scope === "vendor" ? "" : "display:none"}">
+        <label for="w_vendor">Vendor</label>
+        <select id="w_vendor">
+          <option value="">Choose a vendor</option>
+          ${vendors.map(v => `<option value="${esc(v.key)}"${w.vendor_key === v.key ? " selected" : ""}>${
+            esc(v.label)} &mdash; ${v.states.length} ${v.states.length === 1 ? "state" : "states"}</option>`).join("")}
+        </select>
+        <span class="hint">Taken from your state guides. One recording covers every state using that vendor.</span>
+      </div>
+
+      <div id="wStateWrap" style="${w.scope === "state" ? "" : "display:none"}">
+        <label for="w_state">State</label>
+        <select id="w_state"><option value="">Choose a state</option>
+          ${STATE_LIST.map(st => `<option value="${st.code}"${w.state_code === st.code ? " selected" : ""}>${esc(st.name)}</option>`).join("")}</select>
+        <span class="hint">Only where the state's process genuinely differs &mdash; not because it names
+          its exam differently. A different exam name is a line in the state guide, not a new recording.</span>
+      </div>
+
+      <label for="w_license">Licence type (optional)</label>
+      <select id="w_license"><option value="">Any</option>
+        ${["Life & Health","Life"].map(l => `<option${w.license_type === l ? " selected" : ""}>${esc(l)}</option>`).join("")}</select>
+    </div></div>
+
+    <div class="cc-panel pb-sec"><div class="cc-panel-h"><h2>The recording</h2></div><div class="pad">
+      ${f("title", "Title", w.title, "How to schedule your exam through Pearson VUE")}
+      ${ta("description", "One line for the agent", w.description, "What this covers", 2)}
+      ${ta("instructions", "What they'll need before starting", w.instructions, "Card, licence details, a second tab open…", 2)}
+      ${f("video_url", "Video link", w.video_url, "YouTube, Vimeo, Loom, or an uploaded file")}
+      <label for="w_file">…or upload a file</label>
+      <div class="drop drop-sm" id="wDrop">
+        <input id="w_file" type="file" hidden accept="video/mp4,video/webm,video/quicktime"/>
+        <b>Drop an MP4 here</b>
+        <span class="drop-or">or <button type="button" class="lnk-file" id="wPick">choose a file</button></span>
+        <span class="drop-name" id="wFileName"></span>
+      </div>
+      ${f("captions_url", "Captions file (WebVTT)", w.captions_url, "Optional — adds subtitles")}
+      ${f("thumbnail_url", "Thumbnail", w.thumbnail_url, "Optional")}
+      ${f("duration_seconds", "Length in seconds", w.duration_seconds, "165", "number")}
+      ${ta("transcript", "Transcript", w.transcript, "Optional — shown as “Read it instead”", 4)}
+    </div></div>
+
+    <div class="cc-panel pb-sec"><div class="cc-panel-h"><h2>Status</h2></div><div class="pad">
+      <label for="w_status">Status</label>
+      <select id="w_status">${WT_STATUS.map(st =>
+        `<option value="${st}"${w.status === st ? " selected" : ""}>${esc(st)}</option>`).join("")}</select>
+      <span class="hint">Only one <b>active</b> walkthrough per slot, so agents never get two.
+        Publishing a replacement means retiring the old one first.</span>
+      ${f("last_reviewed", "Last reviewed", w.last_reviewed, "", "date")}
+      ${f("effective_date", "Effective from", w.effective_date, "", "date")}
+      ${isNew ? "" : `<p class="hint" style="margin-top:12px">Used by ${usedBy.length}
+        explicit ${usedBy.length === 1 ? "assignment" : "assignments"} &middot;
+        ${views.length} started &middot; ${views.filter(v => v.completed_at).length} finished.
+        Replacing the link here keeps every one of those attachments intact.</p>`}
+    </div></div>
+
+    <div id="wAlert" class="alert"></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin:0 0 40px">
+      <button class="btn btn-primary" id="wSave">${isNew ? "Create" : "Save"}</button>
+      <button class="btn btn-quiet" id="wCancel">Cancel</button>
+    </div>`;
+
+  el("wBack").onclick = el("wCancel").onclick = () => { A.view = { name:"walk" }; render(); };
+  el("w_scope").onchange = () => {
+    const v = el("w_scope").value;
+    el("wVendorWrap").style.display = v === "vendor" ? "" : "none";
+    el("wStateWrap").style.display  = v === "state"  ? "" : "none";
+  };
+
+  /* Uploading is a convenience, not the only route -- a link to YouTube
+     or Loom works just as well and costs nothing to store. */
+  const pick = el("wPick"), file = el("w_file");
+  if (pick) pick.onclick = () => file.click();
+  if (file) file.onchange = async () => {
+    const fl = file.files[0]; if (!fl) return;
+    const msg = el("wAlert");
+    const say = (t, c) => { msg.className = `alert show ${c || ""}`; msg.textContent = t; };
+    el("wFileName").textContent = fl.name;
+    say(`Uploading ${fl.name}…`);
+    try {
+      const path = `${wtOwner() || "library"}/${w.requirement_key}/${Date.now()}_${fl.name}`.replace(/\s+/g, "_");
+      const up = await supabase.storage.from("walkthroughs").upload(path, fl, { upsert: true });
+      if (up.error) throw up.error;
+      const { data } = supabase.storage.from("walkthroughs").getPublicUrl(path);
+      el("w_video_url").value = data.publicUrl;
+      say("Uploaded. Save to publish it.", "alert-ok");
+    } catch (e) { say("Couldn't upload: " + (e.message || e), "alert-error"); }
+  };
+
+  el("wSave").onclick = async () => {
+    const msg = el("wAlert");
+    const say = (t, c) => { msg.className = `alert show ${c || ""}`; msg.textContent = t; };
+    const val = (id) => (el("w_" + id)?.value || "").trim();
+    const scope = val("scope");
+    if (!val("title")) return say("Give it a title.", "alert-error");
+    if (scope === "vendor" && !val("vendor")) return say("Choose a vendor.", "alert-error");
+    if (scope === "state"  && !val("state"))  return say("Choose a state.", "alert-error");
+
+    const row = {
+      agency_id: wtOwner(),
+      requirement_key: w.requirement_key,
+      scope,
+      vendor_key: scope === "vendor" ? val("vendor") : null,
+      state_code: scope === "state"  ? val("state")  : null,
+      license_type: val("license") || null,
+      title: val("title"),
+      description: val("description") || null,
+      instructions: val("instructions") || null,
+      video_url: val("video_url") || null,
+      captions_url: val("captions_url") || null,
+      thumbnail_url: val("thumbnail_url") || null,
+      transcript: val("transcript") || null,
+      duration_seconds: val("duration_seconds") ? Number(val("duration_seconds")) : null,
+      status: val("status"),
+      last_reviewed: val("last_reviewed") || null,
+      effective_date: val("effective_date") || null,
+      updated_at: new Date().toISOString(),
+      updated_by: A.me?.id,
+    };
+    say("Saving…");
+    const q = isNew
+      ? supabase.from("walkthroughs").insert(row)
+      : supabase.from("walkthroughs").update({ ...row, version: (w.version || 1) + (
+          w.video_url !== row.video_url ? 1 : 0) }).eq("id", w.id);
+    const { error } = await q;
+    if (error) {
+      /* The one-active-per-slot index is the likeliest refusal, and it is
+         worth explaining rather than showing the raw constraint name. */
+      return say(/duplicate key|unique/i.test(error.message)
+        ? "There is already an active walkthrough in that slot. Retire it first, or save this one as a draft."
+        : "Couldn't save: " + error.message, "alert-error");
+    }
+    A.view = { name:"walk" };
     await load();
   };
 }

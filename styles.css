@@ -1051,3 +1051,59 @@ html.themed .syscard.exam-name{
   background:var(--brand,#0C3D82);border-radius:inherit;transition:width .4s ease}
 html.themed .progress.dual > b{background:var(--brand)}
 .dash-waiting{margin:0 0 20px;font-size:.9rem;color:var(--muted,#51637A)}
+
+/* ============================================================
+   UPDATE v24 — walkthroughs
+
+   Facts sit ABOVE the recording, because the recording says "use the
+   information above". That ordering is the whole product decision: an
+   exam name that changes is a line of data, not a re-record.
+   ============================================================ */
+.facts{border:1px solid var(--line,#DCE3EC);border-radius:12px;background:#fff;
+  padding:15px 18px;margin:20px 0 12px}
+.facts-k{font-size:.66rem;font-weight:700;letter-spacing:.15em;text-transform:uppercase;
+  color:var(--faint,#5E7089);margin-bottom:11px}
+.facts dl{margin:0;display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}
+.facts dl > div{min-width:0}
+.facts dt{font-size:.7rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase;
+  color:var(--faint,#5E7089);margin:0 0 3px}
+.facts dd{margin:0;font-size:1rem;font-weight:650;letter-spacing:-.012em;color:var(--ink,#061223);
+  overflow-wrap:break-word}
+.facts dd.big{font-size:1.1rem}
+.facts dl > div.is-missing dd{color:#A32019}
+.facts-hint{margin:5px 0 0;font-size:.8rem;color:#A32019;line-height:1.45}
+.facts-use{max-width:620px;margin:0 auto 18px;font-size:.92rem;color:var(--muted,#51637A);
+  text-align:center}
+html.themed .facts{border-color:color-mix(in srgb,var(--agency-gold,#D4A12B) 34%,#fff)}
+
+/* the walkthrough itself */
+.wtb{margin:6px 0 20px}
+.wtb-h{display:flex;align-items:flex-end;justify-content:space-between;gap:14px;
+  flex-wrap:wrap;margin-bottom:8px}
+.wtb-h b{display:block;font-size:1.06rem;font-weight:700;letter-spacing:-.015em;margin-top:2px}
+.wtb-h .section-k{margin:0}
+.wtb-meta{display:flex;align-items:center;gap:9px;flex:0 0 auto}
+.wtb-dur{font-size:.78rem;color:var(--faint,#5E7089);font-weight:600}
+.wtb-done{font-size:.74rem;font-weight:700;color:#0F6F40;background:#E4F3E9;
+  border-radius:99px;padding:3px 10px;white-space:nowrap}
+.wtb-desc{margin:0 0 10px;font-size:.93rem;color:var(--muted,#51637A)}
+.wtb-need{background:#F5F8FC;border:1px solid var(--line,#DCE3EC);border-radius:10px;
+  padding:11px 15px;margin:0 0 12px;font-size:.9rem;color:var(--muted,#51637A)}
+.wtb-need .lab{display:block;font-size:.64rem;font-weight:700;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--faint,#5E7089);margin-bottom:3px}
+.video.is-file video{width:100%;height:100%;display:block;background:#0B1622;border-radius:inherit}
+
+.wtb-ctl{display:flex;align-items:center;gap:9px;margin:9px 0 0;flex-wrap:wrap}
+.wtb-b{appearance:none;border:1px solid var(--line,#DCE3EC);background:#fff;border-radius:8px;
+  font:inherit;font-size:.8rem;font-weight:600;color:var(--muted,#51637A);
+  padding:6px 12px;cursor:pointer;font-variant-numeric:tabular-nums}
+.wtb-b:hover{border-color:var(--brand,#0C3D82);color:var(--brand,#0C3D82)}
+.wtb-b:focus-visible{outline:2px solid var(--brand,#0C3D82);outline-offset:2px}
+.wtb-resume{background:var(--brand,#0C3D82);border-color:var(--brand,#0C3D82);color:#fff}
+.wtb-resume:hover{color:#fff;opacity:.92}
+.wtb-t{font-size:.8rem;color:var(--faint,#5E7089);font-variant-numeric:tabular-nums;
+  margin-left:auto}
+.wtb-tx{margin-top:12px;font-size:.9rem}
+.wtb-tx summary{cursor:pointer;font-weight:600;color:var(--muted,#51637A)}
+.wtb-tx > div{margin-top:9px;color:var(--muted,#51637A);line-height:1.62;white-space:pre-wrap}
+.wtb-foot{margin:11px 0 0;font-size:.82rem;color:var(--faint,#5E7089);text-align:center}

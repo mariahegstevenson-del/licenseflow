@@ -435,6 +435,10 @@ export function playbookDefaults(code){
   return {
     exam: {
       vendor: PROVIDER_LABEL[prov] || "",
+      /* Taken from the exam URL rather than the label, so renaming
+         "Pearson VUE" to "Pearson" in the guide cannot silently detach the
+         Pearson walkthrough from twenty-seven states. */
+      vendor_key: prov || "",
       url: s.exam || "",
       /* Deliberately empty except where it has been checked. The exam's
          name in the vendor's own catalogue varies state by state -- and
@@ -444,10 +448,10 @@ export function playbookDefaults(code){
       note: "",
       steps: (PROVIDER_STEPS[prov] || []).slice(),
     },
-    study:     { vendor:"Xcel Solutions", url:CONSTANTS.study, note:"", steps:PROVIDER_STEPS.xcel.slice() },
-    state_app: { vendor:"NIPR", url:CONSTANTS.nipr, note:"", steps:[] },
-    ce:        { vendor:"Success CE", url:`https://successce.com/insurance-ce-requirements-${code}/`, note:"", steps:[] },
-    eo:        { vendor:"NAPA", url:CONSTANTS.eo,
+    study:     { vendor:"Xcel Solutions", vendor_key:"xcel", url:CONSTANTS.study, note:"", steps:PROVIDER_STEPS.xcel.slice() },
+    state_app: { vendor:"NIPR", vendor_key:"nipr", url:CONSTANTS.nipr, note:"", steps:[] },
+    ce:        { vendor:"Success CE", vendor_key:"successce", url:`https://successce.com/insurance-ce-requirements-${code}/`, note:"", steps:[] },
+    eo:        { vendor:"NAPA", vendor_key:"napa", url:CONSTANTS.eo,
                  /* The single most asked question on this step, so it is
                     stated up front rather than left to be discovered. */
                  note:"Choose the package that includes FIXED ANNUITIES. The cheapest option covers life and health only \u2014 if you write annuities and your certificate doesn't cover them, you are not protected and carriers may not accept it.",

@@ -1,6 +1,8 @@
 import { supabase, isConfigured, requireSession, hardSignOut } from "./supabase.js?v=2";
 import { STATE_LIST, STATES, ceSlots, ceIsConfigured, resolvePlaybook,
-         fillTokens } from "./states.js?v=12";
+         fillTokens } from "./states.js?v=13";
+import { resolveWalkthrough, factsFor, videoSource, isFile,
+         fmtDuration, clockTime } from "./walkthrough.js?v=1";
 import * as F from "./flow.js?v=8";
 import { loadTenant, renderUnknownAgency, applyTenantChrome, urlForAgency } from "./tenant.js?v=4";
 
@@ -42,12 +44,15 @@ async function load() {
   const settle = (q) => Promise.resolve(q).then(
     (r) => r, (e) => ({ data: null, error: e || new Error("Request failed") }));
 
-  const [p, inst, docs, vids] = await Promise.all([
+  const [p, inst, docs, vids, wtl, wta, wtv] = await Promise.all([
     settle(supabase.from("licensing_profiles")
       .select("*, agency:agencies(id,slug,name,theme)").eq("user_id", uid).maybeSingle()),
     settle(supabase.from("requirement_instances").select("*").eq("user_id", uid)),
     settle(supabase.from("documents").select("*").eq("user_id", uid)),
     settle(supabase.from("step_videos").select("*")),
+    settle(supabase.from("walkthroughs").select("*").eq("status","active")),
+    settle(supabase.from("walkthrough_assignments").select("*")),
+    settle(supabase.from("walkthrough_views").select("*").eq("user_id", uid)),
   ]);
   /* A failed profile read and a genuinely new agent both arrive here as
      null. Treating them the same is dangerous: an existing agent would be
@@ -56,6 +61,9 @@ async function load() {
   S.profileError = p.error || null;
   S.profile = p.data; S.instances = inst.data || []; S.docs = docs.data || [];
   S.videos = {}; (vids.data||[]).forEach(v => S.videos[v.step_key] = v);
+  S.wtLib    = wtl.data    || [];
+  S.wtAssign = wta.data    || [];
+  S.wtViews  = wtv.data    || [];
   S.sm = F.statusMap(S.instances);
 
   /* An agent who arrives on the wrong agency's address -- an old
@@ -149,24 +157,186 @@ function docFor(key){ return S.docs.find(d => d.doc_key === key); }
 function sysLine(){ return `Licensing state: <strong>${esc(stateName(S.profile.designated_state))}</strong> &nbsp;·&nbsp; License: <strong>${esc(S.profile.license_type)}</strong>`; }
 async function audit(event, before, after, meta={}) { await supabase.from("audit_events").insert({ user_id:S.user.id, event, status_before:before||null, status_after:after||null, source:"agent", meta }); }
 function stepIndex(key){ return S.journey ? S.journey.reqs.findIndex(r=>r.key===key) : -1; }
+/* ------------------------------------------------------------
+   THE WALKTHROUGH PANEL
+
+   Facts first, then the recording. The order matters: the video says
+   "use the information above", so the information has to be above it.
+
+   Nothing state-specific is baked into the recording. Rename an exam in
+   the state guide and this panel changes on the next load while the
+   video carries on being correct.
+------------------------------------------------------------- */
+function walkthroughFor(key){
+  return resolveWalkthrough({
+    requirementKey: key,
+    stateCode: S.profile?.designated_state,
+    licenseType: S.profile?.license_type,
+    agencyId: S.profile?.agency_id || S.profile?.agency?.id || null,
+    playbook: S.journey?.playbook || playbookFor(S.profile?.designated_state),
+    library: S.wtLib || [],
+    assignments: S.wtAssign || [],
+  });
+}
+
+function factsPanel(key){
+  const rows = factsFor(key, {
+    playbook: S.journey?.playbook || playbookFor(S.profile?.designated_state),
+    stateCode: S.profile?.designated_state,
+    licenseType: S.profile?.license_type,
+  });
+  if (!rows.length) return "";
+  return `<div class="facts">
+    <div class="facts-k">Your details for this step</div>
+    <dl>${rows.map(r => `<div${r.missing ? ' class="is-missing"' : ""}>
+      <dt>${esc(r.k)}</dt>
+      <dd${r.emphasis ? ' class="big"' : ""}>${esc(r.v)}</dd>
+      ${r.hint ? `<p class="facts-hint">${esc(r.hint)}</p>` : ""}
+    </div>`).join("")}</dl>
+  </div>`;
+}
+
 function videoBlock(key, fallbackTitle){
-  const v = S.videos?.[key];
-  if (!v || !v.active || !v.url) {
-    /* No recording for this step yet. Hold the space rather than letting
-       the layout jump the day one is added, and say plainly that it is
-       coming -- an empty frame with no explanation reads as broken. */
+  const w = walkthroughFor(key);
+  const legacy = S.videos?.[key];
+
+  if (!w) {
+    /* Still fall back to anything set up before the library existed, so
+       nothing that was working stops working. */
+    if (legacy && legacy.active && legacy.url) {
+      return `<div class="section-k center-k">${esc(legacy.title || fallbackTitle || "Watch")}</div>
+        <div class="video">${videoEmbed(legacy.url)}</div>
+        ${legacy.description ? `<p class="link-note" style="margin-top:-12px">${esc(legacy.description)}</p>` : ""}`;
+    }
     return `<div class="section-k center-k">Watch this step</div>
       <div class="video is-soon">
-        <div class="ph">
-          <div class="pi"></div>
+        <div class="ph"><div class="pi"></div>
           <b>Walkthrough coming soon</b>
-          <span>A short screen recording of this step is being made.</span>
-        </div>
+          <span>A short screen recording of this step is being made.</span></div>
       </div>`;
   }
-  return `<div class="section-k center-k">${esc(v.title||fallbackTitle||"Watch")}</div>
-    <div class="video">${videoEmbed(v.url)}</div>
-    ${v.description?`<p class="link-note" style="margin-top:-12px">${esc(v.description)}</p>`:""}`;
+
+  const view = (S.wtViews || []).find(v => v.walkthrough_id === w.id);
+  const resume = isFile(w) && view && view.last_position_sec > 15 && !view.completed_at
+    ? view.last_position_sec : 0;
+  const src = videoSource(w);
+
+  return `<div class="wtb" data-wt="${esc(w.id)}" data-req="${esc(key)}" data-ver="${esc(String(w.version || 1))}">
+    <div class="wtb-h">
+      <div>
+        <div class="section-k">Watch this step</div>
+        <b>${esc(w.title)}</b>
+      </div>
+      <div class="wtb-meta">
+        ${w.duration_seconds ? `<span class="wtb-dur">${esc(fmtDuration(w.duration_seconds))}</span>` : ""}
+        ${view?.completed_at ? `<span class="wtb-done">&#10003; Watched</span>` : ""}
+      </div>
+    </div>
+    ${w.description ? `<p class="wtb-desc">${esc(w.description)}</p>` : ""}
+    ${w.instructions ? `<div class="wtb-need"><span class="lab">Before you start</span>${esc(w.instructions)}</div>` : ""}
+
+    <div class="video${src?.kind === "file" ? " is-file" : ""}">
+      ${src?.kind === "file"
+        ? `<video id="wtV" preload="metadata" playsinline controls
+             ${w.thumbnail_url ? `poster="${esc(w.thumbnail_url)}"` : ""}
+             src="${esc(src.src)}#t=${resume || 0}">
+             ${w.captions_url ? `<track kind="captions" srclang="en" label="Captions" default src="${esc(w.captions_url)}"/>` : ""}
+           </video>`
+        : `<iframe src="${esc(src.src)}" allowfullscreen loading="lazy"
+             allow="accelerometer; clipboard-write; encrypted-media; picture-in-picture"></iframe>`}
+    </div>
+
+    ${src?.kind === "file" ? `
+      <div class="wtb-ctl">
+        <button type="button" class="wtb-b" data-back10 title="Back 10 seconds">&#8630; 10s</button>
+        <button type="button" class="wtb-b" data-speed>1&times;</button>
+        <span class="wtb-t" id="wtT">0:00</span>
+        ${resume ? `<button type="button" class="wtb-b wtb-resume" data-resume="${resume}">Resume at ${esc(clockTime(resume))}</button>` : ""}
+      </div>` : ""}
+
+    ${w.transcript ? `<details class="wtb-tx"><summary>Read it instead</summary>
+      <div>${esc(w.transcript)}</div></details>` : ""}
+
+    <p class="wtb-foot">Watching is not the same as doing &mdash; this step still needs completing below.</p>
+  </div>`;
+}
+
+/* Play, progress and completion are recorded against the agent, both so
+   they can pick up where they left off and so a coordinator can see what
+   was watched. It is deliberately NOT evidence that the requirement was
+   met: nothing here writes to requirement_instances. */
+async function wtTrack(id, patch){
+  if (!id || !S.user) return;
+  const now = new Date().toISOString();
+  const existing = (S.wtViews || []).find(v => v.walkthrough_id === id);
+  const row = { user_id: S.user.id, walkthrough_id: id, last_seen_at: now, ...patch };
+  if (!existing) {
+    row.started_at = now;
+    row.agency_id = S.profile?.agency_id || S.profile?.agency?.id || null;
+    S.wtViews = (S.wtViews || []).concat([{ ...row }]);
+  } else {
+    Object.assign(existing, patch, { last_seen_at: now });
+  }
+  try {
+    await supabase.from("walkthrough_views")
+      .upsert(row, { onConflict: "user_id,walkthrough_id" });
+  } catch (_) { /* a lost tracking write must never block the step */ }
+}
+
+function wireWalkthrough(){
+  const box = root.querySelector(".wtb");
+  if (!box) return;
+  const id = box.dataset.wt, req = box.dataset.req, ver = Number(box.dataset.ver || 1);
+  const v = el("wtV");
+
+  if (!v) {
+    /* An embedded player does not tell us anything, so the most we can
+       honestly record is that they opened the step with it on screen. */
+    wtTrack(id, { requirement_key: req, version_watched: ver });
+    return;
+  }
+
+  let started = false, lastSave = 0;
+  v.addEventListener("play", () => {
+    if (started) return;
+    started = true;
+    wtTrack(id, { requirement_key: req, version_watched: ver });
+  });
+  v.addEventListener("timeupdate", () => {
+    const t = el("wtT"); if (t) t.textContent = clockTime(v.currentTime);
+    /* Every 10 seconds is enough to make resume useful without writing
+       constantly. */
+    if (v.currentTime - lastSave > 10) {
+      lastSave = v.currentTime;
+      wtTrack(id, { last_position_sec: Math.floor(v.currentTime), requirement_key: req });
+    }
+  });
+  v.addEventListener("ended", () => {
+    wtTrack(id, { completed_at: new Date().toISOString(),
+                  last_position_sec: Math.floor(v.duration || 0), requirement_key: req });
+    const d = box.querySelector(".wtb-done");
+    if (!d) box.querySelector(".wtb-meta")
+      ?.insertAdjacentHTML("beforeend", `<span class="wtb-done">&#10003; Watched</span>`);
+  });
+
+  const back = box.querySelector("[data-back10]");
+  if (back) back.onclick = () => { v.currentTime = Math.max(0, v.currentTime - 10); };
+
+  const SPEEDS = [1, 1.25, 1.5, 2, 0.75];
+  let si = 0;
+  const sp = box.querySelector("[data-speed]");
+  if (sp) sp.onclick = () => {
+    si = (si + 1) % SPEEDS.length;
+    v.playbackRate = SPEEDS[si];
+    sp.innerHTML = `${SPEEDS[si]}&times;`;
+  };
+
+  const res = box.querySelector("[data-resume]");
+  if (res) res.onclick = () => {
+    v.currentTime = Number(res.dataset.resume) || 0;
+    v.play().catch(() => {});
+    res.remove();
+  };
 }
 
 /* ------------------------------------------------------------
@@ -371,6 +541,7 @@ function wireNext(r){
   const df = el("docInput");
   if (df) df.addEventListener("change", () => paintNext(r));
   wireDrops(() => paintNext(r));
+  wireWalkthrough();
   paintNext(r);
 }
 
@@ -1062,6 +1233,7 @@ function renderStep(key) {
            as a callout rather than buried in the collapsed instructions,
            because it is usually the thing agents get wrong. -->
       ${r.stateNote ? `<div class="callout callout-warn"><span class="lab">Before you buy</span>${esc(r.stateNote)}</div>` : ""}
+      ${factsPanel(r.key)}
       ${videoBlock(r.key, r.help?r.help.title:"Watch")}
       ${r.render==="action" && r.providerLabel ? `<div class="syscard"><span class="sys-k">Your provider</span><strong>${esc(r.providerLabel)}</strong></div>` : ""}
       ${r.link ? `<div class="link-row"><span class="cta" id="ctaLink"><a class="btn btn-accent btn-lg" id="stepLink" href="${esc(r.link)}" target="_blank" rel="noopener">${esc(openLabel(r,""))}</a></span></div><div class="link-note">Opens in a new tab. When you're done there, come back and record it below.</div>` : ""}
@@ -1163,12 +1335,11 @@ function renderExam(r, st, head) {
       <h2 style="margin-top:.4rem">Schedule your exam</h2>
       <p class="step-desc">${esc(info.examTitle)}. We've prepared the correct examination information for you. You can book this as soon as you've bought your course \u2014 you don't need to have finished studying.</p>
 
-      ${videoBlock("exam","Watch before you schedule") || `<div class="section-k center-k">Watch before you schedule</div><div class="video">${videoEmbed(null)}</div><p class="link-note" style="margin-top:-12px">Learn how to schedule your licensing examination.</p>`}
-
-      <div class="section-k" style="margin-top:22px">Your examination platform</div>
-      <div class="syscard"><span class="sys-k">Scheduled through</span><strong>${esc(vendor)}</strong></div>
-      ${r.examName ? `<div class="syscard exam-name"><span class="sys-k">Search for this exam</span><strong>${esc(r.examName)}</strong></div>
-        <p class="link-note" style="margin-top:-6px">Exams are named differently in every state. This is the one to book &mdash; if you can't find it, stop and ask your coordinator rather than booking something that looks close.</p>` : ""}
+      ${factsPanel("exam")}
+      <p class="facts-use">Use the exam name shown above when you choose your examination. Exams are
+        named differently in every state &mdash; if you can't find that one, stop and ask your
+        coordinator rather than booking something that looks close.</p>
+      ${videoBlock("exam","Watch before you schedule")}
       <div class="link-row"><a class="btn btn-accent btn-lg" href="${esc(url)}" target="_blank" rel="noopener">Open ${esc(vendor)}</a></div>
       <div class="link-note">This opens the official scheduling platform in a new tab.</div>
       ${r.stateNote ? `<div class="callout"><span class="lab">For ${esc(stateName(S.profile.designated_state))}</span>${esc(r.stateNote)}</div>` : ""}
@@ -1187,6 +1358,7 @@ function renderExam(r, st, head) {
       </div>
     </div></div>
   </div>`;
+  wireWalkthrough();
   el("submitStep").onclick = async () => {
     const A=el("stepAlert"); const d=el("f_exam_date").value;
     if(!d){ A.className="alert show alert-error"; A.textContent="Please enter your exam date."; return; }
@@ -1213,6 +1385,7 @@ function renderCE(r, st, head) {
       <h2 style="margin-top:.4rem">Continuing education</h2>
       <p class="step-desc">${esc(r.lead)}</p>
       ${st==="action_required"||st==="rejected" ? `<div class="callout callout-warn"><span class="lab">Action required</span>${esc(meta._reject||"One certificate needs attention. Replace the flagged certificate below.")}</div>` : ""}
+      ${factsPanel("continuing_education")}
       ${videoBlock("continuing_education","How to complete your continuing education")}
       ${r.link ? `<div class="link-row"><a class="btn btn-accent btn-lg" href="${esc(r.link)}" target="_blank" rel="noopener">Open Success CE</a></div><div class="link-note">Review your state's continuing-education requirements.</div>` : ""}
 
@@ -1255,6 +1428,7 @@ function renderCE(r, st, head) {
   drawCeRows();
   el("addCert").onclick = () => { ceRows.push({ purchase_date:"", file:null }); drawCeRows(); };
   root.querySelectorAll(".ce-replace").forEach(inp => inp.addEventListener("change", () => { el("repn_"+inp.dataset.idx).textContent = inp.files[0]?`Selected: ${inp.files[0].name}`:""; }));
+  wireWalkthrough();
   el("submitStep").onclick = () => submitCE(r);
 }
 function drawCeRows() {
