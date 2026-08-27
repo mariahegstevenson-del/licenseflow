@@ -1,5 +1,5 @@
 import { supabase, isConfigured, requireSession, hardSignOut } from "./supabase.js?v=2";
-import { STATE_LIST, STATES, ceSlots, ceIsConfigured, resolvePlaybook } from "./states.js?v=10";
+import { STATE_LIST, STATES, ceSlots, ceIsConfigured, resolvePlaybook } from "./states.js?v=11";
 import * as F from "./flow.js?v=8";
 import { loadTenant, renderUnknownAgency, applyTenantChrome, urlForAgency } from "./tenant.js?v=4";
 
@@ -1021,7 +1021,7 @@ function nextCard(ns){
    ============================================================ */
 function openLabel(r, provider){
   if (r.key==="exam") return "Open " + provider;
-  const map={ study_material:"Open Xcel Solutions", nipr_application:"Open NIPR", continuing_education:"Open Success CE", eo:"Open 360 Coverage Pros" };
+  const map={ study_material:"Open Xcel Solutions", nipr_application:"Open NIPR", continuing_education:"Open Success CE", eo:"Open NAPA" };
   return map[r.key] || "Open this step";
 }
 function renderStep(key) {
@@ -1048,6 +1048,10 @@ function renderStep(key) {
       <p class="step-desc">${esc(r.lead||"")}</p>
       ${st==="rejected"||st==="action_required" ? `<div class="callout callout-warn"><span class="lab">Action required</span>${esc(meta._reject || "This was sent back for correction. Please review and resubmit.")}</div>` : ""}
       ${r.help ? `<div class="callout"><span class="lab">${esc(r.help.title)}</span>${esc(r.help.body)}</div>` : ""}
+      <!-- The agency's own note for this step, from the state guide. Shown
+           as a callout rather than buried in the collapsed instructions,
+           because it is usually the thing agents get wrong. -->
+      ${r.stateNote ? `<div class="callout callout-warn"><span class="lab">Before you buy</span>${esc(r.stateNote)}</div>` : ""}
       ${videoBlock(r.key, r.help?r.help.title:"Watch")}
       ${r.render==="action" && r.providerLabel ? `<div class="syscard"><span class="sys-k">Your provider</span><strong>${esc(r.providerLabel)}</strong></div>` : ""}
       ${r.link ? `<div class="link-row"><span class="cta" id="ctaLink"><a class="btn btn-accent btn-lg" id="stepLink" href="${esc(r.link)}" target="_blank" rel="noopener">${esc(openLabel(r,""))}</a></span></div><div class="link-note">Opens in a new tab. When you're done there, come back and record it below.</div>` : ""}

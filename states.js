@@ -8,7 +8,10 @@ export const CONSTANTS = {
   study:   "https://partners.xcelsolutions.com/insurance-license/life-and-health?partner=pris",
   nipr:    "https://nipr.com/",
   surelc:  "https://accounts.surancebay.com/oauth/authorize?redirect_uri=https:%2F%2Fsurelc.surancebay.com%2Fproducer%2Foauth%3FreturnUrl%3D%252Fprofile%252Fcontact-info%253FgaId%253D381&gaId=381&client_id=surecrmweb&response_type=code",
-  eo:      "https://www.360coveragepros.com/ba",
+  /* NAPA rather than the previous carrier, whose programme was tied to a
+     single IMO. This is the default every agency inherits; any agency can
+     point their own E&O elsewhere from the State guide. */
+  eo:      "https://www.napa-benefits.org/nd/errors-and-omissions#life-and-health-agents",
   successCe: null, // add the Success CE link here
 };
 
@@ -216,7 +219,7 @@ export function buildWalkthrough(code) {
       desc: "Complete your carrier contracting through SureLC by SuranceBay." },
     { key: "eo", title: "Get your E&O insurance",
       link: CONSTANTS.eo, video: VIDEOS.eo,
-      desc: "Obtain your Errors & Omissions (E&O) insurance through 360 Coverage Pros." },
+      desc: "Obtain your Errors & Omissions (E&O) insurance through NAPA. Choose the package that includes fixed annuities." },
   ];
   return { state: s, provider, misc: s.misc || null, steps };
 }
@@ -424,7 +427,17 @@ export function playbookDefaults(code){
     study:     { vendor:"Xcel Solutions", url:CONSTANTS.study, note:"", steps:PROVIDER_STEPS.xcel.slice() },
     state_app: { vendor:"NIPR", url:CONSTANTS.nipr, note:"", steps:[] },
     ce:        { vendor:"Success CE", url:`https://successce.com/insurance-ce-requirements-${code}/`, note:"", steps:[] },
-    eo:        { vendor:"360 Coverage Pros", url:CONSTANTS.eo, note:"", steps:[] },
+    eo:        { vendor:"NAPA", url:CONSTANTS.eo,
+                 /* The single most asked question on this step, so it is
+                    stated up front rather than left to be discovered. */
+                 note:"Choose the package that includes FIXED ANNUITIES. The cheapest option covers life and health only \u2014 if you write annuities and your certificate doesn't cover them, you are not protected and carriers may not accept it.",
+                 steps:[
+                   "Open the NAPA link and go to the Life & Health Agents section.",
+                   "Compare the coverage options.",
+                   "Pick the option that includes fixed annuities \u2014 not the basic life-and-health-only one.",
+                   "Apply online. Coverage and proof of it come through in minutes.",
+                   "Save the certificate, then come back and upload it here.",
+                 ] },
     fingerprinting: { url: fpHttp ? s.fp : "", note: s.fpNote || (s.fp && !fpHttp ? s.fp : "") },
     affidavit: { url: s.affidavit || "", note:"" },
     misc: s.misc || "",
