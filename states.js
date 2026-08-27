@@ -85,7 +85,7 @@ export const PROVIDER_STEPS = {
 // state code -> { name, exam, fp, affidavit?, misc?, order? }
 // order: overrides sequence of core steps for the starred states.
 export const STATES = {
-  AL: { name: "Alabama", exam: "https://www.enrole.com/ua/jsp/index.jsp?categoryId=80211EE0", examName: "Producer Combined Life and Health", fp: "https://fieldprintalabama.com/individuals", affidavit: "https://aldoi.gov/LicenseeCZ/Initial.aspx" },
+  AL: { name: "Alabama", exam: "https://www.enrole.com/ua/jsp/index.jsp?categoryId=80211EE0", fp: "https://fieldprintalabama.com/individuals", affidavit: "https://aldoi.gov/LicenseeCZ/Initial.aspx" },
   AK: { name: "Alaska", exam: "https://www.pearsonvue.com/us/en/ak/insurance.html", fp: "https://pearsonwest.ibtfingerprint.com/" },
   AZ: { name: "Arizona", exam: "https://test-takers.psiexams.com/anzins", fp: "https://docs.google.com/document/d/1JpuV0S7YKeLG5pvMB4a1ssCpOlzkLXdZOPSLRjeMUOA/edit?usp=sharing", affidavit: "https://aldoi.gov/LicenseeCZ/Initial.aspx" },
   AR: { name: "Arkansas", exam: "https://test-takers.psiexams.com/arins", fp: "https://www.ark.org/background-check/index.php/home/index/aid", order: { fingerprinting: 2, exam_registration: 3 } },
@@ -105,8 +105,11 @@ export const STATES = {
   LA: { name: "Louisiana", exam: "https://test-takers.psiexams.com/ladi", fp: "https://uenroll.identogo.com/" },
   ME: { name: "Maine", exam: "https://home.pearsonvue.com/me/insurance", fp: null },
   MD: { name: "Maryland", exam: "https://www.prometric.com/maryland/insurance", fp: null },
-  MA: { name: "Massachusetts", exam: "https://www.prometric.com/massachusetts/insurance", fp: null },
-  MI: { name: "Michigan", exam: "https://test-takers.psiexams.com/midifs", examName: "State exam #60731", fp: null },
+  /* Massachusetts moved from Prometric to Pearson VUE on 22 July 2026.
+     The old Prometric link still resolves, which is what makes this the
+     dangerous kind of stale data -- it looks like it works. */
+  MA: { name: "Massachusetts", exam: "https://www.pearsonvue.com/us/en/ma/insurance.html", fp: null },
+  MI: { name: "Michigan", exam: "https://test-takers.psiexams.com/midifs", fp: null },
   MN: { name: "Minnesota", exam: "https://test-takers.psiexams.com/mnins/", fp: "https://proctor2.psionline.com/programs/MN%20INS%20Fingerprint%20hours.pdf" },
   MS: { name: "Mississippi", exam: "http://www.pearsonvue.com/ms/insurance", fp: null },
   MO: { name: "Missouri", exam: "http://www.pearsonvue.com/mo/insurance", fp: null },
