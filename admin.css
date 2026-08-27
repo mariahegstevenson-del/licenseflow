@@ -366,3 +366,21 @@ body.cc-locked .cc-nav,body.cc-locked .cc-rail{display:none}
 .pb-scope-k{font-size:.66rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
   color:var(--faint,#5E7089)}
 .pb-scope b{font-size:.98rem;font-weight:700;letter-spacing:-.01em;color:#061223}
+
+/* Find-a-state, and a clearer state button. Fifty-one buttons need a way
+   to narrow them; the previous screen made you scan. */
+.pb-find{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin:0 0 14px}
+.pb-find input{font:inherit;font-size:.95rem;padding:9px 13px;border-radius:9px;
+  border:1px solid var(--line,#DCE3EC);background:#fff;color:#061223;min-width:220px}
+.pb-find input:focus{outline:2px solid #0C3D82;outline-offset:1px;border-color:#0C3D82}
+.pb-find .hint{margin:0}
+
+.pb-b{position:relative;padding-right:30px}
+.pb-b .pb-go{position:absolute;right:12px;top:50%;transform:translateY(-50%);
+  font-size:1.3rem;line-height:1;color:var(--faint,#5E7089)}
+.pb-b:hover .pb-go{color:#0C3D82}
+.pb-chg{font-size:.7rem;font-weight:600;color:#0F6F40}
+
+.cc-err{background:#FDEEEC;border:1px solid #F5CFCB;color:#A32019;border-radius:8px;
+  padding:10px 13px;font-size:.82rem;white-space:pre-wrap;word-break:break-word;
+  font-family:"IBM Plex Mono",ui-monospace,monospace;margin:0 0 14px}

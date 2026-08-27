@@ -357,7 +357,7 @@ const NAV = [
   {v:"compliant",   label:"Fully compliant", c:"compliant"},
   {grp:"Content"},
   {v:"videos",   label:"Step videos",     c:"videos"},
-  {v:"playbooks",label:"State playbooks", c:"playbooks"},
+  {v:"playbooks",label:"State guide",     c:"playbooks"},
 ];
 function renderNav(){
   const c = counts(), cur = A.view.name;
@@ -484,7 +484,27 @@ function renderRail(){
 }
 
 /* ---------------- router ---------------- */
+/* A screen that fails should say so. Previously an exception anywhere in
+   a view left the previous screen sitting there, which reads to the person
+   using it as "I clicked and nothing happened" -- the hardest kind of
+   fault to report and the hardest to diagnose from a description. */
 function render(){
+  try { return renderView(); }
+  catch (e) {
+    console.error("[LicenseFlow] view failed:", e);
+    root.innerHTML = `<div class="cc-panel"><div class="pad">
+      <h2 style="margin-top:0">This screen didn&rsquo;t load</h2>
+      <p class="muted">Something went wrong drawing it, so you are seeing this rather than
+      something half-right. Send your LicenseFlow contact the line below and what you clicked.</p>
+      <pre class="cc-err">${esc(e && e.message ? e.message : String(e))}</pre>
+      <button class="btn btn-ghost btn-sm" id="errBack">Back to the queue</button>
+    </div></div>`;
+    const b = el("errBack");
+    if (b) b.onclick = () => { A.view = { name:"overview" }; render(); };
+  }
+}
+
+function renderView(){
   renderTabs(); renderNav(); renderRail();
   /* Re-bound on every render, because the panel is rebuilt each time. */
   setTimeout(wireNotices, 0);
@@ -1116,44 +1136,61 @@ function pbScopeBar(){
   </div>`;
 }
 
-function pbEditedCount(){
+/* The badge counts the states you can open, not the ones somebody has
+   edited. A "0" beside a content section reads as "nothing in here" and
+   stops people clicking -- which is exactly what happened. */
+function pbEditedCount(){ return STATE_LIST.length; }
+
+function pbOverrideCount(){
   return (pbScope() === "master" ? (A.pbMaster || [])
                                  : (A.pbAgency || []).filter(r => r.agency_id === pbOwner())).length;
 }
 
 function renderPlaybookGrid(){
   const mine = pbScope();
-  const sub = mine === "master"
-    ? "The LicenseFlow master. Every agency starts from this, and inherits any change you make here unless they have overridden that state themselves."
-    : `${esc(pbAgencyName(pbOwner()))}'s own copy. Edit a state to change what their agents are told — vendors, links, the exam's name, and the steps. Anything left untouched follows the LicenseFlow master.`;
+  const owner = mine === "master" ? "LicenseFlow" : pbAgencyName(pbOwner());
+  const changed = pbOverrideCount();
+  const q = (A.pbFind || "").trim().toLowerCase();
+  const shown = STATE_LIST.filter(st =>
+    !q || st.name.toLowerCase().includes(q) || st.code.toLowerCase().includes(q));
 
   const btn = (st) => {
     const edited = !!pbMineRow(st.code);
     const r = pbResolved(st.code);
-    const named = !!(r?.exam?.exam_name || "").trim();
     return `<button class="pb-b${edited ? " edited" : ""}" data-pb="${esc(st.code)}" type="button">
-      <span class="pb-code">${esc(st.code)}</span>
       <span class="pb-name">${esc(st.name)}</span>
-      <span class="pb-meta">${esc(r?.exam?.vendor || "No vendor set")}</span>
-      <span class="pb-flags">
-        ${edited ? `<i class="pb-dot ed" title="You have edited this state"></i>` : ""}
-        ${named ? "" : `<i class="pb-dot no" title="No exam name recorded"></i>`}
-      </span>
+      <span class="pb-meta">Exam: ${esc(r?.exam?.vendor || "not set")}</span>
+      ${edited ? `<span class="pb-chg">Changed by ${esc(owner)}</span>` : ""}
+      <span class="pb-go" aria-hidden="true">&rsaquo;</span>
     </button>`;
   };
 
-  const missing = STATE_LIST.filter(st => !(pbResolved(st.code)?.exam?.exam_name || "").trim()).length;
-
   root.innerHTML = `
-    <div class="cc-h"><div><h1>State playbooks</h1><p>${sub}</p></div></div>
+    <div class="cc-h"><div><h1>State guide</h1>
+      <p>What your agents are told to do in each state &mdash; which company to use, the link,
+      what their exam is called there, and the steps to follow. Click a state to read it or change it.</p></div></div>
+
     ${pbScopeBar()}
-    <div class="pb-legend">
-      <span><i class="pb-dot ed"></i> ${mine === "master" ? "Edited on the master" : "Overridden for " + esc(pbAgencyName(pbOwner()))}</span>
-      <span><i class="pb-dot no"></i> No exam name recorded${missing ? ` &mdash; ${missing} states` : ""}</span>
+
+    <div class="pb-find">
+      <input id="pbFind" type="search" placeholder="Find a state" value="${esc(A.pbFind || "")}"
+             autocomplete="off" spellcheck="false"/>
+      <span class="hint">${shown.length} of ${STATE_LIST.length} states${
+        changed ? ` &middot; ${changed} changed by ${esc(owner)}` : ""}</span>
     </div>
-    <div class="pb-grid">${STATE_LIST.map(btn).join("")}</div>`;
+
+    <div class="pb-grid">${shown.map(btn).join("")}</div>
+    ${shown.length ? "" : `<p class="muted" style="margin:4px 2px 30px">No state matches &ldquo;${esc(A.pbFind)}&rdquo;.</p>`}`;
+
   root.querySelectorAll("[data-pb]").forEach(b =>
     b.onclick = () => { A.view = { name:"playbook", arg:b.dataset.pb }; render(); });
+
+  const find = el("pbFind");
+  if (find) {
+    find.oninput = () => { A.pbFind = find.value; renderPlaybookGrid();
+      const again = el("pbFind"); if (again) { again.focus();
+        again.setSelectionRange(again.value.length, again.value.length); } };
+  }
 }
 
 function renderPlaybook(code){
