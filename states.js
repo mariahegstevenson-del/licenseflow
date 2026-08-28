@@ -1076,6 +1076,71 @@ export function fillTokens(str, vals){
    Written for a Life & Health agent -- the fuller case -- with the
    long-term-care line marked as health-only rather than dropped, since a
    coordinator reading this needs to see it either way. */
+/* ------------------------------------------------------------------
+   THE LICENCE APPLICATION
+
+   Transcribed from the agency's own NIPR handout rather than written
+   from the outside, because the click path is not guessable and getting
+   it wrong costs an agent an afternoon. Three things in here are the
+   difference between an approval and a delay, and all three come from
+   the handout:
+
+     - the background check is FEDERAL and pulls ten years, so any
+       discrepancy in what they type stalls the file
+     - answering YES to a background question means sending the
+       supporting documents to NIPR straight away, not waiting to be asked
+     - employment history wants five unbroken years; gaps are filled
+       with Self-Employed or Unemployed rather than left blank
+
+   Georgia is not NIPR at all -- see below.
+------------------------------------------------------------------- */
+const NIPR_WARNING =
+  "Your state runs a FEDERAL background check going back at least ten years. " +
+  "Any discrepancy between what you enter and what it finds will delay approval, " +
+  "so take your time over names, dates and addresses. If you answer YES to any " +
+  "background question, send the supporting documents to NIPR straight away \u2014 " +
+  "do not wait to be asked for them.";
+
+const NIPR_WARNING_GA =
+  "Georgia does not use NIPR. Resident producers apply through Sircon instead. " +
+  "Everything else still applies: the state runs a FEDERAL background check going " +
+  "back at least ten years, any discrepancy will delay approval, and if you answer " +
+  "YES to a background question you should send the supporting documents in straight away.";
+
+const NIPR_STEPS = [
+  "Open NIPR and click \u201cStart Now\u201d under Apply for a New License.",
+  "Choose \u201cIndividual\u201d.",
+  "Choose \u201cSocial Security Number\u201d.",
+  "Enter your Social Security number and last name, then click NEXT.",
+  "Enter your date of birth, then click NEXT.",
+  "Click \u201cStart\u201d.",
+  "Choose \u201cProducer License\u201d.",
+  "Choose \u201cInitial\u201d.",
+  "Choose \u201cResident\u201d, then click NEXT.",
+  "Select your state, then click NEXT.",
+  "Select your line of authority \u2014 Life if that is what you passed, or both Life and Health if you passed both \u2014 then click NEXT.",
+  "Review the price, then carry on.",
+  "Fill in the application with your personal details.",
+  "Business address: use the same address as your mailing address.",
+  "Employment history: give five consecutive years. Fill any gap with Self-Employed or Unemployed rather than leaving it blank.",
+  "Aliases and affiliations: skip both sections.",
+  "Finish the form and submit payment.",
+];
+
+/* Georgia's own click path through Sircon has not been walked and written
+   down, so the list says what is true and stops rather than inventing
+   screens. The parts that are the state's rules, not Sircon's, still hold. */
+const NIPR_STEPS_GA = [
+  "Open Sircon \u2014 Georgia residents apply there, not through NIPR.",
+  "Apply for an initial resident Producer licence.",
+  "Select your line of authority \u2014 Life if that is what you passed, or both Life and Health if you passed both.",
+  "Business address: use the same address as your mailing address.",
+  "Employment history: give five consecutive years. Fill any gap with Self-Employed or Unemployed rather than leaving it blank.",
+  "Aliases and affiliations: skip both sections.",
+  "Finish the form and submit payment.",
+  "Sircon's own screens are not written out here yet \u2014 if anything does not match, tell your coordinator so this list can be fixed.",
+];
+
 export function ceSteps(code){
   const c = CE_CART[code];
   if (!c) return [];
@@ -1125,7 +1190,16 @@ export function playbookDefaults(code){
       steps: (PROVIDER_STEPS[prov] || []).slice(),
     },
     study:     { vendor:"Xcel Solutions", vendor_key:"xcel", url:CONSTANTS.study, note:"", steps:PROVIDER_STEPS.xcel.slice() },
-    state_app: { vendor:"NIPR", vendor_key:"nipr", url:CONSTANTS.nipr, note:"", steps:[] },
+    /* Georgia does not use NIPR. Resident producers apply through Sircon,
+       so the vendor, the link and the click path all change -- and an agent
+       sent to NIPR would spend an afternoon on the wrong website. Taken from
+       the agency's own NIPR handout; the Sircon click path is not recorded
+       here because nobody has walked it yet. */
+    state_app: code === "GA"
+      ? { vendor:"Sircon", vendor_key:"sircon", url:"https://www.sircon.com/",
+          note:NIPR_WARNING_GA, steps:NIPR_STEPS_GA.slice() }
+      : { vendor:"NIPR", vendor_key:"nipr", url:CONSTANTS.nipr,
+          note:NIPR_WARNING, steps:NIPR_STEPS.slice() },
     ce:        { vendor:"Success CE", vendor_key:"successce", url:`https://successce.com/insurance-ce-requirements-${code}/`, note:"", steps:ceSteps(code) },
     eo:        { vendor:"NAPA", vendor_key:"napa", url:CONSTANTS.eo,
                  /* The single most asked question on this step, so it is

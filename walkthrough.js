@@ -23,7 +23,7 @@
    own. Five assets cover fifty-one jurisdictions.
    ============================================================ */
 
-import { STATES } from "./states.js?v=17";
+import { STATES } from "./states.js?v=18";
 
 /* Which playbook section supplies each requirement's facts and vendor. */
 export const REQ_SECTION = {

@@ -3,7 +3,7 @@
    The system owns configuration (state, license, exam provider,
    URLs). The agent only provides personal/action data.
    ============================================================ */
-import { STATES, buildWalkthrough, examProvider, PROVIDER_LABEL } from "./states.js?v=17";
+import { STATES, buildWalkthrough, examProvider, PROVIDER_LABEL } from "./states.js?v=18";
 
 /* ---------------- status vocabulary ---------------- */
 export const ST = {
@@ -53,7 +53,10 @@ export const REQS = [
   { key:"nipr_application", label:"NIPR Application", short:"NIPR Application", verify:"auto",
     render:"action", linkKey:"state_app", providerLabel:"NIPR",
     heading:"Submit your license application",
-    lead:"Apply for your license through NIPR.",
+    /* The vendor is not always NIPR -- Georgia applies through Sircon -- so
+       the lead does not name one. The playbook supplies the real vendor,
+       link and steps for the agent's own state. */
+    lead:"Apply for your license, then follow it up until it is issued.",
     fields:[{name:"application_date",label:"NIPR application date",type:"date",required:true}],
     dependsOn:["exam"] },
 
@@ -61,7 +64,10 @@ export const REQS = [
     render:"generic",
     heading:"Enter your license number",
     lead:"Once the state issues your license, enter your license number below. We'll verify it.",
-    help:{ title:"How to find your license number", body:"Your license number is typically provided by your state's insurance department — through email, official correspondence, your license documentation, or the state's official license lookup system." },
+    /* The waiting is the hard part of this step, so the help says what to
+       do during it rather than only where the number turns up. Chasing the
+       department daily is what the coordinators actually advise. */
+    help:{ title:"How to find your license number", body:"Call your state's department of insurance daily to check where your application has got to — applications sit until somebody asks about them. Once it is approved, ask them for your license number then and there. It also arrives by email or in your license documentation, and appears on the state's license lookup." },
     fields:[{name:"license_number",label:"License number",type:"text",required:true}],
     dependsOn:["nipr_application"] },
 
@@ -69,7 +75,7 @@ export const REQS = [
     render:"generic",
     heading:"Enter your National Producer Number",
     lead:"Your NPN is assigned when your license is processed. Enter it below and we'll verify it.",
-    help:{ title:"How to find your NPN", body:"Your National Producer Number (NPN) is assigned by the NAIC. You can look it up on the official NIPR site using your name and state." },
+    help:{ title:"How to find your NPN", body:"Your National Producer Number is assigned by the NAIC and shows up about 24 hours after your license is issued — so if you look straight away and find nothing, that is normal. Look it up on the official NIPR site using your name and state." },
     lookupUrl:"https://nipr.com/licensing-center/look-up-a-national-producer-number", lookupLabel:"Look up my NPN",
     fields:[{name:"npn",label:"NPN",type:"text",required:true}],
     dependsOn:["license_number"] },
