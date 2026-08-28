@@ -420,6 +420,17 @@ body.cc-locked .cc-nav,body.cc-locked .cc-rail{display:none}
 
 /* the agent preview */
 .pv-lead{font-size:.92rem;color:var(--muted,#51637A);margin:0 0 12px}
+/* Licence switch. Life-only and Life & Health see genuinely different
+   screens -- the long-term-care course is dropped for Life-only -- so the
+   preview lets an owner flip between them rather than guess. */
+.pv-lic{display:inline-flex;gap:2px;padding:2px;margin:0 0 14px;
+  border:1px solid var(--line,#DCE3EC);border-radius:99px;background:#F5F7FA}
+.pv-licb{appearance:none;border:0;background:none;border-radius:99px;cursor:pointer;
+  font:inherit;font-size:.8rem;font-weight:600;letter-spacing:-.005em;
+  padding:6px 14px;color:var(--muted,#51637A)}
+.pv-licb:hover{color:#0C3D82}
+.pv-licb.on{background:#0C3D82;color:#fff}
+.pv-licb:focus-visible{outline:2px solid #0C3D82;outline-offset:1px}
 .pv-chips{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 16px}
 .pv-chip{appearance:none;border:1px solid var(--line,#DCE3EC);background:#fff;border-radius:99px;
   padding:6px 13px;font:inherit;font-size:.84rem;font-weight:600;color:var(--muted,#51637A);cursor:pointer}

@@ -1,6 +1,6 @@
 import { supabase, isConfigured, requireSession, hardSignOut } from "./supabase.js?v=2";
-import { STATE_LIST, STATES, ceSlots, ceIsConfigured, ceCart, AML_TRAP, resolvePlaybook,
-         fillTokens } from "./states.js?v=15";
+import { STATE_LIST, STATES, ceSlots, ceIsConfigured, ceBasketHTML, resolvePlaybook,
+         fillTokens } from "./states.js?v=16";
 import { resolveWalkthrough, factsFor, videoSource, isFile,
          fmtDuration, clockTime } from "./walkthrough.js?v=1";
 import * as F from "./flow.js?v=8";
@@ -1581,84 +1581,9 @@ function ceSlotList(){ return ceSlots(S.profile?.designated_state, S.profile?.li
    telling their agents to shop somewhere else.
 ------------------------------------------------------------------- */
 function ceCartBlock(playbook){
-  const code = S.profile?.designated_state;
-  const lt   = S.profile?.license_type;
-  const cart = ceCart(code, lt);
-  if (!cart) return "";
-
-  /* Only meaningful while the agency is actually sending people to
-     Success CE. A changed vendor means a changed basket. */
-  const vendorKey = (playbook?.ce?.vendor_key || "successce").toLowerCase();
-  if (vendorKey !== "successce") return "";
-
-  const stateName = STATES[code]?.name || "your state";
-  const money = (c) => [c.h ? `${c.h} hrs` : null, c.p || null].filter(Boolean).join(" · ");
-  const line  = (c) => `<div class="cart-course"><span class="cc-n">${esc(c.n)}</span>${
-    money(c) ? `<span class="cc-m">${esc(money(c))}</span>` : ""}</div>`;
-
-  const steps = [];
-  steps.push({ t: "Open the course catalogue",
-    b: `<a class="btn btn-accent btn-sm" href="https://app.successce.com/v2Theme/Courses/SelectCourse.aspx"
-          target="_blank" rel="noopener">Open Success CE</a>` });
-
-  steps.push({ t: "Choose your state and licence",
-    b: `<div class="cart-pick"><span>${esc(stateName)}</span><span>Life Only / Life &amp; Health / Annuity (Reg BI) / Ethics / LTC</span></div>` });
-
-  steps.push({ t: "Add one all-inclusive package",
-    b: `<p class="cart-note">${cart.packages} to choose from. Any single one of them meets ${esc(stateName)}&rsquo;s minimum hours, so pick the one that matches what you intend to sell &mdash; you do not need more than one.</p>` });
-
-  if (cart.ltc.length) {
-    /* A generic course is one the catalogue stocks but the state does not
-       mandate. Saying so matters: an agent who buys it believing it clears
-       a state requirement has bought the wrong thing. */
-    const generic = cart.ltc.every(c => c.generic);
-    steps.push({ t: "Add your long-term care course",
-      b: cart.ltc.map(line).join("") + (generic
-        ? `<p class="cart-note">${esc(stateName)} does not publish its own long-term-care course or hour count. This is the general one &mdash; useful, but confirm with your carrier that it accepts it before you rely on it.</p>`
-        : `<p class="cart-note">Take the initial course now. The follow-up is for your next renewal, not today.</p>`) });
-  } else if (/health/i.test(String(lt || ""))) {
-    steps.push({ t: "Long-term care &mdash; nothing to buy", b:
-      `<p class="cart-note">${esc(stateName)} has no long-term-care training requirement and Success CE lists no course for it, so there is nothing to add here. If you intend to write LTC, ask your carrier &mdash; a carrier can ask for more than the state does.</p>` });
-  }
-
-  /* The one course an agent is most likely to get wrong, and the one that
-     costs them most later. Most agents end up writing in more than one
-     state, and the AML certificate travels with them -- so it has to carry
-     real CE credit and be worth two hours, or a non-resident state will not
-     take it. The free course on the same screen carries none. */
-  if (cart.aml) {
-    steps.push({ t: "Add anti-money laundering", b: line(cart.aml) +
-      `<p class="cart-note">Two hours, and it carries CE credit &mdash; both matter. You will almost certainly end up licensed in more than one state, and this certificate goes with you. A shorter one, or one with no CE credit, gets refused when you apply somewhere new.</p>` +
-      `<p class="cart-note cart-warn">Do <b>not</b> take &ldquo;${esc(AML_TRAP)}&rdquo;. It is free because it carries <b>no CE credit at all</b> &mdash; it satisfies the federal rule and nothing else. It sits right next to the right one on the same screen.</p>` +
-      (cart.aml.alt?.length
-        ? `<p class="cart-note">If you would rather a different subject, ${
-            cart.aml.alt.length === 1 ? "this one is" : "these are"
-          } also two hours with CE credit: ${esc(cart.aml.alt.join(", "))}.</p>`
-        : "") });
-  } else {
-    steps.push({ t: "Anti-money laundering", b:
-      `<p class="cart-note cart-warn">Success CE does not carry an AML course for ${esc(stateName)}. You still need one &mdash; carriers will not appoint you without it. Ask your coordinator where to take it.</p>` });
-  }
-
-  if (cart.extras.length) {
-    steps.push({ t: `Add ${esc(stateName)}&rsquo;s own courses`,
-      b: cart.extras.map(line).join("") +
-         `<p class="cart-note">${esc(stateName)} asks for these on top of the package. They are not optional.</p>` });
-  }
-
-  steps.push({ t: "Check out",
-    b: `<p class="cart-note">Then upload each certificate below as it comes through. You do not have to wait until you have all of them.</p>` });
-
-  return `
-    <div class="section-k" style="margin-top:24px">Your courses in ${esc(stateName)}</div>
-    <ol class="cart">${steps.map(s => `
-      <li class="cart-step">
-        <div class="cart-t">${s.t}</div>
-        <div class="cart-b">${s.b}</div>
-      </li>`).join("")}</ol>
-    <p class="hint cart-foot">Course names and prices read from Success CE&rsquo;s catalogue on 28 August 2026${
-      /health/i.test(String(lt || "")) ? "" : ", for a Life-only licence &mdash; long-term care is left out because you cannot sell it on this licence"
-    }. If what you see in the basket differs, believe the basket and tell your coordinator.</p>`;
+  /* The markup lives in states.js so the admin console's agent preview
+     renders the identical basket -- see ceBasketHTML there. */
+  return ceBasketHTML(S.profile?.designated_state, S.profile?.license_type, playbook);
 }
 
 /* A plain reading of what this agent's state asks of them, in the order

@@ -1,6 +1,6 @@
 import { supabase, isConfigured, requireSession, hardSignOut } from "./supabase.js?v=2";
-import { STATES, STATE_LIST, ceSlots, PLAYBOOK_SECTIONS, playbookDefaults,
-         resolvePlaybook, COMPLETE_FIELDS, fillTokens } from "./states.js?v=15";
+import { STATES, STATE_LIST, ceSlots, ceBasketHTML, PLAYBOOK_SECTIONS, playbookDefaults,
+         resolvePlaybook, COMPLETE_FIELDS, fillTokens } from "./states.js?v=16";
 import { WALKTHROUGH_REQS, resolveWalkthrough, vendorKeyFor, videoSource,
          fmtDuration, RECORDING_STANDARD } from "./walkthrough.js?v=1";
 import * as F from "./flow.js?v=8";
@@ -1326,6 +1326,12 @@ function renderPlaybookAgent(code){
   const chip = (q, i) => `<button class="pv-chip${q.key === pick ? " on" : ""}" data-step="${esc(q.key)}"
       type="button"><span class="pv-cn">${i + 1}</span>${esc(q.short || q.label)}</button>`;
 
+  /* Which licence the preview is standing in for. It changes what an
+     agent actually sees -- long-term care is a health-line product, so a
+     Life-only agent is never shown it -- and an owner checking placement
+     needs both without creating two accounts. */
+  const lic = A.pbLicense || "Life & Health";
+
   /* The agent's own components, so spacing and placement are the real
      thing rather than an approximation. */
   const screen =
@@ -1350,6 +1356,8 @@ function renderPlaybookAgent(code){
               <div class="link-note">Opens in a new tab. When you're done there, come back and record it below.</div>` : ""}
           ${req.instructions ? `<details class="inst" style="margin-top:16px" open><summary>Step-by-step instructions</summary>
               <ol>${req.instructions.map(i => `<li>${esc(i)}</li>`).join("")}</ol></details>` : ""}
+          ${req.key === "continuing_education"
+            ? ceBasketHTML(code, lic, r) : ""}
           <div class="form-block">
             <h3 style="margin:22px 0 6px;font-size:1.02rem">${req.render === "eo" ? "Upload your certificate" : "Record what you did"}</h3>
             ${(req.fields || []).map(f => `<label>${esc(f.label)}${f.required ? " *" : ""}</label>
@@ -1378,13 +1386,24 @@ function renderPlaybookAgent(code){
              : `<span class="pv-move is-off">End of the journey &rarr;</span>`}
     </div>`;
 
+  const licSwitch = `
+    <div class="pv-lic" role="group" aria-label="Licence type">
+      ${["Life & Health", "Life"].map(v => `
+        <button class="pv-licb${v === lic ? " on" : ""}" type="button" data-lic="${esc(v)}"
+          aria-pressed="${v === lic}">${esc(v === "Life" ? "Life only" : v)}</button>`).join("")}
+    </div>`;
+
   host.innerHTML = `
     <p class="pv-lead">Every screen this state's agents get, without signing in as one.
       ${pbScope() === "master" ? "" : "Links and vendors are " + esc(pbAgencyName(pbOwner())) + "'s."}</p>
+    ${licSwitch}
     <div class="pv-chipwrap"><div class="pv-chips">${seq.map(chip).join("")}</div></div>
     ${nav("top")}
     ${screen}
     ${nav("bottom")}`;
+
+  host.querySelectorAll("[data-lic]").forEach(b =>
+    b.onclick = () => { A.pbLicense = b.dataset.lic; renderPlaybookAgent(code); });
 
   host.querySelectorAll("[data-step]").forEach(b =>
     b.onclick = () => {
