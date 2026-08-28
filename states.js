@@ -364,7 +364,7 @@ export const CE_BY_STATE = {
     { key:"best_interest", label:"Annuity Best Interest training (4 hours)", required:true,
       note:"Connecticut requires this one-time course before you may sell an annuity, and the carrier has to see the certificate before it will let you write one." },
     { key:"ltc", lines:"health", label:"Long-Term Care training", required:false, advise:true,
-      note:"Only if you will write long-term care — it is a health-line product, so a Life-only licence does not need it at all. Connecticut's hour figure is not published by our source. The course is on the catalogue — confirm the length with your CE provider before you book it." },
+      note:"Only if you will write long-term care — it is a health-line product, so a Life-only licence does not need it at all. Connecticut publishes no hour figure and stocks no Connecticut-specific course — only a general 10-hour one. It is a one-time requirement with no follow-up. Confirm with your carrier that the general course satisfies it before you rely on it." },
     ETHICS_RENEWAL(3, 2),
     OTHER,
   ],
@@ -536,7 +536,7 @@ export const CE_BY_STATE = {
     { key:"best_interest", label:"Annuity Best Interest training (4 hours)", required:true,
       note:"Minnesota requires this one-time course before you may sell an annuity, and the carrier has to see the certificate before it will let you write one." },
     { key:"ltc", lines:"health", label:"Long-Term Care training", required:false, advise:true,
-      note:"Only if you will write long-term care — it is a health-line product, so a Life-only licence does not need it at all. Minnesota's hour figure is not published by our source. The course is on the catalogue — confirm the length with your CE provider before you book it." },
+      note:"Only if you will write long-term care — it is a health-line product, so a Life-only licence does not need it at all. Minnesota runs it through the Medical Assistance Eligibility and LTC Partnership programme: 8 hours before you sell it, then 4 hours each renewal. The state's own requirements page describes this for non-resident producers only, so confirm with your coordinator if you are resident." },
     ETHICS_RENEWAL(3, 2),
     OTHER,
   ],
@@ -815,61 +815,76 @@ export const CE_BY_STATE = {
 };
 
 /* What to actually put in the basket at Success CE, per state.
-   Pulled from their catalogue API on 28 August 2026. The packages
-   and the AML course are the same everywhere; the long-term-care
-   course is the only piece that genuinely changes by state. */
+   Pulled from their catalogue API on 28 August 2026.
+
+   The AML course is chosen, not just listed. Agents write in more
+   than one state, so the certificate has to travel: it must carry
+   real CE credit and it must be worth two hours, which is what a
+   non-resident state will accept without argument. Success CE also
+   sells a $0.00 AML course carrying zero CE hours -- fine for the
+   federal obligation on its own, useless on a multi-state file, and
+   the one an agent picks by accident. AML_TRAP names it so the
+   portal can warn them off it by name.
+
+   Forty-eight states get "The Battle Rages On". Connecticut,
+   Minnesota and Ohio do not stock it at two hours, so they get
+   "AML Developments" instead -- same credit, same price. `alt`
+   holds the other two-hour options in that state for anyone who
+   wants a different subject. */
+export const AML_TRAP = "AML - Anti-Money Laundering for Insurance/Securities";
+
 export const CE_CART = {
-  AK: { packages:2, aml:{ n:"AML - The Battle Rages On", h:2, p:"$4.95" }, ltc:[{ n:"Alaska 8 Hour LTC Initial Training", h:8, p:"$9.95" }, { n:"Alaska 4 Hour LTC Follow-up", h:4, p:"$9.95" }], extras:[] },
-  AL: { packages:2, aml:{ n:"AML - The Battle Rages On", h:2, p:"$4.95" }, ltc:[{ n:"Alabama Long Term Care", h:8, p:"$9.95" }, { n:"Partnership LTC Follow up", h:4, p:"$9.95" }], extras:[] },
-  AR: { packages:2, aml:{ n:"AML - The Battle Rages On", h:2, p:"$4.95" }, ltc:[{ n:"Arkansas Long Term Care", h:8, p:"$9.95" }, { n:"Partnership LTC Follow up", h:4, p:"$9.95" }], extras:[] },
-  AZ: { packages:2, aml:{ n:"AML - The Battle Rages On", h:2, p:"$4.95" }, ltc:[{ n:"Arizona Partnership Long Term Care", h:8, p:"$9.95" }, { n:"Partnership LTC Follow up", h:4, p:"$9.95" }], extras:[] },
-  CA: { packages:4, aml:{ n:"AML - The Battle Rages On", h:2, p:"$4.95" }, ltc:[{ n:"New California Long-Term Care", h:8, p:"$9.95" }], extras:[{ n:"Life Insurance Policies", h:4, p:"$19.95" }, { n:"Comprehensive Annuity Training", h:8, p:"$19.95" }] },
-  CO: { packages:2, aml:{ n:"AML - The Battle Rages On", h:2, p:"$4.95" }, ltc:[{ n:"Colorado Long Term Care General", h:8, p:"$9.95" }], extras:[] },
-  CT: { packages:2, aml:null, ltc:[{ n:"Principles of Long-Term Care", h:10, p:"" }], extras:[] },
-  DC: { packages:2, aml:{ n:"AML - The Battle Rages On", h:2, p:"$4.95" }, ltc:[], extras:[] },
-  DE: { packages:2, aml:{ n:"AML - The Battle Rages On", h:2, p:"$4.95" }, ltc:[{ n:"Delaware Partnership LTC Follow-Up", h:3, p:"$9.95" }, { n:"Principles of Long-Term Care", h:8, p:"$9.95" }], extras:[] },
-  FL: { packages:2, aml:{ n:"AML - The Battle Rages On", h:2, p:"$4.95" }, ltc:[{ n:"Partnership LTC 4 hour Follow-up", h:4, p:"$9.95" }], extras:[{ n:"Law & Ethics Updates - 215", h:4, p:"" }] },
-  GA: { packages:2, aml:{ n:"AML - The Battle Rages On", h:2, p:"$4.95" }, ltc:[{ n:"Georgia Long Term Care Partnership", h:8, p:"$9.95" }, { n:"Partnership LTC Follow up", h:4, p:"$9.95" }], extras:[] },
-  HI: { packages:2, aml:{ n:"AML - The Battle Rages On", h:2, p:"$4.95" }, ltc:[], extras:[{ n:"Hawaii Insurance Rules & Regulations - L&H", h:5, p:"" }] },
-  IA: { packages:3, aml:{ n:"AML - The Battle Rages On", h:2, p:"$4.95" }, ltc:[{ n:"Partnership LTC Follow up", h:4, p:"$9.95" }], extras:[] },
-  ID: { packages:2, aml:{ n:"AML - The Battle Rages On", h:2, p:"$4.95" }, ltc:[{ n:"ID LTC Partnership", h:8, p:"$9.95" }, { n:"Principles of Long-Term Care", h:8, p:"$9.95" }], extras:[] },
-  IL: { packages:2, aml:{ n:"AML - The Battle Rages On", h:2, p:"$4.95" }, ltc:[{ n:"Partnership LTC Follow up", h:4, p:"$9.95" }], extras:[] },
-  IN: { packages:2, aml:{ n:"AML - The Battle Rages On", h:2, p:"$4.95" }, ltc:[{ n:"Long Term Care in Indiana", h:8, p:"$9.95" }, { n:"Indiana 5 Hour Long Term Care", h:5, p:"$9.95" }], extras:[] },
-  KS: { packages:2, aml:{ n:"AML - The Battle Rages On", h:2, p:"$4.95" }, ltc:[{ n:"Partnership LTC Initial Training", h:4, p:"$9.95" }, { n:"Partnership LTC Follow up", h:4, p:"$9.95" }], extras:[] },
-  KY: { packages:2, aml:{ n:"AML - The Battle Rages On", h:2, p:"$4.95" }, ltc:[{ n:"Kentucky Partnership Long Term Care", h:8, p:"$9.95" }, { n:"Partnership LTC Follow up", h:4, p:"$9.95" }], extras:[] },
-  LA: { packages:2, aml:{ n:"AML - The Battle Rages On", h:2, p:"$4.95" }, ltc:[{ n:"Louisiana Long Term Care Partnership", h:8, p:"$9.95" }, { n:"Partnership LTC Follow up", h:4, p:"$9.95" }], extras:[] },
-  MA: { packages:3, aml:{ n:"AML - The Battle Rages On", h:2, p:"$4.95" }, ltc:[{ n:"MA 8hr Partnership Long-Term Care", h:8, p:"$9.95" }, { n:"MA 4hr Partnership LTC Follow-up", h:4, p:"$9.95" }], extras:[] },
-  MD: { packages:2, aml:{ n:"AML - The Battle Rages On", h:2, p:"$4.95" }, ltc:[{ n:"Partnership LTC Follow up", h:4, p:"$9.95" }], extras:[] },
-  ME: { packages:2, aml:{ n:"AML - The Battle Rages On", h:2, p:"$4.95" }, ltc:[{ n:"Maine Long Term Care Partnership", h:8, p:"$9.95" }, { n:"Partnership LTC Follow up", h:4, p:"$9.95" }], extras:[] },
-  MI: { packages:2, aml:{ n:"AML - The Battle Rages On", h:2, p:"$4.95" }, ltc:[{ n:"Michigan Long Term Care Partnership", h:8, p:"$9.95" }, { n:"Partnership LTC Follow up", h:4, p:"$9.95" }], extras:[] },
-  MN: { packages:2, aml:null, ltc:[{ n:"Medical Assistance Eligibility & The LTC Partnership Program", h:8, p:"" }, { n:"Medical Assistance Eligibility and the LTC Partnership Program", h:4, p:"" }], extras:[] },
-  MO: { packages:2, aml:{ n:"AML - The Battle Rages On", h:2, p:"$4.95" }, ltc:[{ n:"Missouri Partnership LTC", h:8, p:"" }, { n:"Partnership LTC Follow up", h:4, p:"$9.95" }], extras:[] },
-  MS: { packages:2, aml:{ n:"AML - The Battle Rages On", h:2, p:"$4.95" }, ltc:[], extras:[] },
-  MT: { packages:2, aml:{ n:"AML - The Battle Rages On", h:2, p:"$4.95" }, ltc:[{ n:"Montana Long Term Care and Partnership Program", h:8, p:"$9.95" }, { n:"Partnership LTC Follow up", h:4, p:"$9.95" }], extras:[{ n:"Montana Legislative Updates", h:1, p:"" }] },
-  NC: { packages:2, aml:{ n:"AML - The Battle Rages On", h:2, p:"$4.95" }, ltc:[{ n:"North Carolina Partnership Long-Term Care", h:8, p:"$9.95" }, { n:"Partnership LTC Follow up", h:4, p:"$9.95" }], extras:[] },
-  ND: { packages:2, aml:{ n:"AML - The Battle Rages On", h:2, p:"$4.95" }, ltc:[{ n:"North Dakota Long Term Care Partnership", h:8, p:"$9.95" }, { n:"Partnership LTC Follow up", h:4, p:"$9.95" }], extras:[] },
-  NE: { packages:2, aml:{ n:"AML - The Battle Rages On", h:2, p:"$4.95" }, ltc:[{ n:"Nebraska LTC Partnership", h:8, p:"" }, { n:"Partnership LTC Follow up", h:4, p:"$9.95" }], extras:[] },
-  NH: { packages:2, aml:{ n:"AML - The Battle Rages On", h:2, p:"$4.95" }, ltc:[{ n:"New Hampshire Long Term Care", h:8, p:"$9.95" }, { n:"Partnership LTC Follow up", h:4, p:"$9.95" }], extras:[] },
-  NJ: { packages:2, aml:{ n:"AML - The Battle Rages On", h:2, p:"$4.95" }, ltc:[{ n:"New Jersey Partnership Long Term Care", h:8, p:"$9.95" }, { n:"Partnership LTC Follow up", h:4, p:"$9.95" }], extras:[] },
-  NM: { packages:2, aml:{ n:"AML - The Battle Rages On", h:2, p:"$4.95" }, ltc:[{ n:"New Mexico Long-Term Care Partnership Program", h:8, p:"$9.95" }, { n:"Partnership LTC Follow up", h:4, p:"$9.95" }], extras:[] },
-  NV: { packages:2, aml:{ n:"AML - The Battle Rages On", h:2, p:"$4.95" }, ltc:[{ n:"Partnership LTC Follow up", h:4, p:"$9.95" }], extras:[] },
-  NY: { packages:3, aml:{ n:"AML - The Battle Rages On", h:2, p:"$4.95" }, ltc:[], extras:[{ n:"New York Insurance Law", h:1, p:"" }, { n:"Professional Insurance Standards", h:3, p:"" }] },
-  OH: { packages:2, aml:{ n:"AML - The Battle Rages On", h:1, p:"$4.95" }, ltc:[{ n:"Ohio Partnership Long Term Care", h:8, p:"$9.95" }, { n:"Partnership LTC Follow up", h:4, p:"$9.95" }], extras:[] },
-  OK: { packages:2, aml:{ n:"AML - The Battle Rages On", h:2, p:"$4.95" }, ltc:[{ n:"Oklahoma Partnership Long Term Care", h:8, p:"$9.95" }, { n:"Partnership LTC Follow-Up", h:4, p:"" }], extras:[{ n:"Oklahoma Legislative Updates", h:2, p:"" }, { n:"Earthquake Insurance", h:1, p:"" }] },
-  OR: { packages:2, aml:{ n:"AML - The Battle Rages On", h:2, p:"$4.95" }, ltc:[{ n:"OR Long Term Care Partnership", h:8, p:"$9.95" }, { n:"Partnership LTC Follow up", h:4, p:"$9.95" }], extras:[{ n:"Oregon Statutes & Regulations", h:3, p:"" }] },
-  PA: { packages:2, aml:{ n:"AML - The Battle Rages On", h:2, p:"$4.95" }, ltc:[{ n:"Partnership LTC Follow up", h:4, p:"$9.95" }], extras:[] },
-  RI: { packages:2, aml:{ n:"AML - The Battle Rages On", h:2, p:"$4.95" }, ltc:[{ n:"Rhode Island Partnership Long Term Care", h:8, p:"$9.95" }, { n:"Partnership LTC Follow up", h:4, p:"$9.95" }], extras:[] },
-  SC: { packages:2, aml:{ n:"AML - The Battle Rages On", h:2, p:"$4.95" }, ltc:[{ n:"South Carolina Partnership Long Term Care", h:8, p:"$9.95" }, { n:"Partnership LTC Follow-up", h:4, p:"$9.95" }], extras:[] },
-  SD: { packages:2, aml:{ n:"AML - The Battle Rages On", h:2, p:"$4.95" }, ltc:[{ n:"South Dakota Partnership Long Term Care", h:8, p:"$9.95" }, { n:"Partnership LTC Follow Up", h:4, p:"$9.95" }], extras:[{ n:"South Dakota Medicaid", h:1, p:"" }] },
-  TN: { packages:2, aml:{ n:"AML - The Battle Rages On", h:2, p:"$4.95" }, ltc:[{ n:"Tennessee Partnership Long Term Care", h:8, p:"$9.95" }, { n:"Partnership LTC Follow up", h:4, p:"$9.95" }], extras:[] },
-  TX: { packages:3, aml:{ n:"AML - The Battle Rages On", h:2, p:"$4.95" }, ltc:[{ n:"Texas Partnership Long Term Care", h:8, p:"$9.95" }, { n:"Partnership LTC Follow up", h:4, p:"$9.95" }], extras:[{ n:"Texas Annuities", h:8, p:"" }] },
-  UT: { packages:2, aml:{ n:"AML - The Battle Rages On", h:2, p:"$4.95" }, ltc:[{ n:"Utah Long Term Care Initial Training", h:3, p:"" }, { n:"Partnership LTC Follow up", h:3, p:"" }], extras:[] },
-  VA: { packages:2, aml:{ n:"AML - The Battle Rages On", h:2, p:"$4.95" }, ltc:[{ n:"Virginia Partnership LTC", h:8, p:"" }, { n:"Partnership LTC Follow up", h:4, p:"$9.95" }], extras:[] },
-  VT: { packages:2, aml:{ n:"AML - The Battle Rages On", h:2, p:"$4.95" }, ltc:[{ n:"Vermont LTC Partnership Program and Medicaid", h:8, p:"$9.95" }, { n:"Partnership LTC Follow up", h:4, p:"$9.95" }], extras:[] },
-  WA: { packages:2, aml:{ n:"AML - The Battle Rages On", h:2, p:"$4.95" }, ltc:[{ n:"WA LTC Initial 8 Hour Course", h:8, p:"" }, { n:"WA LTC Refresher 4 hour Course", h:4, p:"" }], extras:[] },
-  WI: { packages:2, aml:{ n:"AML - The Battle Rages On", h:2, p:"$4.95" }, ltc:[{ n:"WI Partnership LTC & Medicaid Training", h:8, p:"" }, { n:"Partnership LTC Follow up", h:4, p:"$9.95" }], extras:[{ n:"Specific Medicaid & LTC Information Training", h:2, p:"" }] },
-  WV: { packages:2, aml:{ n:"AML - The Battle Rages On", h:2, p:"$4.95" }, ltc:[{ n:"West Virginia Partnership Long Term Care", h:8, p:"$9.95" }, { n:"Partnership LTC Follow up", h:4, p:"$9.95" }], extras:[] },
-  WY: { packages:2, aml:{ n:"AML - The Battle Rages On", h:2, p:"$4.95" }, ltc:[{ n:"Wyoming Partnership Long Term Care", h:8, p:"$9.95" }, { n:"Partnership LTC Follow up", h:4, p:"$9.95" }], extras:[] },
+  AK: { packages:2, aml:{ n:"AML - The Battle Rages On", h:2, p:"$4.95", alt:["AML Developments", "AML Risk Management", "Safeguarding Insurance: Comprehensive AML Measures"] }, ltc:[{ n:"Alaska 8 Hour LTC Initial Training", h:8, p:"$9.95" }, { n:"Alaska 4 Hour LTC Follow-up", h:4, p:"$9.95" }], extras:[] },
+  AL: { packages:2, aml:{ n:"AML - The Battle Rages On", h:2, p:"$4.95", alt:["AML Developments", "Safeguarding Insurance: Comprehensive AML Measures"] }, ltc:[{ n:"Alabama Long Term Care", h:8, p:"$9.95" }, { n:"Partnership LTC Follow up", h:4, p:"$9.95" }], extras:[] },
+  AR: { packages:2, aml:{ n:"AML - The Battle Rages On", h:2, p:"$4.95", alt:["AML Developments"] }, ltc:[{ n:"Arkansas Long Term Care", h:8, p:"$9.95" }, { n:"Partnership LTC Follow up", h:4, p:"$9.95" }], extras:[] },
+  AZ: { packages:2, aml:{ n:"AML - The Battle Rages On", h:2, p:"$4.95", alt:["AML Developments", "Safeguarding Insurance: Comprehensive AML Measures"] }, ltc:[{ n:"Arizona Partnership Long Term Care", h:8, p:"$9.95" }, { n:"Partnership LTC Follow up", h:4, p:"$9.95" }], extras:[] },
+  CA: { packages:4, aml:{ n:"AML - The Battle Rages On", h:2, p:"$4.95", alt:["AML Developments", "Safeguarding Insurance: Comprehensive AML Measures"] }, ltc:[{ n:"New California Long-Term Care", h:8, p:"$9.95" }], extras:[{ n:"Life Insurance Policies", h:4, p:"$19.95" }, { n:"Comprehensive Annuity Training", h:8, p:"$19.95" }] },
+  CO: { packages:2, aml:{ n:"AML - The Battle Rages On", h:2, p:"$4.95", alt:["AML Developments", "Safeguarding Insurance: Comprehensive AML Measures"] }, ltc:[{ n:"Colorado Long Term Care General", h:8, p:"$9.95" }], extras:[] },
+  CT: { packages:2, aml:{ n:"AML Developments", h:2, p:"$4.95", alt:["Safeguarding Insurance: Comprehensive AML Measures"] }, ltc:[{ n:"Principles of Long-Term Care", h:10, p:"$9.95", generic:true }], extras:[] },
+  DC: { packages:2, aml:{ n:"AML - The Battle Rages On", h:2, p:"$4.95", alt:["AML Developments", "Safeguarding Insurance: Comprehensive AML Measures"] }, ltc:[], extras:[] },
+  DE: { packages:2, aml:{ n:"AML - The Battle Rages On", h:2, p:"$4.95", alt:["AML Developments", "Safeguarding Insurance: Comprehensive AML Measures"] }, ltc:[{ n:"Delaware Partnership LTC Follow-Up", h:3, p:"$9.95" }, { n:"Principles of Long-Term Care", h:8, p:"$9.95" }], extras:[] },
+  FL: { packages:2, aml:{ n:"AML - The Battle Rages On", h:2, p:"$4.95", alt:["AML Developments", "Safeguarding Insurance: Comprehensive AML Measures"] }, ltc:[{ n:"Partnership LTC 4 hour Follow-up", h:4, p:"$9.95" }], extras:[] },
+  GA: { packages:2, aml:{ n:"AML - The Battle Rages On", h:2, p:"$4.95", alt:["AML Developments"] }, ltc:[{ n:"Georgia Long Term Care Partnership", h:8, p:"$9.95" }, { n:"Partnership LTC Follow up", h:4, p:"$9.95" }], extras:[] },
+  HI: { packages:2, aml:{ n:"AML - The Battle Rages On", h:2, p:"$4.95", alt:["AML Developments", "Safeguarding Insurance: Comprehensive AML Measures"] }, ltc:[], extras:[{ n:"Hawaii Insurance Rules & Regulations - L&H", h:5, p:"" }] },
+  IA: { packages:3, aml:{ n:"AML - The Battle Rages On", h:2, p:"$4.95", alt:["AML Developments", "Safeguarding Insurance: Comprehensive AML Measures"] }, ltc:[{ n:"Partnership LTC Follow up", h:4, p:"$9.95" }], extras:[] },
+  ID: { packages:2, aml:{ n:"AML - The Battle Rages On", h:2, p:"$4.95", alt:["AML Developments", "Safeguarding Insurance: Comprehensive AML Measures"] }, ltc:[{ n:"ID LTC Partnership", h:8, p:"$9.95" }, { n:"Principles of Long-Term Care", h:8, p:"$9.95" }], extras:[] },
+  IL: { packages:2, aml:{ n:"AML - The Battle Rages On", h:2, p:"$4.95", alt:["AML Developments", "Safeguarding Insurance: Comprehensive AML Measures"] }, ltc:[{ n:"Partnership LTC Follow up", h:4, p:"$9.95" }], extras:[] },
+  IN: { packages:2, aml:{ n:"AML - The Battle Rages On", h:2, p:"$4.95", alt:["AML Developments", "Safeguarding Insurance: Comprehensive AML Measures"] }, ltc:[{ n:"Long Term Care in Indiana", h:8, p:"$9.95" }, { n:"Indiana 5 Hour Long Term Care", h:5, p:"$9.95" }], extras:[] },
+  KS: { packages:2, aml:{ n:"AML - The Battle Rages On", h:2, p:"$4.95", alt:["AML Developments", "Safeguarding Insurance: Comprehensive AML Measures"] }, ltc:[{ n:"Partnership LTC Initial Training", h:4, p:"$9.95" }, { n:"Partnership LTC Follow up", h:4, p:"$9.95" }], extras:[] },
+  KY: { packages:2, aml:{ n:"AML - The Battle Rages On", h:2, p:"$4.95", alt:["AML - Agent/Rep Responsibilities Under AML Laws", "AML Developments", "Safeguarding Insurance: Comprehensive AML Measures"] }, ltc:[{ n:"Kentucky Partnership Long Term Care", h:8, p:"$9.95" }, { n:"Partnership LTC Follow up", h:4, p:"$9.95" }], extras:[] },
+  LA: { packages:2, aml:{ n:"AML - The Battle Rages On", h:2, p:"$4.95", alt:["AML Developments", "Safeguarding Insurance: Comprehensive AML Measures"] }, ltc:[{ n:"Louisiana Long Term Care Partnership", h:8, p:"$9.95" }, { n:"Partnership LTC Follow up", h:4, p:"$9.95" }], extras:[] },
+  MA: { packages:3, aml:{ n:"AML - The Battle Rages On", h:2, p:"$4.95", alt:["AML - Agent/Rep Responsibilities Under AML Laws", "AML - What's New", "AML Developments", "Anti-Money Laundering Trends", "Bank Secrecy Act and AML Review", "Safeguarding Insurance: Comprehensive AML Measures"] }, ltc:[{ n:"MA 8hr Partnership Long-Term Care", h:8, p:"$9.95" }, { n:"MA 4hr Partnership LTC Follow-up", h:4, p:"$9.95" }], extras:[] },
+  MD: { packages:2, aml:{ n:"AML - The Battle Rages On", h:2, p:"$4.95", alt:["AML Developments", "Safeguarding Insurance: Comprehensive AML Measures"] }, ltc:[{ n:"Partnership LTC Follow up", h:4, p:"$9.95" }], extras:[] },
+  ME: { packages:2, aml:{ n:"AML - The Battle Rages On", h:2, p:"$4.95", alt:["AML Developments", "Safeguarding Insurance: Comprehensive AML Measures"] }, ltc:[{ n:"Maine Long Term Care Partnership", h:8, p:"$9.95" }, { n:"Partnership LTC Follow up", h:4, p:"$9.95" }], extras:[] },
+  MI: { packages:2, aml:{ n:"AML - The Battle Rages On", h:2, p:"$4.95", alt:["AML Developments", "Safeguarding Insurance: Comprehensive AML Measures"] }, ltc:[{ n:"Michigan Long Term Care Partnership", h:8, p:"$9.95" }, { n:"Partnership LTC Follow up", h:4, p:"$9.95" }], extras:[] },
+  MN: { packages:2, aml:{ n:"AML Developments", h:2, p:"$4.95", alt:[] }, ltc:[{ n:"Medical Assistance Eligibility & The LTC Partnership Program", h:8, p:"$9.95" }, { n:"Medical Assistance Eligibility and the LTC Partnership Program - 4 Hours", h:4, p:"$9.95" }], extras:[] },
+  MO: { packages:2, aml:{ n:"AML - The Battle Rages On", h:2, p:"$4.95", alt:["AML Developments", "Safeguarding Insurance: Comprehensive AML Measures"] }, ltc:[{ n:"Missouri Partnership LTC", h:8, p:"" }, { n:"Partnership LTC Follow up", h:4, p:"$9.95" }], extras:[] },
+  MS: { packages:2, aml:{ n:"AML - The Battle Rages On", h:2, p:"$4.95", alt:["AML Developments", "Safeguarding Insurance: Comprehensive AML Measures"] }, ltc:[], extras:[] },
+  MT: { packages:2, aml:{ n:"AML - The Battle Rages On", h:2, p:"$4.95", alt:["AML Developments", "Safeguarding Insurance: Comprehensive AML Measures"] }, ltc:[{ n:"Montana Long Term Care and Partnership Program", h:8, p:"$9.95" }, { n:"Partnership LTC Follow up", h:4, p:"$9.95" }], extras:[{ n:"Montana Legislative Updates", h:1, p:"" }] },
+  NC: { packages:2, aml:{ n:"AML - The Battle Rages On", h:2, p:"$4.95", alt:["AML Developments", "Safeguarding Insurance: Comprehensive AML Measures"] }, ltc:[{ n:"North Carolina Partnership Long-Term Care", h:8, p:"$9.95" }, { n:"Partnership LTC Follow up", h:4, p:"$9.95" }], extras:[] },
+  ND: { packages:2, aml:{ n:"AML - The Battle Rages On", h:2, p:"$4.95", alt:["AML Developments", "Safeguarding Insurance: Comprehensive AML Measures"] }, ltc:[{ n:"North Dakota Long Term Care Partnership", h:8, p:"$9.95" }, { n:"Partnership LTC Follow up", h:4, p:"$9.95" }], extras:[] },
+  NE: { packages:2, aml:{ n:"AML - The Battle Rages On", h:2, p:"$4.95", alt:["AML Developments", "Safeguarding Insurance: Comprehensive AML Measures"] }, ltc:[{ n:"Nebraska LTC Partnership", h:8, p:"" }, { n:"Partnership LTC Follow up", h:4, p:"$9.95" }], extras:[] },
+  NH: { packages:2, aml:{ n:"AML - The Battle Rages On", h:2, p:"$4.95", alt:["AML Developments", "Safeguarding Insurance: Comprehensive AML Measures"] }, ltc:[{ n:"New Hampshire Long Term Care", h:8, p:"$9.95" }, { n:"Partnership LTC Follow up", h:4, p:"$9.95" }], extras:[] },
+  NJ: { packages:2, aml:{ n:"AML - The Battle Rages On", h:2, p:"$4.95", alt:["AML Developments", "Safeguarding Insurance: Comprehensive AML Measures"] }, ltc:[{ n:"New Jersey Partnership Long Term Care", h:8, p:"$9.95" }, { n:"Partnership LTC Follow up", h:4, p:"$9.95" }], extras:[] },
+  NM: { packages:2, aml:{ n:"AML - The Battle Rages On", h:2, p:"$4.95", alt:["AML Developments", "Safeguarding Insurance: Comprehensive AML Measures"] }, ltc:[{ n:"New Mexico Long-Term Care Partnership Program", h:8, p:"$9.95" }, { n:"Partnership LTC Follow up", h:4, p:"$9.95" }], extras:[] },
+  NV: { packages:2, aml:{ n:"AML - The Battle Rages On", h:2, p:"$4.95", alt:["AML Developments", "Safeguarding Insurance: Comprehensive AML Measures"] }, ltc:[{ n:"Partnership LTC Follow up", h:4, p:"$9.95" }], extras:[] },
+  NY: { packages:3, aml:{ n:"AML - The Battle Rages On", h:2, p:"$4.95", alt:["Bank Secrecy Act and AML Review", "AML Developments", "Safeguarding Insurance: Comprehensive AML Measures"] }, ltc:[], extras:[{ n:"New York Insurance Law", h:1, p:"" }, { n:"Professional Insurance Standards", h:3, p:"" }] },
+  OH: { packages:2, aml:{ n:"AML Developments", h:2, p:"$4.95", alt:["Safeguarding Insurance: Comprehensive AML Measures"] }, ltc:[{ n:"Ohio Partnership Long Term Care", h:8, p:"$9.95" }, { n:"Partnership LTC Follow up", h:4, p:"$9.95" }], extras:[] },
+  OK: { packages:2, aml:{ n:"AML - The Battle Rages On", h:2, p:"$4.95", alt:["AML Developments", "Safeguarding Insurance: Comprehensive AML Measures"] }, ltc:[{ n:"Oklahoma Partnership Long Term Care", h:8, p:"$9.95" }, { n:"Partnership LTC Follow-Up", h:4, p:"" }], extras:[{ n:"Oklahoma Legislative Updates", h:2, p:"" }, { n:"Earthquake Insurance", h:1, p:"" }] },
+  OR: { packages:2, aml:{ n:"AML - The Battle Rages On", h:2, p:"$4.95", alt:["AML Developments", "Safeguarding Insurance: Comprehensive AML Measures"] }, ltc:[{ n:"OR Long Term Care Partnership", h:8, p:"$9.95" }, { n:"Partnership LTC Follow up", h:4, p:"$9.95" }], extras:[{ n:"Oregon Statutes & Regulations", h:3, p:"" }] },
+  PA: { packages:2, aml:{ n:"AML - The Battle Rages On", h:2, p:"$4.95", alt:["AML Developments", "Safeguarding Insurance: Comprehensive AML Measures"] }, ltc:[{ n:"Partnership LTC Follow up", h:4, p:"$9.95" }], extras:[] },
+  RI: { packages:2, aml:{ n:"AML - The Battle Rages On", h:2, p:"$4.95", alt:["AML Developments", "Safeguarding Insurance: Comprehensive AML Measures"] }, ltc:[{ n:"Rhode Island Partnership Long Term Care", h:8, p:"$9.95" }, { n:"Partnership LTC Follow up", h:4, p:"$9.95" }], extras:[] },
+  SC: { packages:2, aml:{ n:"AML - The Battle Rages On", h:2, p:"$4.95", alt:["AML Developments", "Safeguarding Insurance: Comprehensive AML Measures"] }, ltc:[{ n:"South Carolina Partnership Long Term Care", h:8, p:"$9.95" }, { n:"Partnership LTC Follow-up", h:4, p:"$9.95" }], extras:[] },
+  SD: { packages:2, aml:{ n:"AML - The Battle Rages On", h:2, p:"$4.95", alt:["AML Developments", "Safeguarding Insurance: Comprehensive AML Measures"] }, ltc:[{ n:"South Dakota Partnership Long Term Care", h:8, p:"$9.95" }, { n:"Partnership LTC Follow Up", h:4, p:"$9.95" }], extras:[{ n:"South Dakota Medicaid", h:1, p:"" }] },
+  TN: { packages:2, aml:{ n:"AML - The Battle Rages On", h:2, p:"$4.95", alt:["AML Developments", "Safeguarding Insurance: Comprehensive AML Measures"] }, ltc:[{ n:"Tennessee Partnership Long Term Care", h:8, p:"$9.95" }, { n:"Partnership LTC Follow up", h:4, p:"$9.95" }], extras:[] },
+  TX: { packages:3, aml:{ n:"AML - The Battle Rages On", h:2, p:"$4.95", alt:["AML Developments", "Safeguarding Insurance: Comprehensive AML Measures"] }, ltc:[{ n:"Texas Partnership Long Term Care", h:8, p:"$9.95" }, { n:"Partnership LTC Follow up", h:4, p:"$9.95" }], extras:[{ n:"Texas Annuities", h:8, p:"" }] },
+  UT: { packages:2, aml:{ n:"AML - The Battle Rages On", h:2, p:"$4.95", alt:["AML Developments", "Safeguarding Insurance: Comprehensive AML Measures"] }, ltc:[{ n:"Utah Long Term Care Initial Training", h:3, p:"" }, { n:"Partnership LTC Follow up", h:3, p:"" }], extras:[] },
+  VA: { packages:2, aml:{ n:"AML - The Battle Rages On", h:2, p:"$4.95", alt:["AML Developments", "Safeguarding Insurance: Comprehensive AML Measures"] }, ltc:[{ n:"Virginia Partnership LTC", h:8, p:"" }, { n:"Partnership LTC Follow up", h:4, p:"$9.95" }], extras:[] },
+  VT: { packages:2, aml:{ n:"AML - The Battle Rages On", h:2, p:"$4.95", alt:["AML Developments", "Safeguarding Insurance: Comprehensive AML Measures"] }, ltc:[{ n:"Vermont LTC Partnership Program and Medicaid", h:8, p:"$9.95" }, { n:"Partnership LTC Follow up", h:4, p:"$9.95" }], extras:[] },
+  WA: { packages:2, aml:{ n:"AML - The Battle Rages On", h:2, p:"$4.95", alt:["AML Developments", "Safeguarding Insurance: Comprehensive AML Measures"] }, ltc:[{ n:"WA LTC Initial 8 Hour Course", h:8, p:"" }, { n:"WA LTC Refresher 4 hour Course", h:4, p:"" }], extras:[] },
+  WI: { packages:2, aml:{ n:"AML - The Battle Rages On", h:2, p:"$4.95", alt:["AML Developments", "Safeguarding Insurance: Comprehensive AML Measures"] }, ltc:[{ n:"WI Partnership LTC & Medicaid Training", h:8, p:"" }, { n:"Partnership LTC Follow up", h:4, p:"$9.95" }], extras:[{ n:"Specific Medicaid & LTC Information Training", h:2, p:"" }] },
+  WV: { packages:2, aml:{ n:"AML - The Battle Rages On", h:2, p:"$4.95", alt:["AML Developments", "Safeguarding Insurance: Comprehensive AML Measures"] }, ltc:[{ n:"West Virginia Partnership Long Term Care", h:8, p:"$9.95" }, { n:"Partnership LTC Follow up", h:4, p:"$9.95" }], extras:[] },
+  WY: { packages:2, aml:{ n:"AML - The Battle Rages On", h:2, p:"$4.95", alt:["AML Developments", "Safeguarding Insurance: Comprehensive AML Measures"] }, ltc:[{ n:"Wyoming Partnership Long Term Care", h:8, p:"$9.95" }, { n:"Partnership LTC Follow up", h:4, p:"$9.95" }], extras:[] },
 };
 
 export function ceCart(code, licenseType){

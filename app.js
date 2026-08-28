@@ -1,5 +1,5 @@
 import { supabase, isConfigured, requireSession, hardSignOut } from "./supabase.js?v=2";
-import { STATE_LIST, STATES, ceSlots, ceIsConfigured, ceCart, resolvePlaybook,
+import { STATE_LIST, STATES, ceSlots, ceIsConfigured, ceCart, AML_TRAP, resolvePlaybook,
          fillTokens } from "./states.js?v=15";
 import { resolveWalkthrough, factsFor, videoSource, isFile,
          fmtDuration, clockTime } from "./walkthrough.js?v=1";
@@ -1608,17 +1608,33 @@ function ceCartBlock(playbook){
     b: `<p class="cart-note">${cart.packages} to choose from. Any single one of them meets ${esc(stateName)}&rsquo;s minimum hours, so pick the one that matches what you intend to sell &mdash; you do not need more than one.</p>` });
 
   if (cart.ltc.length) {
+    /* A generic course is one the catalogue stocks but the state does not
+       mandate. Saying so matters: an agent who buys it believing it clears
+       a state requirement has bought the wrong thing. */
+    const generic = cart.ltc.every(c => c.generic);
     steps.push({ t: "Add your long-term care course",
-      b: cart.ltc.map(line).join("") +
-         `<p class="cart-note">Take the initial course now. The follow-up is for your next renewal, not today.</p>` });
+      b: cart.ltc.map(line).join("") + (generic
+        ? `<p class="cart-note">${esc(stateName)} does not publish its own long-term-care course or hour count. This is the general one &mdash; useful, but confirm with your carrier that it accepts it before you rely on it.</p>`
+        : `<p class="cart-note">Take the initial course now. The follow-up is for your next renewal, not today.</p>`) });
   } else if (/health/i.test(String(lt || ""))) {
-    steps.push({ t: "Long-term care", b:
-      `<p class="cart-note">${esc(stateName)} lists no long-term-care course. If you intend to write LTC, ask your carrier what it wants &mdash; a carrier can ask for more than the state does.</p>` });
+    steps.push({ t: "Long-term care &mdash; nothing to buy", b:
+      `<p class="cart-note">${esc(stateName)} has no long-term-care training requirement and Success CE lists no course for it, so there is nothing to add here. If you intend to write LTC, ask your carrier &mdash; a carrier can ask for more than the state does.</p>` });
   }
 
+  /* The one course an agent is most likely to get wrong, and the one that
+     costs them most later. Most agents end up writing in more than one
+     state, and the AML certificate travels with them -- so it has to carry
+     real CE credit and be worth two hours, or a non-resident state will not
+     take it. The free course on the same screen carries none. */
   if (cart.aml) {
     steps.push({ t: "Add anti-money laundering", b: line(cart.aml) +
-      `<p class="cart-note cart-warn">There is another AML course listed at $0.00. It carries <b>no</b> CE credit. Take the one named above.</p>` });
+      `<p class="cart-note">Two hours, and it carries CE credit &mdash; both matter. You will almost certainly end up licensed in more than one state, and this certificate goes with you. A shorter one, or one with no CE credit, gets refused when you apply somewhere new.</p>` +
+      `<p class="cart-note cart-warn">Do <b>not</b> take &ldquo;${esc(AML_TRAP)}&rdquo;. It is free because it carries <b>no CE credit at all</b> &mdash; it satisfies the federal rule and nothing else. It sits right next to the right one on the same screen.</p>` +
+      (cart.aml.alt?.length
+        ? `<p class="cart-note">If you would rather a different subject, ${
+            cart.aml.alt.length === 1 ? "this one is" : "these are"
+          } also two hours with CE credit: ${esc(cart.aml.alt.join(", "))}.</p>`
+        : "") });
   } else {
     steps.push({ t: "Anti-money laundering", b:
       `<p class="cart-note cart-warn">Success CE does not carry an AML course for ${esc(stateName)}. You still need one &mdash; carriers will not appoint you without it. Ask your coordinator where to take it.</p>` });
