@@ -87,7 +87,7 @@ export const PROVIDER_STEPS = {
 export const STATES = {
   AL: { name: "Alabama", exam: "https://www.enrole.com/ua/jsp/index.jsp?categoryId=80211EE0", fp: "https://fieldprintalabama.com/individuals", affidavit: "https://aldoi.gov/LicenseeCZ/Initial.aspx" },
   AK: { name: "Alaska", exam: "https://www.pearsonvue.com/us/en/ak/insurance.html", fp: "https://pearsonwest.ibtfingerprint.com/" },
-  AZ: { name: "Arizona", exam: "https://test-takers.psiexams.com/anzins", fp: "https://docs.google.com/document/d/1JpuV0S7YKeLG5pvMB4a1ssCpOlzkLXdZOPSLRjeMUOA/edit?usp=sharing", affidavit: "https://aldoi.gov/LicenseeCZ/Initial.aspx" },
+  AZ: { name: "Arizona", exam: "https://test-takers.psiexams.com/anzins", fp: "https://docs.google.com/document/d/1JpuV0S7YKeLG5pvMB4a1ssCpOlzkLXdZOPSLRjeMUOA/edit?usp=sharing", },
   AR: { name: "Arkansas", exam: "https://test-takers.psiexams.com/arins", fp: "https://www.ark.org/background-check/index.php/home/index/aid", order: { fingerprinting: 2, exam_registration: 3 } },
   CA: { name: "California", exam: "https://test-takers.psiexams.com/cadi", fp: "https://www.applicantservices.com/cdi/" },
   CO: { name: "Colorado", exam: "http://www.pearsonvue.com/co/insurance", fp: null },
@@ -1227,6 +1227,33 @@ export const STEP_ORDER = {
   WY: ["study_material", "exam", "nipr_application", "fingerprinting", ...TAIL],
 };
 
+/* ------------------------------------------------------------------
+   THE THINGS THAT BLOCK PEOPLE
+
+   The licensing sheet's miscellaneous column turned out to hold the most
+   operationally useful information in the whole document: a code you
+   cannot book fingerprints without, a form you have to bring with you, a
+   waiting period nobody would guess. It was already in the data and
+   already visible in the state guide -- and never once shown to an agent.
+
+   Each note is attached to the step it actually blocks rather than
+   floating loose at the bottom of a screen. Illinois, Rhode Island and
+   Wyoming are absent because their notes are already written into those
+   steps in full.
+------------------------------------------------------------------- */
+export const STATE_GOTCHA = {
+  KS: { step: "fingerprinting",
+        text: "Two things to have ready before you go. The fingerprint code is KSINSFP \u2014 they will ask for it. And bring the Kansas DCF-FP1020 form with you: insurance.ks.gov/documents/agentagency/DCF-FP1020.pdf. Afterwards, upload your clearance to NIPR as an ALD." },
+  PA: { step: "fingerprinting",
+        text: "You need the service code 1kgbgj to book. Without it the site will not let you make an appointment." },
+  OH: { step: "fingerprinting",
+        text: "Ohio uses FastFingerprints \u2014 fastfingerprints.com. Book there rather than searching for a provider yourself." },
+  UT: { step: "fingerprinting",
+        text: "Utah will not take your fingerprints until you have passed the exam AND have your NIPR confirmation in hand. Bring the confirmation with you." },
+  SD: { step: "nipr_application",
+        text: "South Dakota makes you wait 48 hours after your exam before you can apply. If the site rejects you, that is usually why \u2014 come back the next day." },
+};
+
 export function stepOrder(code){
   return (STEP_ORDER[code] || STEP_ORDER_DEFAULT).slice();
 }
@@ -1252,12 +1279,6 @@ export const SUPPLEMENTAL = {
         lead: "Kansas asks for a tax clearance certificate from the Department of Revenue \u2014 not an affidavit. Request it, then upload the certificate." },
   KY: { label: "Court records check",
         lead: "Kentucky asks for a court records check. Open the courts site, follow the instructions there, and upload what it returns." },
-  /* The sheet's Arizona row carries Alabama's Department of Insurance URL
-     (aldoi.gov). Rather than send an Arizona agent to another state's
-     licensing form, this step says what we know and stops. */
-  AZ: { label: "Supplemental document",
-        lead: "Arizona has a supplemental requirement on file, but the link we hold points at another state's department. Ask your coordinator what Arizona needs before you act on it.",
-        unverified: true },
 };
 
 /* ------------------------------------------------------------------

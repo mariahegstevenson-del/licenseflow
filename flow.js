@@ -4,7 +4,7 @@
    URLs). The agent only provides personal/action data.
    ============================================================ */
 import { STATES, buildWalkthrough, examProvider, PROVIDER_LABEL,
-         stepOrder, SUPPLEMENTAL } from "./states.js?v=24";
+         stepOrder, SUPPLEMENTAL, STATE_GOTCHA } from "./states.js?v=25";
 
 /* ---------------- status vocabulary ---------------- */
 export const ST = {
@@ -199,6 +199,16 @@ export function buildJourney(code, playbook) {
      trusting the static dependsOn is the whole point -- a resequenced
      state gets a resequenced gate for free. */
   ordered.forEach((r, i) => { r.dependsOn = i ? [ordered[i - 1].key] : []; });
+
+  /* The state's blocking note goes on the step it blocks. Appended rather
+     than replacing, so a state can have both a vendor note and a gotcha. */
+  const gotcha = STATE_GOTCHA[code];
+  if (gotcha) {
+    const target = ordered.find((r) => r.key === gotcha.step);
+    if (target) target.stateNote = target.stateNote
+      ? target.stateNote + " " + gotcha.text
+      : gotcha.text;
+  }
 
   /* The supplemental document is named by its state. */
   const sup = SUPPLEMENTAL[code];

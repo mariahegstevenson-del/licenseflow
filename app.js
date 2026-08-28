@@ -1,9 +1,9 @@
 import { supabase, isConfigured, requireSession, hardSignOut } from "./supabase.js?v=2";
 import { STATE_LIST, STATES, ceSlots, ceIsConfigured, ceBasketHTML, STUDY_TIPS, EXAM_BRING, resolvePlaybook,
-         fillTokens } from "./states.js?v=24";
+         fillTokens } from "./states.js?v=25";
 import { resolveWalkthrough, factsFor, videoSource, isFile,
          fmtDuration, clockTime } from "./walkthrough.js?v=1";
-import * as F from "./flow.js?v=11";
+import * as F from "./flow.js?v=12";
 import { loadTenant, renderUnknownAgency, applyTenantChrome, urlForAgency } from "./tenant.js?v=4";
 
 const el = (id) => document.getElementById(id);
@@ -1233,7 +1233,11 @@ function renderStep(key) {
       <!-- The agency's own note for this step, from the state guide. Shown
            as a callout rather than buried in the collapsed instructions,
            because it is usually the thing agents get wrong. -->
-      ${r.stateNote ? `<div class="callout callout-warn"><span class="lab">Before you buy</span>${esc(r.stateNote)}</div>` : ""}
+      ${r.stateNote ? `<div class="callout callout-warn"><span class="lab">${
+        r.key === "study_material" ? "Before you buy"
+        : r.key === "fingerprinting" ? "Before you go"
+        : r.key === "nipr_application" ? "Before you apply"
+        : "Worth knowing"}</span>${esc(r.stateNote)}</div>` : ""}
       ${factsPanel(r.key)}
       ${videoBlock(r.key, r.help?r.help.title:"Watch")}
       ${r.render==="action" && r.providerLabel ? `<div class="syscard"><span class="sys-k">Your provider</span><strong>${esc(r.providerLabel)}</strong></div>` : ""}
