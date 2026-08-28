@@ -1138,19 +1138,13 @@ const NIPR_STEPS = [
    several state departments point residents at Sircon on their own
    websites, and Sircon is a private licensing gateway, not a state
    system -- being pointed at one gateway does not mean the other is
-   closed. Only Georgia actually closes it. */
+   closed. Only Georgia actually closes it.
+
+   An agent gets one route and no caveats. Telling them their state also
+   has another portal answers a question they were never asking, and the
+   step screen is the wrong place to hedge. */
 export const APPLY_ELSEWHERE = {
   GA: { vendor:"Sircon", vendor_key:"sircon", url:"https://www.sircon.com/georgia" },
-};
-
-/* States whose own department points at a second route as well. NIPR is
-   the default because the steps below are NIPR's and NIPR works in all of
-   them; this note exists so an agent who has been handed a different link
-   by their state does not think they are in the wrong place. */
-export const APPLY_ALSO = {
-  CA: "Sircon", CO: "Sircon", FL: "Florida's own MyProfile portal", IN: "Sircon",
-  MN: "Sircon", MS: "Sircon", NV: "Sircon", NY: "New York's own DFS portal",
-  PA: "Sircon", TX: "Sircon", UT: "Sircon", WY: "Sircon",
 };
 
 const ALT_STEPS = (state, system) => [
@@ -1164,9 +1158,6 @@ const ALT_STEPS = (state, system) => [
   `${system}'s own screens are not written out here yet \u2014 if anything does not match, tell your coordinator so this list can be fixed.`,
 ];
 
-const ALSO_NOTE = (where) =>
-  ` Your department also points people at ${where}. Either route works \u2014 ` +
-  "the steps below are NIPR's, so if somebody has handed you a different link, you are not lost.";
 
 export function ceSteps(code){
   const c = CE_CART[code];
@@ -1226,8 +1217,7 @@ export function playbookDefaults(code){
         note: NIPR_WARNING_ALT(s.name, alt.vendor),
         steps: ALT_STEPS(s.name, alt.vendor) };
       return { vendor:"NIPR", vendor_key:"nipr", url:CONSTANTS.nipr,
-        note: NIPR_WARNING + (APPLY_ALSO[code] ? ALSO_NOTE(APPLY_ALSO[code]) : ""),
-        steps: NIPR_STEPS.slice() };
+        note: NIPR_WARNING, steps: NIPR_STEPS.slice() };
     })(),
     ce:        { vendor:"Success CE", vendor_key:"successce", url:`https://successce.com/insurance-ce-requirements-${code}/`, note:"", steps:ceSteps(code) },
     eo:        { vendor:"NAPA", vendor_key:"napa", url:CONSTANTS.eo,
