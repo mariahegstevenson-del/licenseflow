@@ -1127,29 +1127,31 @@ const NIPR_STEPS = [
   "Finish the form and submit payment.",
 ];
 
-/* The seven states that do not take a resident's first application through
-   NIPR. Each was confirmed on the state's own department-of-insurance site,
-   not on NIPR's -- NIPR's per-state pages carry the same boilerplate for
-   every state and say NIPR handles initial applications even where the
-   state says otherwise.
+/* Georgia is the only state that does not take a resident's first
+   application through NIPR. That is not a guess: NIPR's own "Select a
+   State" list, walked on 28 August 2026, runs Florida, Guam, Hawaii --
+   Georgia is absent from it, while California, Florida, Minnesota,
+   Nevada, New York and Wyoming are all present and selectable.
 
-   Nobody has walked these portals click by click, so the step lists say
-   what is true of the state's rules and stop, rather than inventing
-   screens. Fill them in as somebody actually applies. */
+   An earlier version of this file had all seven marked as non-NIPR. That
+   was wrong, and the mistake is worth naming so it is not repeated:
+   several state departments point residents at Sircon on their own
+   websites, and Sircon is a private licensing gateway, not a state
+   system -- being pointed at one gateway does not mean the other is
+   closed. Only Georgia actually closes it. */
 export const APPLY_ELSEWHERE = {
-  CA: { vendor:"Sircon", vendor_key:"sircon", url:"https://www.sircon.com/california" },
-  FL: { vendor:"MyProfile", vendor_key:"myprofile", url:"https://dice.fldfs.com/public/pb_index.aspx" },
   GA: { vendor:"Sircon", vendor_key:"sircon", url:"https://www.sircon.com/georgia" },
-  MN: { vendor:"Sircon", vendor_key:"sircon", url:"https://www.sircon.com/" },
-  NV: { vendor:"Sircon", vendor_key:"sircon", url:"https://www.sircon.com/nevada" },
-  NY: { vendor:"NY LINX", vendor_key:"nylinx", url:"https://myportal.dfs.ny.gov" },
-  WY: { vendor:"Sircon", vendor_key:"sircon", url:"https://www.sircon.com/" },
 };
 
-/* States whose own site names Sircon as well as NIPR. NIPR stays the
-   default because the written steps below are NIPR's, but an agent who
-   lands on Sircon has not gone wrong. */
-export const APPLY_EITHER = ["CO", "IN", "MS", "PA", "TX", "UT"];
+/* States whose own department points at a second route as well. NIPR is
+   the default because the steps below are NIPR's and NIPR works in all of
+   them; this note exists so an agent who has been handed a different link
+   by their state does not think they are in the wrong place. */
+export const APPLY_ALSO = {
+  CA: "Sircon", CO: "Sircon", FL: "Florida's own MyProfile portal", IN: "Sircon",
+  MN: "Sircon", MS: "Sircon", NV: "Sircon", NY: "New York's own DFS portal",
+  PA: "Sircon", TX: "Sircon", UT: "Sircon", WY: "Sircon",
+};
 
 const ALT_STEPS = (state, system) => [
   `Open ${system} \u2014 ${state} residents apply there, not through NIPR.`,
@@ -1162,9 +1164,9 @@ const ALT_STEPS = (state, system) => [
   `${system}'s own screens are not written out here yet \u2014 if anything does not match, tell your coordinator so this list can be fixed.`,
 ];
 
-const EITHER_NOTE =
-  " Your state also accepts Sircon for this application, so either site is fine \u2014 " +
-  "the steps below are NIPR's.";
+const ALSO_NOTE = (where) =>
+  ` Your department also points people at ${where}. Either route works \u2014 ` +
+  "the steps below are NIPR's, so if somebody has handed you a different link, you are not lost.";
 
 export function ceSteps(code){
   const c = CE_CART[code];
@@ -1224,7 +1226,7 @@ export function playbookDefaults(code){
         note: NIPR_WARNING_ALT(s.name, alt.vendor),
         steps: ALT_STEPS(s.name, alt.vendor) };
       return { vendor:"NIPR", vendor_key:"nipr", url:CONSTANTS.nipr,
-        note: NIPR_WARNING + (APPLY_EITHER.includes(code) ? EITHER_NOTE : ""),
+        note: NIPR_WARNING + (APPLY_ALSO[code] ? ALSO_NOTE(APPLY_ALSO[code]) : ""),
         steps: NIPR_STEPS.slice() };
     })(),
     ce:        { vendor:"Success CE", vendor_key:"successce", url:`https://successce.com/insurance-ce-requirements-${code}/`, note:"", steps:ceSteps(code) },
