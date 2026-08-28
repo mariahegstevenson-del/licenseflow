@@ -1101,11 +1101,11 @@ const NIPR_WARNING =
   "background question, send the supporting documents to NIPR straight away \u2014 " +
   "do not wait to be asked for them.";
 
-const NIPR_WARNING_GA =
-  "Georgia does not use NIPR. Resident producers apply through Sircon instead. " +
-  "Everything else still applies: the state runs a FEDERAL background check going " +
-  "back at least ten years, any discrepancy will delay approval, and if you answer " +
-  "YES to a background question you should send the supporting documents in straight away.";
+const NIPR_WARNING_ALT = (state, system) =>
+  `${state} does not use NIPR for a resident's first licence \u2014 you apply through ${system} instead. ` +
+  "Everything else still holds: the state runs a FEDERAL background check going back at least ten years, " +
+  "any discrepancy will delay approval, and if you answer YES to a background question, send the supporting " +
+  "documents in straight away rather than waiting to be asked.";
 
 const NIPR_STEPS = [
   "Open NIPR and click \u201cStart Now\u201d under Apply for a New License.",
@@ -1127,19 +1127,44 @@ const NIPR_STEPS = [
   "Finish the form and submit payment.",
 ];
 
-/* Georgia's own click path through Sircon has not been walked and written
-   down, so the list says what is true and stops rather than inventing
-   screens. The parts that are the state's rules, not Sircon's, still hold. */
-const NIPR_STEPS_GA = [
-  "Open Sircon \u2014 Georgia residents apply there, not through NIPR.",
+/* The seven states that do not take a resident's first application through
+   NIPR. Each was confirmed on the state's own department-of-insurance site,
+   not on NIPR's -- NIPR's per-state pages carry the same boilerplate for
+   every state and say NIPR handles initial applications even where the
+   state says otherwise.
+
+   Nobody has walked these portals click by click, so the step lists say
+   what is true of the state's rules and stop, rather than inventing
+   screens. Fill them in as somebody actually applies. */
+export const APPLY_ELSEWHERE = {
+  CA: { vendor:"Sircon", vendor_key:"sircon", url:"https://www.sircon.com/california" },
+  FL: { vendor:"MyProfile", vendor_key:"myprofile", url:"https://dice.fldfs.com/public/pb_index.aspx" },
+  GA: { vendor:"Sircon", vendor_key:"sircon", url:"https://www.sircon.com/georgia" },
+  MN: { vendor:"Sircon", vendor_key:"sircon", url:"https://www.sircon.com/" },
+  NV: { vendor:"Sircon", vendor_key:"sircon", url:"https://www.sircon.com/nevada" },
+  NY: { vendor:"NY LINX", vendor_key:"nylinx", url:"https://myportal.dfs.ny.gov" },
+  WY: { vendor:"Sircon", vendor_key:"sircon", url:"https://www.sircon.com/" },
+};
+
+/* States whose own site names Sircon as well as NIPR. NIPR stays the
+   default because the written steps below are NIPR's, but an agent who
+   lands on Sircon has not gone wrong. */
+export const APPLY_EITHER = ["CO", "IN", "MS", "PA", "TX", "UT"];
+
+const ALT_STEPS = (state, system) => [
+  `Open ${system} \u2014 ${state} residents apply there, not through NIPR.`,
   "Apply for an initial resident Producer licence.",
   "Select your line of authority \u2014 Life if that is what you passed, or both Life and Health if you passed both.",
   "Business address: use the same address as your mailing address.",
   "Employment history: give five consecutive years. Fill any gap with Self-Employed or Unemployed rather than leaving it blank.",
   "Aliases and affiliations: skip both sections.",
   "Finish the form and submit payment.",
-  "Sircon's own screens are not written out here yet \u2014 if anything does not match, tell your coordinator so this list can be fixed.",
+  `${system}'s own screens are not written out here yet \u2014 if anything does not match, tell your coordinator so this list can be fixed.`,
 ];
+
+const EITHER_NOTE =
+  " Your state also accepts Sircon for this application, so either site is fine \u2014 " +
+  "the steps below are NIPR's.";
 
 export function ceSteps(code){
   const c = CE_CART[code];
@@ -1190,16 +1215,18 @@ export function playbookDefaults(code){
       steps: (PROVIDER_STEPS[prov] || []).slice(),
     },
     study:     { vendor:"Xcel Solutions", vendor_key:"xcel", url:CONSTANTS.study, note:"", steps:PROVIDER_STEPS.xcel.slice() },
-    /* Georgia does not use NIPR. Resident producers apply through Sircon,
-       so the vendor, the link and the click path all change -- and an agent
-       sent to NIPR would spend an afternoon on the wrong website. Taken from
-       the agency's own NIPR handout; the Sircon click path is not recorded
-       here because nobody has walked it yet. */
-    state_app: code === "GA"
-      ? { vendor:"Sircon", vendor_key:"sircon", url:"https://www.sircon.com/",
-          note:NIPR_WARNING_GA, steps:NIPR_STEPS_GA.slice() }
-      : { vendor:"NIPR", vendor_key:"nipr", url:CONSTANTS.nipr,
-          note:NIPR_WARNING, steps:NIPR_STEPS.slice() },
+    /* Seven states do not take a resident's first application through NIPR
+       at all -- see APPLY_ELSEWHERE. An agent sent to NIPR in one of them
+       spends an afternoon on a site that cannot process their file. */
+    state_app: (() => {
+      const alt = APPLY_ELSEWHERE[code];
+      if (alt) return { ...alt,
+        note: NIPR_WARNING_ALT(s.name, alt.vendor),
+        steps: ALT_STEPS(s.name, alt.vendor) };
+      return { vendor:"NIPR", vendor_key:"nipr", url:CONSTANTS.nipr,
+        note: NIPR_WARNING + (APPLY_EITHER.includes(code) ? EITHER_NOTE : ""),
+        steps: NIPR_STEPS.slice() };
+    })(),
     ce:        { vendor:"Success CE", vendor_key:"successce", url:`https://successce.com/insurance-ce-requirements-${code}/`, note:"", steps:ceSteps(code) },
     eo:        { vendor:"NAPA", vendor_key:"napa", url:CONSTANTS.eo,
                  /* The single most asked question on this step, so it is

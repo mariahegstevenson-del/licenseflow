@@ -1,6 +1,6 @@
 import { supabase, isConfigured, requireSession, hardSignOut } from "./supabase.js?v=2";
 import { STATE_LIST, STATES, ceSlots, ceIsConfigured, ceBasketHTML, resolvePlaybook,
-         fillTokens } from "./states.js?v=18";
+         fillTokens } from "./states.js?v=19";
 import { resolveWalkthrough, factsFor, videoSource, isFile,
          fmtDuration, clockTime } from "./walkthrough.js?v=1";
 import * as F from "./flow.js?v=9";
