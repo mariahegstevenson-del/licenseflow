@@ -1,9 +1,9 @@
 import { supabase, isConfigured, requireSession, hardSignOut } from "./supabase.js?v=2";
 import { STATE_LIST, STATES, ceSlots, ceIsConfigured, ceBasketHTML, STUDY_TIPS, EXAM_BRING, resolvePlaybook,
-         fillTokens } from "./states.js?v=23";
+         fillTokens } from "./states.js?v=24";
 import { resolveWalkthrough, factsFor, videoSource, isFile,
          fmtDuration, clockTime } from "./walkthrough.js?v=1";
-import * as F from "./flow.js?v=10";
+import * as F from "./flow.js?v=11";
 import { loadTenant, renderUnknownAgency, applyTenantChrome, urlForAgency } from "./tenant.js?v=4";
 
 const el = (id) => document.getElementById(id);
@@ -824,7 +824,7 @@ const EXPECT = [
    The agency's own scenery, behind the top of the portal.
 
    Drawn rather than photographed: it paints with the page, costs no
-   request, never pixelates, and takes its colours from the agency's
+   request, never pixelates, and takes its colors from the agency's
    theme -- so it is the agency's dawn, not a stock one. It appears only
    where an agency has asked for it in their theme row, which is why
    LicenseFlow's own domain and an unthemed agency stay plain.
@@ -1029,7 +1029,7 @@ function renderComplete() {
    Confetti.
 
    Drawn on a canvas rather than pulled from a library: it is forty
-   lines, it costs no download, and it takes the agency's own colours so
+   lines, it costs no download, and it takes the agency's own colors so
    the moment still looks like their agency rather than a generic party.
    It runs once, for three seconds, and cleans itself up -- and it does
    not run at all for anyone who has asked their system for less motion.
@@ -1040,7 +1040,7 @@ function celebrate(host){
 
   const css = getComputedStyle(document.documentElement);
   const pick = (name, fallback) => (css.getPropertyValue(name) || "").trim() || fallback;
-  const COLOURS = ["#12A05C", "#3ECC85", "#0F7A4A",
+  const COLORS = ["#12A05C", "#3ECC85", "#0F7A4A",
     pick("--agency-gold", "#D4A12B"), pick("--brand", "#0C3D82"), "#FFFFFF"];
 
   const cv = document.createElement("canvas");
@@ -1070,7 +1070,7 @@ function celebrate(host){
       h: 8 + Math.random() * 8,
       rot: Math.random() * Math.PI,
       vr: (Math.random() - 0.5) * 0.3,
-      c: COLOURS[(Math.random() * COLOURS.length) | 0],
+      c: COLORS[(Math.random() * COLORS.length) | 0],
       life: 0,
     });
   }
@@ -1202,7 +1202,8 @@ function nextCard(ns){
    ============================================================ */
 function openLabel(r, provider){
   if (r.key==="exam") return "Open " + provider;
-  const map={ study_material:"Open Xcel Solutions", nipr_application:"Open NIPR", continuing_education:"Open Success CE", eo:"Open NAPA" };
+  const map={ study_material:"Open Xcel Solutions", nipr_application:"Open NIPR", continuing_education:"Open Success CE", eo:"Open NAPA",
+              fingerprinting:"Open the fingerprinting site", affidavit:"Open the form" };
   return map[r.key] || "Open this step";
 }
 function renderStep(key) {
@@ -1563,12 +1564,12 @@ function ceSlotList(){ return ceSlots(S.profile?.designated_state, S.profile?.li
    The guide below says what the state asks for. This says what to click
    and what to put in the basket to satisfy it -- the same handout an
    agency owner writes by hand for each state, except it is generated
-   from the provider's own catalogue and cannot drift out of date
+   from the provider's own catalog and cannot drift out of date
    quietly.
 
    Two things it will not do. It will not show a Life-only agent the
    long-term-care course, because LTC is a health-line product they
-   cannot sell. And it will not invent a course: where the catalogue
+   cannot sell. And it will not invent a course: where the catalog
    lists none, the step says so and points at the carrier.
 
    Agencies that sell through a different provider override the CE link

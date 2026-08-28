@@ -3,7 +3,8 @@
    The system owns configuration (state, license, exam provider,
    URLs). The agent only provides personal/action data.
    ============================================================ */
-import { STATES, buildWalkthrough, examProvider, PROVIDER_LABEL } from "./states.js?v=23";
+import { STATES, buildWalkthrough, examProvider, PROVIDER_LABEL,
+         stepOrder, SUPPLEMENTAL } from "./states.js?v=24";
 
 /* ---------------- status vocabulary ---------------- */
 export const ST = {
@@ -60,6 +61,27 @@ export const REQS = [
     fields:[{name:"application_date",label:"NIPR application date",type:"date",required:true}],
     dependsOn:["exam"] },
 
+  { key:"fingerprinting", label:"Fingerprinting", short:"Fingerprints", verify:"admin",
+    doneLabel:"Done",
+    render:"action", linkKey:"fingerprinting",
+    heading:"Get your fingerprints taken",
+    lead:"Your state runs a criminal background check and needs your fingerprints on file. Book it, go, and record the date here.",
+    fields:[{name:"fingerprint_date",label:"Date completed",type:"date",required:true}],
+    doc:{label:"Receipt or confirmation (if you were given one)"},
+    dependsOn:[] },
+
+  /* The sheet calls this the affidavit column, but only Georgia's is one.
+     The label and the opening line come from the state -- see SUPPLEMENTAL
+     in states.js -- so a Kansas agent is asked for a tax clearance rather
+     than sent looking for an affidavit that does not exist. */
+  { key:"affidavit", label:"Supplemental document", short:"Supplemental", verify:"admin",
+    render:"action", linkKey:"affidavit",
+    heading:"Your state's supplemental requirement",
+    lead:"Your state asks for one more document. Open the link, follow the instructions there, and upload what it gives you.",
+    fields:[{name:"affidavit_date",label:"Date completed",type:"date",required:true}],
+    doc:{label:"Completed document", required:true},
+    dependsOn:[] },
+
   { key:"license_number", label:"License Number", short:"License Number", verify:"admin",
     render:"generic",
     heading:"Enter your license number",
@@ -99,7 +121,8 @@ export const REQS = [
 export const REQ_BY_KEY = Object.fromEntries(REQS.map(r => [r.key, r]));
 
 const WALK_KEY = { study_material:"study_material", exam:"exam_registration",
-  nipr_application:"state_app", continuing_education:"success_ce", eo:"eo" };
+  nipr_application:"state_app", continuing_education:"success_ce", eo:"eo",
+  fingerprinting:"fingerprinting", affidavit:"affidavit" };
 
 /* ---------------- system configuration for a state/license ---------------- */
 export function examInfo(code, license) {
@@ -113,11 +136,12 @@ export function examInfo(code, license) {
 const PLAYBOOK_KEY = {
   study_material:"study", exam:"exam", nipr_application:"state_app",
   continuing_education:"ce", eo:"eo",
+  fingerprinting:"fingerprinting", affidavit:"affidavit",
 };
 
 /* `playbook` is the resolved state playbook -- the agency's overrides on
    top of the LicenseFlow master on top of the built-in defaults. Passing
-   nothing gives exactly the old behaviour, which is what keeps the
+   nothing gives exactly the old behavior, which is what keeps the
    registration screens working before a profile has an agency. */
 export function buildJourney(code, playbook) {
   const w = buildWalkthrough(code);
@@ -146,7 +170,59 @@ export function buildJourney(code, playbook) {
     }
     return out;
   });
-  return { state:w.state, code, reqs, playbook: playbook || null };
+
+  /* ---- order, and the dependency chain that follows from it ----
+     Steps the state does not run are dropped: only 35 jurisdictions
+     fingerprint through this process and only 6 want a supplemental
+     document. What survives is then chained in the state's own order, so
+     "you cannot book the exam until you have applied" is true in Arkansas
+     and North Carolina and false everywhere else, without either being
+     written into the code. */
+  const runs = (r) => {
+    if (r.key === "fingerprinting") {
+      const f = (playbook && playbook.fingerprinting) || {};
+      return !!(f.url || f.note);
+    }
+    if (r.key === "affidavit") {
+      const a = (playbook && playbook.affidavit) || {};
+      return !!(a.url || a.note || SUPPLEMENTAL[code]);
+    }
+    return true;
+  };
+
+  const rank = stepOrder(code);
+  const ordered = reqs
+    .filter(runs)
+    .sort((a, b) => rank.indexOf(a.key) - rank.indexOf(b.key));
+
+  /* Each step waits on the one before it. Rebuilding the chain rather than
+     trusting the static dependsOn is the whole point -- a resequenced
+     state gets a resequenced gate for free. */
+  ordered.forEach((r, i) => { r.dependsOn = i ? [ordered[i - 1].key] : []; });
+
+  /* The supplemental document is named by its state. */
+  const sup = SUPPLEMENTAL[code];
+  if (sup) {
+    const a = ordered.find((r) => r.key === "affidavit");
+    if (a) {
+      a.label = sup.label;
+      a.short = sup.label;
+      a.heading = sup.label;
+      a.lead = sup.lead;
+      /* Where we do not know what the state actually wants, the step still
+         appears -- there IS a requirement -- but it does not hold the agent
+         hostage to a document nobody can name. The coordinator clears it. */
+      if (sup.unverified) {
+        a.unverified = true;
+        a.doc = a.doc ? { ...a.doc, label: "Whatever your coordinator asks for", required: false } : a.doc;
+        a.fields = [];
+      } else if (a.doc) {
+        a.doc = { ...a.doc, label: sup.label };
+      }
+    }
+  }
+
+  return { state:w.state, code, reqs: ordered, playbook: playbook || null };
 }
 
 /* ---------------- status computation ---------------- */

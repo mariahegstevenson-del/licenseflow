@@ -2,7 +2,7 @@
    agency.css — the front page of an agency's own subdomain.
 
    Loaded by index.html on every host, but only ever visible on a
-   tenant. The colours come from the agency's stored theme, written
+   tenant. The colors come from the agency's stored theme, written
    onto :root by tenant.js; the fallbacks below are LicenseFlow's own,
    so an agency with no theme still gets a coherent page rather than
    an unstyled one.

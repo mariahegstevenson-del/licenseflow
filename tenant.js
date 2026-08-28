@@ -124,13 +124,13 @@ export function applyTenantChrome(agency) {
 /* ------------------------------------------------------------
    The theme.
 
-   An agency's branding is a row, not a stylesheet: a handful of colour
+   An agency's branding is a row, not a stylesheet: a handful of color
    tokens written onto :root, over the top of the ones styles.css and
    auth.css already use. Every rule in the product reads those tokens,
-   so recolouring the whole app is this one loop.
+   so recoloring the whole app is this one loop.
 
    Only recognised keys are read, and each value must look like a hex
-   colour before it is written -- the theme comes from the database, and
+   color before it is written -- the theme comes from the database, and
    a CSS custom property is a place where a hostile string could
    otherwise end up inside a url() or a declaration.
    ------------------------------------------------------------ */

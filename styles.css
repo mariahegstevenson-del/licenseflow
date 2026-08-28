@@ -349,7 +349,7 @@ body{background:#F2F5F9}
 
 /* The halo isn't only for the dashboard's next step. The welcome page's
    launch and the last button of registration are the same kind of
-   moment -- one obvious thing to press -- so they wear it too. Colour is
+   moment -- one obvious thing to press -- so they wear it too. Color is
    left to the button's own class, so an agency's theme still applies. */
 .cta-wrap .btn{width:100%;justify-content:center;gap:10px;border:0;border-radius:11px;
   padding:15px 24px;font-weight:700;font-size:1.02rem;
@@ -515,7 +515,7 @@ body{background:#F2F5F9}
 .pg-rail .lf-kv{border-bottom:1px solid var(--line-2)}
 .pg-rail .lf-kv:last-child{border-bottom:0}
 /* The rail is narrower than the drawer, so the label column gives ground
-   to the value -- a truncated licence number is worse than a tight label. */
+   to the value -- a truncated license number is worse than a tight label. */
 .pg-rail .lf-kv .k{color:var(--muted);flex:0 0 84px;font-size:.82rem}
 .pg-rail .lf-copy{padding:.16rem .42rem;font-size:.72rem}
 .pg-rail .lf-kv .v{color:var(--ink)}
@@ -528,7 +528,7 @@ body{background:#F2F5F9}
 .pg-rail .lf-mark{border:1.5px dashed var(--line);color:transparent}
 .pg-rail .lf-slot.done .lf-mark{border:1px solid var(--ok);background:var(--ok);color:#fff}
 /* The drawer's done-state rules are three classes deep, so the light
-   restatements have to match that depth or the white-on-navy colours win. */
+   restatements have to match that depth or the white-on-navy colors win. */
 .pg-rail .lf-sn b,.pg-rail .lf-slot.done .lf-sn b{color:var(--ink)}
 .pg-rail .lf-sn span,.pg-rail .lf-sd,
 .pg-rail .lf-slot.done .lf-sn span{color:var(--muted)}
@@ -559,11 +559,11 @@ body{background:#F2F5F9}
    `themed` on <html>. On the main domain none of this matches, so
    LicenseFlow's own look is untouched.
 
-   The colour tokens themselves (--brand and friends) are overwritten
-   inline on :root, so most of the product recolours without a single
-   rule here. What is below is the part colour swapping alone can't do:
+   The color tokens themselves (--brand and friends) are overwritten
+   inline on :root, so most of the product recolors without a single
+   rule here. What is below is the part color swapping alone can't do:
    the masthead inverting to the brand, and the agency's secondary
-   colour taking over the accents.
+   color taking over the accents.
    ============================================================ */
 html.themed .appbar{background:var(--brand);border-bottom:0;
   box-shadow:0 1px 0 rgba(0,0,0,.12), 0 6px 18px rgba(6,18,35,.08)}
@@ -579,7 +579,7 @@ html.themed .appbar .lf-burger:hover{background:rgba(255,255,255,.18);border-col
 html.themed .agency-tag{background:var(--agency-gold-050,rgba(255,255,255,.14));
   color:var(--agency-gold-ink,#fff);border-color:transparent;font-weight:650}
 
-/* the agency's second colour does the accent work */
+/* the agency's second color does the accent work */
 html.themed .next::before{background:linear-gradient(180deg,var(--brand) 0%,
   var(--brand-400) 58%, var(--agency-gold,var(--brand-400)) 100%)}
 html.themed .next .k{color:var(--agency-gold-ink,var(--brand))}
@@ -619,7 +619,7 @@ html.themed .reg-wrap .seg button.on{background:var(--brand);color:#fff;border-c
    recruit sees before they start work, so they carry the most branding.
    Everything here hangs off `html.themed`, which only exists once an
    agency has been resolved -- LicenseFlow's own domain is untouched, and
-   an agency with no second colour falls back to their navy rather than
+   an agency with no second color falls back to their navy rather than
    showing gold that isn't theirs.
 
    Gold does the marking; navy still does the reading. The one place gold
@@ -644,7 +644,7 @@ html.themed .welcome .card.pad > h3::after{
   content:"";position:absolute;left:0;bottom:0;width:32px;height:2px;border-radius:2px;
   background:var(--agency-gold,var(--brand))}
 
-/* The licence the journey was built for is the sentence that matters
+/* The license the journey was built for is the sentence that matters
    most on the page. */
 html.themed .welcome .lead strong{color:var(--agency-gold-ink,var(--brand));font-weight:650}
 
@@ -729,7 +729,7 @@ html.scene-on .reg-wrap .card{box-shadow:0 1px 2px rgba(6,18,35,.07),0 10px 30px
 html.scene-on .desig{background:rgba(255,255,255,.78);backdrop-filter:blur(3px)}
 @supports not (backdrop-filter:blur(3px)){html.scene-on .desig{background:rgba(255,255,255,.93)}}
 
-/* The sky is drawn from the agency's own colours, so a printed page or
+/* The sky is drawn from the agency's own colors, so a printed page or
    a reduced-transparency setting still has to read: nothing on these
    screens depends on the picture to be legible. */
 @media print{#lfScene{display:none!important}}
@@ -747,7 +747,7 @@ html.scene-on .desig{background:rgba(255,255,255,.78);backdrop-filter:blur(3px)}
    four documents they hadn't uploaded before they had bought a course,
    which reads as four failures; that material lives in the menu now,
    top left, where it can be looked up rather than confronted. The
-   content column was squeezed left by that panel, so it sat off-centre
+   content column was squeezed left by that panel, so it sat off-center
    in a window with dead space beside it. And nothing on the screen said
    which of the several controls was the one to press next.
    ============================================================ */
@@ -760,7 +760,7 @@ html.scene-on .desig{background:rgba(255,255,255,.78);backdrop-filter:blur(3px)}
 .lf-burger span{width:17px}
 .agency-tag{font-size:.78rem;padding:5px 14px}
 
-/* ---------- one column, centred, wider ---------- */
+/* ---------- one column, centered, wider ---------- */
 .pg{grid-template-columns:minmax(0,1fr);width:min(1108px,94vw)}
 .pg-rail{display:none}
 @media(max-width:1119px){.pg{width:min(1108px,94vw)}}
@@ -843,18 +843,18 @@ html.scene-on .desig{background:rgba(255,255,255,.78);backdrop-filter:blur(3px)}
 .video.is-soon{aspect-ratio:auto;min-height:168px;padding:24px}
 .video.is-soon .pi{width:44px;height:44px;margin-bottom:8px}
 
-/* A date or a licence number in a field 1300px wide looks like a mistake.
+/* A date or a license number in a field 1300px wide looks like a mistake.
    The answers on these steps are all short; give them a short box. */
 .form-block .cta.fw{max-width:420px}
 
 /* ============================================================
-   UPDATE v18: the action zone, centred
+   UPDATE v18: the action zone, centered
 
    The recording and the button that sends an agent off to do the task
    are the two things they act on. Centring them separates them from the
    reading, which stays left-aligned where it belongs.
    ============================================================ */
-/* Only the label over the recording is centred -- the others head lists
+/* Only the label over the recording is centered -- the others head lists
    and belong on the left with the reading. */
 .step-body .center-k{text-align:center}
 .video{margin-left:auto;margin-right:auto}
@@ -864,7 +864,7 @@ html.scene-on .desig{background:rgba(255,255,255,.78);backdrop-filter:blur(3px)}
 @media(max-width:560px){.step-body .link-row .btn{min-width:0;width:100%}}
 
 /* The provider line reads as the label on the button below it, so it
-   shares its width and its centre rather than spanning the whole card. */
+   shares its width and its center rather than spanning the whole card. */
 .step-body .syscard{max-width:720px;margin-left:auto;margin-right:auto}
 
 /* Save & continue is now genuinely shut until the step is satisfied.
@@ -1009,7 +1009,7 @@ html.scene-on .desig{background:rgba(255,255,255,.78);backdrop-filter:blur(3px)}
 
    A numbered run of steps, because that is what the task is: open this,
    pick that, add these, check out. The rail down the left carries the
-   agency's colour, so a Pacific Ridgeway agent and a demo agent see the
+   agency's color, so a Pacific Ridgeway agent and a demo agent see the
    same instructions in their own house style rather than ours.
 ------------------------------------------------------------------- */
 .cart{list-style:none;counter-reset:cs;margin:10px 0 0;padding:0;display:flex;flex-direction:column;gap:2px}
@@ -1079,7 +1079,7 @@ html.themed .ceg-tag.req{
   color:var(--agency-gold-ink,#7A5A0C)
 }
 
-/* The exam's name in the vendor's own catalogue. Called out separately
+/* The exam's name in the vendor's own catalog. Called out separately
    because it is the single most common way somebody books the wrong
    paper -- states name the same exam half a dozen different ways. */
 .syscard.exam-name{border-color:#E3D3AE;background:linear-gradient(180deg,#FEFBF4,#fff 70%)}

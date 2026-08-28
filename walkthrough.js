@@ -23,7 +23,7 @@
    own. Five assets cover fifty-one jurisdictions.
    ============================================================ */
 
-import { STATES } from "./states.js?v=23";
+import { STATES } from "./states.js?v=24";
 
 /* Which playbook section supplies each requirement's facts and vendor. */
 export const REQ_SECTION = {
@@ -43,8 +43,8 @@ export const REQ_SECTION = {
 export const WALKTHROUGH_REQS = [
   { key: "study_material",       label: "Study materials" },
   { key: "exam",                 label: "Exam registration" },
-  { key: "nipr_application",     label: "NIPR / licence application" },
-  { key: "license_number",       label: "Licence number & NPN" },
+  { key: "nipr_application",     label: "NIPR / license application" },
+  { key: "license_number",       label: "License number & NPN" },
   { key: "npn",                  label: "NPN lookup" },
   { key: "continuing_education", label: "Continuing education" },
   { key: "eo",                   label: "Errors & Omissions" },
@@ -136,7 +136,7 @@ export function factsFor(requirementKey, ctx){
   const add = (k, v, opts) => { if (v) out.push({ k, v, ...(opts || {}) }); };
 
   add("State", STATES[stateCode]?.name || stateCode);
-  add("Licence", licenseType);
+  add("License", licenseType);
 
   if (requirementKey === "exam") {
     add("Exam provider", s.vendor);
@@ -213,7 +213,7 @@ export const RECORDING_STANDARD = [
   { n: "1", t: "Title screen",
     d: "Three seconds. What this covers, and that it applies to any state." },
   { n: "2", t: "What you'll need",
-    d: "Card number, licence details, the tab already open — whatever they should fetch before starting." },
+    d: "Card number, license details, the tab already open — whatever they should fetch before starting." },
   { n: "3", t: "The procedure",
     d: "Screen capture of the clicks. Point at the portal for anything specific: “use the exam name shown above”." },
   { n: "4", t: "Pause points",

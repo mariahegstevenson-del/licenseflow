@@ -420,7 +420,7 @@ body.cc-locked .cc-nav,body.cc-locked .cc-rail{display:none}
 
 /* the agent preview */
 .pv-lead{font-size:.92rem;color:var(--muted,#51637A);margin:0 0 12px}
-/* Licence switch. Life-only and Life & Health see genuinely different
+/* License switch. Life-only and Life & Health see genuinely different
    screens -- the long-term-care course is dropped for Life-only -- so the
    preview lets an owner flip between them rather than guess. */
 .pv-lic{display:inline-flex;gap:2px;padding:2px;margin:0 0 14px;

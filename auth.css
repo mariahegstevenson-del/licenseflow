@@ -99,7 +99,7 @@ input:focus{outline:none;border-color:var(--pri);box-shadow:0 0 0 3px var(--pri0
 .btn:disabled{opacity:.5;cursor:not-allowed}
 
 /* Google keeps its own mark; the button stays neutral by design —
-   Google's brand guidance doesn't allow recolouring it to match ours. */
+   Google's brand guidance doesn't allow recoloring it to match ours. */
 .btn-google{gap:.65rem;font-weight:600}
 .btn-google .g-icon{flex:0 0 auto;display:block}
 

@@ -1,9 +1,9 @@
 import { supabase, isConfigured, requireSession, hardSignOut } from "./supabase.js?v=2";
 import { STATES, STATE_LIST, ceSlots, ceBasketHTML, STUDY_TIPS, EXAM_BRING, PLAYBOOK_SECTIONS, playbookDefaults,
-         resolvePlaybook, COMPLETE_FIELDS, fillTokens } from "./states.js?v=23";
+         resolvePlaybook, COMPLETE_FIELDS, fillTokens } from "./states.js?v=24";
 import { WALKTHROUGH_REQS, resolveWalkthrough, vendorKeyFor, videoSource,
          fmtDuration, RECORDING_STANDARD } from "./walkthrough.js?v=1";
-import * as F from "./flow.js?v=10";
+import * as F from "./flow.js?v=11";
 import { loadTenant, renderUnknownAgency, applyTenantChrome, urlForAgency } from "./tenant.js?v=4";
 
 const el = (id) => document.getElementById(id);
@@ -14,7 +14,7 @@ const fmtDT = (t) => t ? new Date(t).toLocaleString(undefined,{month:"short",day
 
 const A = { me:null, admin:false, profiles:[], instances:[], exceptions:[], videos:[],
             view:{name:"overview"}, win:30 };
-const VIDEO_STEPS = ["study_material","exam","nipr_application","license_number","npn","continuing_education","eo"];
+const VIDEO_STEPS = ["study_material","exam","fingerprinting","nipr_application","affidavit","license_number","npn","continuing_education","eo"];
 
 /* how long a submission may sit before we call it overdue */
 const OVERDUE_HOURS = 24;
@@ -165,7 +165,7 @@ function pipelineCounts(){
   return out;
 }
 
-/* initials + a stable colour per agent, so faces are recognisable in a list */
+/* initials + a stable color per agent, so faces are recognizable in a list */
 /* Avatar grounds: all dark enough to carry white initials at 4.5:1+. */
 const AV = ["#1E5FB4","#B04513","#0F6F40","#6B45C4","#A81552","#0B6E85"];
 function avatar(uid){
@@ -565,7 +565,9 @@ function renderTiles(){
 
 /* stacked bar: where agents are sitting, by stage */
 function renderStages(){
-  const keys = ["study_material","exam","fingerprints","nipr_application","license_number","eo"];
+  /* "fingerprints" was a placeholder that never matched a real requirement key,
+     so this bar has been quietly missing a stage. */
+  const keys = ["study_material","exam","fingerprinting","nipr_application","affidavit","license_number","eo"];
   const present = keys.filter(k=>F.REQ_BY_KEY[k]);
   if(!present.length || !A.profiles.length) return "";
   const data = present.map(k=>{
@@ -1326,7 +1328,7 @@ function renderPlaybookAgent(code){
   const chip = (q, i) => `<button class="pv-chip${q.key === pick ? " on" : ""}" data-step="${esc(q.key)}"
       type="button"><span class="pv-cn">${i + 1}</span>${esc(q.short || q.label)}</button>`;
 
-  /* Which licence the preview is standing in for. It changes what an
+  /* Which license the preview is standing in for. It changes what an
      agent actually sees -- long-term care is a health-line product, so a
      Life-only agent is never shown it -- and an owner checking placement
      needs both without creating two accounts. */
@@ -1392,7 +1394,7 @@ function renderPlaybookAgent(code){
     </div>`;
 
   const licSwitch = `
-    <div class="pv-lic" role="group" aria-label="Licence type">
+    <div class="pv-lic" role="group" aria-label="License type">
       ${["Life & Health", "Life"].map(v => `
         <button class="pv-licb${v === lic ? " on" : ""}" type="button" data-lic="${esc(v)}"
           aria-pressed="${v === lic}">${esc(v === "Life" ? "Life only" : v)}</button>`).join("")}
@@ -1587,7 +1589,7 @@ function renderPlaybookEdit(code){
         ${s.key === "exam" ? field("exam", "exam_name", "What this exam is called here",
             "e.g. Producer Combined Life and Health") : ""}
         ${s.key === "exam" ? `<span class="hint">This is the name an agent searches for in the vendor's
-            catalogue. It varies state by state &mdash; leave it blank rather than guessing.</span>` : ""}
+            catalog. It varies state by state &mdash; leave it blank rather than guessing.</span>` : ""}
         ${field(s.key, "note", "Note (optional)", "Anything specific to this state")}
         ${steps(s.key)}
       </div>
@@ -1720,6 +1722,7 @@ function wtVendorOptions(requirementKey){
     const key = vendorKeyFor(pb, requirementKey);
     if (!key) return;
     const sec = pb[({ study_material:"study", exam:"exam", nipr_application:"state_app",
+                      fingerprinting:"fingerprinting", affidavit:"affidavit",
                       continuing_education:"ce", eo:"eo" })[requirementKey]] || {};
     if (!seen.has(key)) seen.set(key, { key, label: sec.vendor || key, states: [] });
     seen.get(key).states.push(st.code);
@@ -1847,7 +1850,7 @@ function renderWalkEdit(arg){
           its exam differently. A different exam name is a line in the state guide, not a new recording.</span>
       </div>
 
-      <label for="w_license">Licence type (optional)</label>
+      <label for="w_license">License type (optional)</label>
       <select id="w_license"><option value="">Any</option>
         ${["Life & Health","Life"].map(l => `<option${w.license_type === l ? " selected" : ""}>${esc(l)}</option>`).join("")}</select>
     </div></div>
@@ -1855,7 +1858,7 @@ function renderWalkEdit(arg){
     <div class="cc-panel pb-sec"><div class="cc-panel-h"><h2>The recording</h2></div><div class="pad">
       ${f("title", "Title", w.title, "How to schedule your exam through Pearson VUE")}
       ${ta("description", "One line for the agent", w.description, "What this covers", 2)}
-      ${ta("instructions", "What they'll need before starting", w.instructions, "Card, licence details, a second tab open…", 2)}
+      ${ta("instructions", "What they'll need before starting", w.instructions, "Card, license details, a second tab open…", 2)}
       ${f("video_url", "Video link", w.video_url, "YouTube, Vimeo, Loom, or an uploaded file")}
       <label for="w_file">…or upload a file</label>
       <div class="drop drop-sm" id="wDrop">

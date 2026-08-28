@@ -136,7 +136,7 @@ function render(agency) {
     ${t.scene ? scene() + '<div class="ah-scrim"></div>' : ""}
     <div class="ah-in">
       <p class="ah-kicker">Licensing Portal</p>
-      <h1>${esc(t.hero_title || "Everything your licence needs,")}
+      <h1>${esc(t.hero_title || "Everything your license needs,")}
         ${t.hero_em ? `<em>${esc(t.hero_em)}</em>` : ""}</h1>
       ${t.hero_body ? `<p class="ah-lede">${esc(t.hero_body)}</p>` : ""}
       <!-- One front door, two ways through it. A recruit who has never

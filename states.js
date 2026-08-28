@@ -8,7 +8,7 @@ export const CONSTANTS = {
   study:   "https://partners.xcelsolutions.com/insurance-license/life-and-health?partner=pris",
   nipr:    "https://nipr.com/",
   surelc:  "https://accounts.surancebay.com/oauth/authorize?redirect_uri=https:%2F%2Fsurelc.surancebay.com%2Fproducer%2Foauth%3FreturnUrl%3D%252Fprofile%252Fcontact-info%253FgaId%253D381&gaId=381&client_id=surecrmweb&response_type=code",
-  /* NAPA rather than the previous carrier, whose programme was tied to a
+  /* NAPA rather than the previous carrier, whose program was tied to a
      single IMO. This is the default every agency inherits; any agency can
      point their own E&O elsewhere from the State guide. */
   eo:      "https://www.napa-benefits.org/nd/errors-and-omissions#life-and-health-agents",
@@ -63,7 +63,7 @@ export const PROVIDER_STEPS = {
   ],
   /* Alabama contracts its producer testing to the University of Alabama's
      continuing-education arm, so the path is a city page rather than a
-     national catalogue. Source: aldoi.gov/licensing/examsites.aspx */
+     national catalog. Source: aldoi.gov/licensing/examsites.aspx */
   ua: [
     "Click the link for Alabama insurance testing.",
     "Choose the city you want to test in — Birmingham, Huntsville, Mobile, Tuscaloosa or Montgomery.",
@@ -126,7 +126,7 @@ export const STATES = {
   OK: { name: "Oklahoma", exam: "https://test-takers.psiexams.com/okins", fp: null },
   OR: { name: "Oregon", exam: "https://test-takers.psiexams.com/orins", fp: "https://proctor2.psionline.com/media/programs/INS%20Fingerprint%20hours.pdf" },
   PA: { name: "Pennsylvania", exam: "https://test-takers.psiexams.com/pain", fp: "https://uenroll.identogo.com/workflows/1kgbgj", misc: "Service code: 1kgbgj." },
-  RI: { name: "Rhode Island", exam: "https://home.pearsonvue.com/ri/insurance", fp: "tel:410-274-4400", fpNote: "Background check report: call the fingerprint number (410-274-4400).", misc: "Background check report — call fingerprint number." },
+  RI: { name: "Rhode Island", exam: "https://home.pearsonvue.com/ri/insurance", fp: null, fpNote: "Rhode Island takes fingerprints in person. Visit the Rhode Island Attorney General\u2019s Customer Service Center \u2014 there is no online booking for this.", fpNote: "Rhode Island takes fingerprints in person. Visit the Rhode Island Attorney General\u2019s Customer Service Center \u2014 there is no online booking, and no link to follow.", misc: "Background check report — call fingerprint number." },
   SC: { name: "South Carolina", exam: "https://home.pearsonvue.com/sc/insurance", fp: "https://sc.state.identogo.com/" },
   SD: { name: "South Dakota", exam: "http://www.pearsonvue.com/sd/insurance", fp: null, misc: "Must wait 48 hours after exam." },
   TN: { name: "Tennessee", exam: "http://www.pearsonvue.com/tn/insurance", fp: "http://www.identogo.com" },
@@ -137,7 +137,7 @@ export const STATES = {
   WA: { name: "Washington", exam: "https://test-takers.psiexams.com/waoic", fp: "http://www.identogo.com/FP/Washington.aspx" },
   WV: { name: "West Virginia", exam: "http://www.pearsonvue.com/wv/insurance", fp: "https://uenroll.identogo.com/workflows/228QG9" },
   WI: { name: "Wisconsin", exam: "https://test-takers.psiexams.com/wiins", fp: "https://www.fieldprintwisconsin.com/", order: { fingerprinting: 1, exam_registration: 2, state_app: 3 } },
-  WY: { name: "Wyoming", exam: "https://home.pearsonvue.com/wy/insurance", fp: null, fpNote: "Fingerprints are handled via the state DOI package.", misc: "DOI package for fingerprints." },
+  WY: { name: "Wyoming", exam: "https://home.pearsonvue.com/wy/insurance", fp: null, fpNote: "Wyoming posts you a packet once your license application is in \u2014 there is nothing to book and no link to follow. Watch for it in the mail, follow the instructions inside, and record the date here when it is done.", misc: "DOI package for fingerprints." },
   DC: { name: "Washington DC", exam: "https://home.pearsonvue.com/dc/insurance", fp: "https://schedule.fieldprint.com/User/SignIn" },
 };
 
@@ -238,7 +238,7 @@ export function buildWalkthrough(code) {
    in CE_BY_STATE below, pulled from Success CE -- the provider the agency
    actually buys from -- so what the portal tells an agent and what they
    see in the basket are the same thing. CE_DEFAULT survives only as the
-   fallback for a state code we do not recognise.
+   fallback for a state code we do not recognize.
 
    Two findings from that research are worth keeping in view, because both
    contradict what the product used to imply:
@@ -304,7 +304,7 @@ export const CE_BY_STATE = {
     { key:"best_interest", label:"Annuity Best Interest training (4 hours)", required:true,
       note:"Alaska requires this one-time course before you may sell an annuity, and the carrier has to see the certificate before it will let you write one." },
     { key:"ltc", lines:"health", label:"Long-Term Care training (8 hours)", required:false, advise:true,
-      note:"Only if you will write long-term care — it is a health-line product, so a Life-only licence does not need it at all. Alaska wants 8 hours before you sell it, then 4 hours every 24 months." },
+      note:"Only if you will write long-term care — it is a health-line product, so a Life-only license does not need it at all. Alaska wants 8 hours before you sell it, then 4 hours every 24 months." },
     ETHICS_RENEWAL(3, 2),
     OTHER,
   ],
@@ -314,7 +314,7 @@ export const CE_BY_STATE = {
     { key:"best_interest", label:"Annuity Best Interest training (4 hours)", required:true,
       note:"Alabama requires this one-time course before you may sell an annuity, and the carrier has to see the certificate before it will let you write one." },
     { key:"ltc", lines:"health", label:"Long-Term Care training (8 hours)", required:false, advise:true,
-      note:"Only if you will write long-term care — it is a health-line product, so a Life-only licence does not need it at all. Alabama wants 8 hours before you sell it, then 4 hours every 24 months." },
+      note:"Only if you will write long-term care — it is a health-line product, so a Life-only license does not need it at all. Alabama wants 8 hours before you sell it, then 4 hours every 24 months." },
     ETHICS_RENEWAL(3, 2),
     OTHER,
   ],
@@ -324,7 +324,7 @@ export const CE_BY_STATE = {
     { key:"best_interest", label:"Annuity Best Interest training (4 hours)", required:true,
       note:"Arkansas requires this one-time course before you may sell an annuity, and the carrier has to see the certificate before it will let you write one." },
     { key:"ltc", lines:"health", label:"Long-Term Care training (8 hours)", required:false, advise:true,
-      note:"Only if you will write long-term care — it is a health-line product, so a Life-only licence does not need it at all. Arkansas wants 8 hours before you sell it, then 4 hours every 24 months." },
+      note:"Only if you will write long-term care — it is a health-line product, so a Life-only license does not need it at all. Arkansas wants 8 hours before you sell it, then 4 hours every 24 months." },
     ETHICS_RENEWAL(3, 2),
     OTHER,
   ],
@@ -334,7 +334,7 @@ export const CE_BY_STATE = {
     { key:"best_interest", label:"Annuity Best Interest training (4 hours)", required:true,
       note:"Arizona requires this one-time course before you may sell an annuity, and the carrier has to see the certificate before it will let you write one." },
     { key:"ltc", lines:"health", label:"Long-Term Care training (8 hours)", required:false, advise:true,
-      note:"Only if you will write long-term care — it is a health-line product, so a Life-only licence does not need it at all. Arizona wants 8 hours before you sell it, then 4 hours every 24 months." },
+      note:"Only if you will write long-term care — it is a health-line product, so a Life-only license does not need it at all. Arizona wants 8 hours before you sell it, then 4 hours every 24 months." },
     ETHICS_RENEWAL(6, 4),
     OTHER,
   ],
@@ -344,7 +344,7 @@ export const CE_BY_STATE = {
     { key:"best_interest", label:"Annuity Best Interest training (8 hours)", required:true,
       note:"California wants 8 hours before you may sell any annuity — the longest of any state — then 4 hours before each renewal. Book it early." },
     { key:"ltc", lines:"health", label:"Long-Term Care training (8 hours)", required:false, advise:true,
-      note:"Only if you will write long-term care — it is a health-line product, so a Life-only licence does not need it at all. California wants 8 hours before you sell it, then 8 hours each renewal." },
+      note:"Only if you will write long-term care — it is a health-line product, so a Life-only license does not need it at all. California wants 8 hours before you sell it, then 8 hours each renewal." },
     ETHICS_RENEWAL(3, 2),
     OTHER,
   ],
@@ -354,7 +354,7 @@ export const CE_BY_STATE = {
     { key:"best_interest", label:"Annuity Best Interest training (4 hours)", required:true,
       note:"Colorado requires this one-time course before you may sell an annuity, and the carrier has to see the certificate before it will let you write one." },
     { key:"ltc", lines:"health", label:"Long-Term Care training (16 hours)", required:false, advise:true,
-      note:"Only if you will write long-term care — it is a health-line product, so a Life-only licence does not need it at all. Colorado wants 16 hours before you sell it, then 8 hours each renewal." },
+      note:"Only if you will write long-term care — it is a health-line product, so a Life-only license does not need it at all. Colorado wants 16 hours before you sell it, then 8 hours each renewal." },
     ETHICS_RENEWAL(3, 2),
     OTHER,
   ],
@@ -364,7 +364,7 @@ export const CE_BY_STATE = {
     { key:"best_interest", label:"Annuity Best Interest training (4 hours)", required:true,
       note:"Connecticut requires this one-time course before you may sell an annuity, and the carrier has to see the certificate before it will let you write one." },
     { key:"ltc", lines:"health", label:"Long-Term Care training", required:false, advise:true,
-      note:"Only if you will write long-term care — it is a health-line product, so a Life-only licence does not need it at all. Connecticut publishes no hour figure and stocks no Connecticut-specific course — only a general 10-hour one. It is a one-time requirement with no follow-up. Confirm with your carrier that the general course satisfies it before you rely on it." },
+      note:"Only if you will write long-term care — it is a health-line product, so a Life-only license does not need it at all. Connecticut publishes no hour figure and stocks no Connecticut-specific course — only a general 10-hour one. It is a one-time requirement with no follow-up. Confirm with your carrier that the general course satisfies it before you rely on it." },
     ETHICS_RENEWAL(3, 2),
     OTHER,
   ],
@@ -374,7 +374,7 @@ export const CE_BY_STATE = {
     { key:"best_interest", label:"Annuity Best Interest training (4 hours)", required:true,
       note:"District of Columbia requires this one-time course before you may sell an annuity, and the carrier has to see the certificate before it will let you write one." },
     { key:"ltc", lines:"health", label:"Long-Term Care training", required:false, advise:true,
-      note:"Only if you will write long-term care — it is a health-line product, so a Life-only licence does not need it at all. District of Columbia lists no long-term-care course at all. If you intend to write LTC, ask your carrier what it wants — a carrier can ask for more than the state does." },
+      note:"Only if you will write long-term care — it is a health-line product, so a Life-only license does not need it at all. District of Columbia lists no long-term-care course at all. If you intend to write LTC, ask your carrier what it wants — a carrier can ask for more than the state does." },
     ETHICS_RENEWAL(3, 2),
     OTHER,
   ],
@@ -384,7 +384,7 @@ export const CE_BY_STATE = {
     { key:"best_interest", label:"Annuity Best Interest training (4 hours)", required:true,
       note:"Delaware requires this one-time course before you may sell an annuity, and the carrier has to see the certificate before it will let you write one." },
     { key:"ltc", lines:"health", label:"Long-Term Care training", required:false, advise:true,
-      note:"Only if you will write long-term care — it is a health-line product, so a Life-only licence does not need it at all. Delaware's hour figure is not published by our source. The course is on the catalogue — confirm the length with your CE provider before you book it." },
+      note:"Only if you will write long-term care — it is a health-line product, so a Life-only license does not need it at all. Delaware's hour figure is not published by our source. The course is on the catalog — confirm the length with your CE provider before you book it." },
     ETHICS_RENEWAL(3, 2),
     OTHER,
   ],
@@ -394,7 +394,7 @@ export const CE_BY_STATE = {
     { key:"best_interest", label:"Annuity Best Interest training (4 hours)", required:true,
       note:"Florida requires this one-time course before you may sell an annuity, and the carrier has to see the certificate before it will let you write one." },
     { key:"ltc", lines:"health", label:"Long-Term Care training", required:false, advise:true,
-      note:"Only if you will write long-term care — it is a health-line product, so a Life-only licence does not need it at all. Florida's hour figure is not published by our source. The course is on the catalogue — confirm the length with your CE provider before you book it." },
+      note:"Only if you will write long-term care — it is a health-line product, so a Life-only license does not need it at all. Florida's hour figure is not published by our source. The course is on the catalog — confirm the length with your CE provider before you book it." },
     ETHICS_RENEWAL(4, 2),
     OTHER,
   ],
@@ -404,7 +404,7 @@ export const CE_BY_STATE = {
     { key:"best_interest", label:"Annuity Best Interest training (4 hours)", required:true,
       note:"Georgia requires this one-time course before you may sell an annuity, and the carrier has to see the certificate before it will let you write one." },
     { key:"ltc", lines:"health", label:"Long-Term Care training (8 hours)", required:false, advise:true,
-      note:"Only if you will write long-term care — it is a health-line product, so a Life-only licence does not need it at all. Georgia wants 8 hours before you sell it, then 4 hours every 24 months." },
+      note:"Only if you will write long-term care — it is a health-line product, so a Life-only license does not need it at all. Georgia wants 8 hours before you sell it, then 4 hours every 24 months." },
     ETHICS_RENEWAL(3, 2),
     OTHER,
   ],
@@ -414,7 +414,7 @@ export const CE_BY_STATE = {
     { key:"best_interest", label:"Annuity Best Interest training (4 hours)", required:true,
       note:"Hawaii requires this one-time course before you may sell an annuity, and the carrier has to see the certificate before it will let you write one." },
     { key:"ltc", lines:"health", label:"Long-Term Care training", required:false, advise:true,
-      note:"Only if you will write long-term care — it is a health-line product, so a Life-only licence does not need it at all. Hawaii lists no long-term-care course at all. If you intend to write LTC, ask your carrier what it wants — a carrier can ask for more than the state does." },
+      note:"Only if you will write long-term care — it is a health-line product, so a Life-only license does not need it at all. Hawaii lists no long-term-care course at all. If you intend to write LTC, ask your carrier what it wants — a carrier can ask for more than the state does." },
     ETHICS_RENEWAL(3, 2),
     OTHER,
   ],
@@ -424,7 +424,7 @@ export const CE_BY_STATE = {
     { key:"best_interest", label:"Annuity Best Interest training (4 hours)", required:true,
       note:"Iowa requires this one-time course before you may sell an annuity, and the carrier has to see the certificate before it will let you write one." },
     { key:"ltc", lines:"health", label:"Long-Term Care training (8 hours)", required:false, advise:true,
-      note:"Only if you will write long-term care — it is a health-line product, so a Life-only licence does not need it at all. Iowa wants 8 hours before you sell it, then 4 hours every 24 months." },
+      note:"Only if you will write long-term care — it is a health-line product, so a Life-only license does not need it at all. Iowa wants 8 hours before you sell it, then 4 hours every 24 months." },
     ETHICS_RENEWAL(3, 3),
     OTHER,
   ],
@@ -434,7 +434,7 @@ export const CE_BY_STATE = {
     { key:"best_interest", label:"Annuity Best Interest training (4 hours)", required:true,
       note:"Idaho requires this one-time course before you may sell an annuity, and the carrier has to see the certificate before it will let you write one." },
     { key:"ltc", lines:"health", label:"Long-Term Care training (8 hours)", required:false, advise:true,
-      note:"Only if you will write long-term care — it is a health-line product, so a Life-only licence does not need it at all. Idaho wants 8 hours before you sell it, then 4 hours each renewal." },
+      note:"Only if you will write long-term care — it is a health-line product, so a Life-only license does not need it at all. Idaho wants 8 hours before you sell it, then 4 hours each renewal." },
     { key:"ethics", label:"Ethics", required:false, advise:true,
       note:"Part of your CE package — take it. Our source does not publish an ethics hour figure for Idaho, so buy the package and let the provider count the hours. It will not hold this step up." },
     OTHER,
@@ -445,7 +445,7 @@ export const CE_BY_STATE = {
     { key:"best_interest", label:"Annuity Best Interest training (4 hours)", required:true,
       note:"Illinois requires this one-time course before you may sell an annuity, and the carrier has to see the certificate before it will let you write one." },
     { key:"ltc", lines:"health", label:"Long-Term Care training (6 hours)", required:false, advise:true,
-      note:"Only if you will write long-term care — it is a health-line product, so a Life-only licence does not need it at all. Illinois wants 6 hours before you sell it, then 4 hours every 24 months." },
+      note:"Only if you will write long-term care — it is a health-line product, so a Life-only license does not need it at all. Illinois wants 6 hours before you sell it, then 4 hours every 24 months." },
     ETHICS_RENEWAL(3, 2),
     OTHER,
   ],
@@ -455,7 +455,7 @@ export const CE_BY_STATE = {
     { key:"best_interest", label:"Annuity Best Interest training", required:true,
       note:"Indiana requires this one-time course before you may sell an annuity, and the carrier has to see the certificate before it will let you write one." },
     { key:"ltc", lines:"health", label:"Long-Term Care training (8 hours)", required:false, advise:true,
-      note:"Only if you will write long-term care — it is a health-line product, so a Life-only licence does not need it at all. Indiana wants 8 hours before you sell it, then 5 hours each renewal." },
+      note:"Only if you will write long-term care — it is a health-line product, so a Life-only license does not need it at all. Indiana wants 8 hours before you sell it, then 5 hours each renewal." },
     ETHICS_RENEWAL(3, 2),
     OTHER,
   ],
@@ -465,7 +465,7 @@ export const CE_BY_STATE = {
     { key:"best_interest", label:"Annuity Best Interest training (4 hours)", required:true,
       note:"Kansas requires this one-time course before you may sell an annuity, and the carrier has to see the certificate before it will let you write one." },
     { key:"ltc", lines:"health", label:"Long-Term Care training (4 hours)", required:false, advise:true,
-      note:"Only if you will write long-term care — it is a health-line product, so a Life-only licence does not need it at all. Kansas wants 4 hours before you sell it, then 1 hour every 24 months." },
+      note:"Only if you will write long-term care — it is a health-line product, so a Life-only license does not need it at all. Kansas wants 4 hours before you sell it, then 1 hour every 24 months." },
     ETHICS_RENEWAL(3, 2),
     OTHER,
   ],
@@ -475,7 +475,7 @@ export const CE_BY_STATE = {
     { key:"best_interest", label:"Annuity Best Interest training", required:true,
       note:"Kentucky requires this one-time course before you may sell an annuity, and the carrier has to see the certificate before it will let you write one." },
     { key:"ltc", lines:"health", label:"Long-Term Care training (8 hours)", required:false, advise:true,
-      note:"Only if you will write long-term care — it is a health-line product, so a Life-only licence does not need it at all. Kentucky wants 8 hours before you sell it, then 4 hours each renewal." },
+      note:"Only if you will write long-term care — it is a health-line product, so a Life-only license does not need it at all. Kentucky wants 8 hours before you sell it, then 4 hours each renewal." },
     { key:"ethics", label:"Ethics", required:false, advise:true,
       note:"Part of your CE package — take it. Our source does not publish an ethics hour figure for Kentucky, so buy the package and let the provider count the hours. It will not hold this step up." },
     OTHER,
@@ -486,7 +486,7 @@ export const CE_BY_STATE = {
     { key:"best_interest", label:"Annuity Best Interest training (4 hours)", required:true,
       note:"Louisiana requires this one-time course before you may sell an annuity, and the carrier has to see the certificate before it will let you write one." },
     { key:"ltc", lines:"health", label:"Long-Term Care training (8 hours)", required:false, advise:true,
-      note:"Only if you will write long-term care — it is a health-line product, so a Life-only licence does not need it at all. Louisiana wants 8 hours before you sell it, then 4 hours every 24 months." },
+      note:"Only if you will write long-term care — it is a health-line product, so a Life-only license does not need it at all. Louisiana wants 8 hours before you sell it, then 4 hours every 24 months." },
     ETHICS_RENEWAL(3, 2),
     OTHER,
   ],
@@ -496,7 +496,7 @@ export const CE_BY_STATE = {
     { key:"best_interest", label:"Annuity Best Interest training (4 hours)", required:true,
       note:"Massachusetts requires this one-time course before you may sell an annuity, and the carrier has to see the certificate before it will let you write one." },
     { key:"ltc", lines:"health", label:"Long-Term Care training (8 hours)", required:false, advise:true,
-      note:"Only if you will write long-term care — it is a health-line product, so a Life-only licence does not need it at all. Massachusetts wants 8 hours before you sell it, then 4 hours every 24 months." },
+      note:"Only if you will write long-term care — it is a health-line product, so a Life-only license does not need it at all. Massachusetts wants 8 hours before you sell it, then 4 hours every 24 months." },
     ETHICS_RENEWAL(3, 3),
     OTHER,
   ],
@@ -506,7 +506,7 @@ export const CE_BY_STATE = {
     { key:"best_interest", label:"Annuity Best Interest training (4 hours)", required:true,
       note:"Maryland requires this one-time course before you may sell an annuity, and the carrier has to see the certificate before it will let you write one." },
     { key:"ltc", lines:"health", label:"Long-Term Care training (8 hours)", required:false, advise:true,
-      note:"Only if you will write long-term care — it is a health-line product, so a Life-only licence does not need it at all. Maryland wants 8 hours before you sell it, then 4 hours every 24 months." },
+      note:"Only if you will write long-term care — it is a health-line product, so a Life-only license does not need it at all. Maryland wants 8 hours before you sell it, then 4 hours every 24 months." },
     ETHICS_RENEWAL(3, 2),
     OTHER,
   ],
@@ -516,7 +516,7 @@ export const CE_BY_STATE = {
     { key:"best_interest", label:"Annuity Best Interest training", required:true,
       note:"Maine requires this one-time course before you may sell an annuity, and the carrier has to see the certificate before it will let you write one." },
     { key:"ltc", lines:"health", label:"Long-Term Care training (8 hours)", required:false, advise:true,
-      note:"Only if you will write long-term care — it is a health-line product, so a Life-only licence does not need it at all. Maine wants 8 hours before you sell it, then 4 hours every 24 months." },
+      note:"Only if you will write long-term care — it is a health-line product, so a Life-only license does not need it at all. Maine wants 8 hours before you sell it, then 4 hours every 24 months." },
     ETHICS_RENEWAL(3, 2),
     OTHER,
   ],
@@ -526,7 +526,7 @@ export const CE_BY_STATE = {
     { key:"best_interest", label:"Annuity Best Interest training (4 hours)", required:true,
       note:"Michigan requires this one-time course before you may sell an annuity, and the carrier has to see the certificate before it will let you write one." },
     { key:"ltc", lines:"health", label:"Long-Term Care training (8 hours)", required:false, advise:true,
-      note:"Only if you will write long-term care — it is a health-line product, so a Life-only licence does not need it at all. Michigan wants 8 hours before you sell it, then 4 hours every 24 months." },
+      note:"Only if you will write long-term care — it is a health-line product, so a Life-only license does not need it at all. Michigan wants 8 hours before you sell it, then 4 hours every 24 months." },
     ETHICS_RENEWAL(3, 2),
     OTHER,
   ],
@@ -536,7 +536,7 @@ export const CE_BY_STATE = {
     { key:"best_interest", label:"Annuity Best Interest training (4 hours)", required:true,
       note:"Minnesota requires this one-time course before you may sell an annuity, and the carrier has to see the certificate before it will let you write one." },
     { key:"ltc", lines:"health", label:"Long-Term Care training", required:false, advise:true,
-      note:"Only if you will write long-term care — it is a health-line product, so a Life-only licence does not need it at all. Minnesota runs it through the Medical Assistance Eligibility and LTC Partnership programme: 8 hours before you sell it, then 4 hours each renewal. The state's own requirements page describes this for non-resident producers only, so confirm with your coordinator if you are resident." },
+      note:"Only if you will write long-term care — it is a health-line product, so a Life-only license does not need it at all. Minnesota runs it through the Medical Assistance Eligibility and LTC Partnership program: 8 hours before you sell it, then 4 hours each renewal. The state's own requirements page describes this for non-resident producers only, so confirm with your coordinator if you are resident." },
     ETHICS_RENEWAL(3, 2),
     OTHER,
   ],
@@ -546,7 +546,7 @@ export const CE_BY_STATE = {
     { key:"best_interest", label:"Annuity Best Interest training (4 hours)", required:true,
       note:"Missouri requires this one-time course before you may sell an annuity, and the carrier has to see the certificate before it will let you write one." },
     { key:"ltc", lines:"health", label:"Long-Term Care training (8 hours)", required:false, advise:true,
-      note:"Only if you will write long-term care — it is a health-line product, so a Life-only licence does not need it at all. Missouri wants 8 hours before you sell it, then 4 hours every 24 months." },
+      note:"Only if you will write long-term care — it is a health-line product, so a Life-only license does not need it at all. Missouri wants 8 hours before you sell it, then 4 hours every 24 months." },
     ETHICS_RENEWAL(3, 2),
     OTHER,
   ],
@@ -556,7 +556,7 @@ export const CE_BY_STATE = {
     { key:"best_interest", label:"Annuity Best Interest training (4 hours)", required:true,
       note:"Mississippi requires this one-time course before you may sell an annuity, and the carrier has to see the certificate before it will let you write one." },
     { key:"ltc", lines:"health", label:"Long-Term Care training", required:false, advise:true,
-      note:"Only if you will write long-term care — it is a health-line product, so a Life-only licence does not need it at all. Mississippi lists no long-term-care course at all. If you intend to write LTC, ask your carrier what it wants — a carrier can ask for more than the state does." },
+      note:"Only if you will write long-term care — it is a health-line product, so a Life-only license does not need it at all. Mississippi lists no long-term-care course at all. If you intend to write LTC, ask your carrier what it wants — a carrier can ask for more than the state does." },
     ETHICS_RENEWAL(3, 2),
     OTHER,
   ],
@@ -566,7 +566,7 @@ export const CE_BY_STATE = {
     { key:"best_interest", label:"Annuity Best Interest training (4 hours)", required:true,
       note:"Montana requires this one-time course before you may sell an annuity, and the carrier has to see the certificate before it will let you write one." },
     { key:"ltc", lines:"health", label:"Long-Term Care training (8 hours)", required:false, advise:true,
-      note:"Only if you will write long-term care — it is a health-line product, so a Life-only licence does not need it at all. Montana wants 8 hours before you sell it, then 4 hours every 24 months." },
+      note:"Only if you will write long-term care — it is a health-line product, so a Life-only license does not need it at all. Montana wants 8 hours before you sell it, then 4 hours every 24 months." },
     { key:"ethics", label:"Ethics", required:false, advise:true,
       note:"Part of your CE package — take it. Our source does not publish an ethics hour figure for Montana, so buy the package and let the provider count the hours. It will not hold this step up." },
     OTHER,
@@ -577,7 +577,7 @@ export const CE_BY_STATE = {
     { key:"best_interest", label:"Annuity Best Interest training (4 hours)", required:true,
       note:"North Carolina requires this one-time course before you may sell an annuity, and the carrier has to see the certificate before it will let you write one." },
     { key:"ltc", lines:"health", label:"Long-Term Care training (8 hours)", required:false, advise:true,
-      note:"Only if you will write long-term care — it is a health-line product, so a Life-only licence does not need it at all. North Carolina wants 8 hours before you sell it, then 4 hours every 24 months." },
+      note:"Only if you will write long-term care — it is a health-line product, so a Life-only license does not need it at all. North Carolina wants 8 hours before you sell it, then 4 hours every 24 months." },
     ETHICS_RENEWAL(3, 2),
     OTHER,
   ],
@@ -587,7 +587,7 @@ export const CE_BY_STATE = {
     { key:"best_interest", label:"Annuity Best Interest training (4 hours)", required:true,
       note:"North Dakota requires this one-time course before you may sell an annuity, and the carrier has to see the certificate before it will let you write one." },
     { key:"ltc", lines:"health", label:"Long-Term Care training (8 hours)", required:false, advise:true,
-      note:"Only if you will write long-term care — it is a health-line product, so a Life-only licence does not need it at all. North Dakota wants 8 hours before you sell it, then 4 hours each renewal." },
+      note:"Only if you will write long-term care — it is a health-line product, so a Life-only license does not need it at all. North Dakota wants 8 hours before you sell it, then 4 hours each renewal." },
     ETHICS_RENEWAL(3, 2),
     OTHER,
   ],
@@ -597,7 +597,7 @@ export const CE_BY_STATE = {
     { key:"best_interest", label:"Annuity Best Interest training (4 hours)", required:true,
       note:"Nebraska requires this one-time course before you may sell an annuity, and the carrier has to see the certificate before it will let you write one." },
     { key:"ltc", lines:"health", label:"Long-Term Care training (8 hours)", required:false, advise:true,
-      note:"Only if you will write long-term care — it is a health-line product, so a Life-only licence does not need it at all. Nebraska wants 8 hours before you sell it, then 4 hours every 24 months." },
+      note:"Only if you will write long-term care — it is a health-line product, so a Life-only license does not need it at all. Nebraska wants 8 hours before you sell it, then 4 hours every 24 months." },
     ETHICS_RENEWAL(3, 2),
     OTHER,
   ],
@@ -607,7 +607,7 @@ export const CE_BY_STATE = {
     { key:"best_interest", label:"Annuity Best Interest training (4 hours)", required:true,
       note:"New Hampshire requires this one-time course before you may sell an annuity, and the carrier has to see the certificate before it will let you write one." },
     { key:"ltc", lines:"health", label:"Long-Term Care training (8 hours)", required:false, advise:true,
-      note:"Only if you will write long-term care — it is a health-line product, so a Life-only licence does not need it at all. New Hampshire wants 8 hours before you sell it, then 4 hours every 24 months." },
+      note:"Only if you will write long-term care — it is a health-line product, so a Life-only license does not need it at all. New Hampshire wants 8 hours before you sell it, then 4 hours every 24 months." },
     ETHICS_RENEWAL(3, 2),
     OTHER,
   ],
@@ -617,7 +617,7 @@ export const CE_BY_STATE = {
     { key:"best_interest", label:"Annuity Best Interest training (4 hours)", required:true,
       note:"New Jersey requires this one-time course before you may sell an annuity, and the carrier has to see the certificate before it will let you write one." },
     { key:"ltc", lines:"health", label:"Long-Term Care training (8 hours)", required:false, advise:true,
-      note:"Only if you will write long-term care — it is a health-line product, so a Life-only licence does not need it at all. New Jersey wants 8 hours before you sell it, then 4 hours every 24 months." },
+      note:"Only if you will write long-term care — it is a health-line product, so a Life-only license does not need it at all. New Jersey wants 8 hours before you sell it, then 4 hours every 24 months." },
     ETHICS_RENEWAL(3, 2),
     OTHER,
   ],
@@ -627,7 +627,7 @@ export const CE_BY_STATE = {
     { key:"best_interest", label:"Annuity Best Interest training (4 hours)", required:true,
       note:"New Mexico requires this one-time course before you may sell an annuity, and the carrier has to see the certificate before it will let you write one." },
     { key:"ltc", lines:"health", label:"Long-Term Care training (8 hours)", required:false, advise:true,
-      note:"Only if you will write long-term care — it is a health-line product, so a Life-only licence does not need it at all. New Mexico wants 8 hours before you sell it, then 4 hours every 24 months." },
+      note:"Only if you will write long-term care — it is a health-line product, so a Life-only license does not need it at all. New Mexico wants 8 hours before you sell it, then 4 hours every 24 months." },
     ETHICS_RENEWAL(3, 2),
     OTHER,
   ],
@@ -637,7 +637,7 @@ export const CE_BY_STATE = {
     { key:"best_interest", label:"Annuity Best Interest training (4 hours)", required:true,
       note:"Nevada requires this one-time course before you may sell an annuity, and the carrier has to see the certificate before it will let you write one." },
     { key:"ltc", lines:"health", label:"Long-Term Care training (8 hours)", required:false, advise:true,
-      note:"Only if you will write long-term care — it is a health-line product, so a Life-only licence does not need it at all. Nevada wants 8 hours before you sell it, then 4 hours every 24 months." },
+      note:"Only if you will write long-term care — it is a health-line product, so a Life-only license does not need it at all. Nevada wants 8 hours before you sell it, then 4 hours every 24 months." },
     ETHICS_RENEWAL(3, 3),
     OTHER,
   ],
@@ -647,7 +647,7 @@ export const CE_BY_STATE = {
     { key:"best_interest", label:"Annuity Best Interest training", required:false, advise:true,
       note:"New York runs Regulation 187, where the training duty sits with the insurer rather than with you. Ask your carrier what it wants before you write an annuity — do not assume you are exempt." },
     { key:"ltc", lines:"health", label:"Long-Term Care training", required:false, advise:true,
-      note:"Only if you will write long-term care — it is a health-line product, so a Life-only licence does not need it at all. New York lists no long-term-care course at all. If you intend to write LTC, ask your carrier what it wants — a carrier can ask for more than the state does." },
+      note:"Only if you will write long-term care — it is a health-line product, so a Life-only license does not need it at all. New York lists no long-term-care course at all. If you intend to write LTC, ask your carrier what it wants — a carrier can ask for more than the state does." },
     ETHICS_RENEWAL(1, 2),
     OTHER,
   ],
@@ -657,7 +657,7 @@ export const CE_BY_STATE = {
     { key:"best_interest", label:"Annuity Best Interest training (4 hours)", required:true,
       note:"Ohio requires this one-time course before you may sell an annuity, and the carrier has to see the certificate before it will let you write one." },
     { key:"ltc", lines:"health", label:"Long-Term Care training (8 hours)", required:false, advise:true,
-      note:"Only if you will write long-term care — it is a health-line product, so a Life-only licence does not need it at all. Ohio wants 8 hours before you sell it, then 4 hours every 24 months." },
+      note:"Only if you will write long-term care — it is a health-line product, so a Life-only license does not need it at all. Ohio wants 8 hours before you sell it, then 4 hours every 24 months." },
     ETHICS_RENEWAL(3, 2),
     OTHER,
   ],
@@ -667,7 +667,7 @@ export const CE_BY_STATE = {
     { key:"best_interest", label:"Annuity Best Interest training (4 hours)", required:true,
       note:"Oklahoma requires this one-time course before you may sell an annuity, and the carrier has to see the certificate before it will let you write one." },
     { key:"ltc", lines:"health", label:"Long-Term Care training (8 hours)", required:false, advise:true,
-      note:"Only if you will write long-term care — it is a health-line product, so a Life-only licence does not need it at all. Oklahoma wants 8 hours before you sell it, then 4 hours every 24 months." },
+      note:"Only if you will write long-term care — it is a health-line product, so a Life-only license does not need it at all. Oklahoma wants 8 hours before you sell it, then 4 hours every 24 months." },
     ETHICS_RENEWAL(3, 2),
     OTHER,
   ],
@@ -677,7 +677,7 @@ export const CE_BY_STATE = {
     { key:"best_interest", label:"Annuity Best Interest training (4 hours)", required:true,
       note:"Oregon requires this one-time course before you may sell an annuity, and the carrier has to see the certificate before it will let you write one." },
     { key:"ltc", lines:"health", label:"Long-Term Care training (8 hours)", required:false, advise:true,
-      note:"Only if you will write long-term care — it is a health-line product, so a Life-only licence does not need it at all. Oregon wants 8 hours before you sell it, then 4 hours each renewal." },
+      note:"Only if you will write long-term care — it is a health-line product, so a Life-only license does not need it at all. Oregon wants 8 hours before you sell it, then 4 hours each renewal." },
     ETHICS_RENEWAL(3, 2),
     OTHER,
   ],
@@ -687,7 +687,7 @@ export const CE_BY_STATE = {
     { key:"best_interest", label:"Annuity Best Interest training", required:false, advise:true,
       note:"Our source lists no annuity training for Pennsylvania, but every neighbouring state requires one. Confirm with your carrier before you write an annuity." },
     { key:"ltc", lines:"health", label:"Long-Term Care training (8 hours)", required:false, advise:true,
-      note:"Only if you will write long-term care — it is a health-line product, so a Life-only licence does not need it at all. Pennsylvania wants 8 hours before you sell it, then 4 hours every 24 months." },
+      note:"Only if you will write long-term care — it is a health-line product, so a Life-only license does not need it at all. Pennsylvania wants 8 hours before you sell it, then 4 hours every 24 months." },
     ETHICS_RENEWAL(3, 2),
     OTHER,
   ],
@@ -697,7 +697,7 @@ export const CE_BY_STATE = {
     { key:"best_interest", label:"Annuity Best Interest training (4 hours)", required:true,
       note:"Rhode Island requires this one-time course before you may sell an annuity, and the carrier has to see the certificate before it will let you write one." },
     { key:"ltc", lines:"health", label:"Long-Term Care training", required:false, advise:true,
-      note:"Only if you will write long-term care — it is a health-line product, so a Life-only licence does not need it at all. Rhode Island's hour figure is not published by our source. The course is on the catalogue — confirm the length with your CE provider before you book it." },
+      note:"Only if you will write long-term care — it is a health-line product, so a Life-only license does not need it at all. Rhode Island's hour figure is not published by our source. The course is on the catalog — confirm the length with your CE provider before you book it." },
     ETHICS_RENEWAL(3, 2),
     OTHER,
   ],
@@ -707,7 +707,7 @@ export const CE_BY_STATE = {
     { key:"best_interest", label:"Annuity Best Interest training (4 hours)", required:true,
       note:"South Carolina requires this one-time course before you may sell an annuity, and the carrier has to see the certificate before it will let you write one." },
     { key:"ltc", lines:"health", label:"Long-Term Care training (8 hours)", required:false, advise:true,
-      note:"Only if you will write long-term care — it is a health-line product, so a Life-only licence does not need it at all. South Carolina wants 8 hours before you sell it, then 4 hours every 24 months." },
+      note:"Only if you will write long-term care — it is a health-line product, so a Life-only license does not need it at all. South Carolina wants 8 hours before you sell it, then 4 hours every 24 months." },
     ETHICS_RENEWAL(3, 2),
     OTHER,
   ],
@@ -717,7 +717,7 @@ export const CE_BY_STATE = {
     { key:"best_interest", label:"Annuity Best Interest training (4 hours)", required:true,
       note:"South Dakota requires this one-time course before you may sell an annuity, and the carrier has to see the certificate before it will let you write one." },
     { key:"ltc", lines:"health", label:"Long-Term Care training (8 hours)", required:false, advise:true,
-      note:"Only if you will write long-term care — it is a health-line product, so a Life-only licence does not need it at all. South Dakota wants 8 hours before you sell it, then 4 hours every 24 months." },
+      note:"Only if you will write long-term care — it is a health-line product, so a Life-only license does not need it at all. South Dakota wants 8 hours before you sell it, then 4 hours every 24 months." },
     { key:"ethics", label:"Ethics", required:false, advise:true,
       note:"Part of your CE package — take it. Our source does not publish an ethics hour figure for South Dakota, so buy the package and let the provider count the hours. It will not hold this step up." },
     OTHER,
@@ -728,7 +728,7 @@ export const CE_BY_STATE = {
     { key:"best_interest", label:"Annuity Best Interest training (4 hours)", required:true,
       note:"Tennessee requires this one-time course before you may sell an annuity, and the carrier has to see the certificate before it will let you write one." },
     { key:"ltc", lines:"health", label:"Long-Term Care training (8 hours)", required:false, advise:true,
-      note:"Only if you will write long-term care — it is a health-line product, so a Life-only licence does not need it at all. Tennessee wants 8 hours before you sell it, then 4 hours every 24 months." },
+      note:"Only if you will write long-term care — it is a health-line product, so a Life-only license does not need it at all. Tennessee wants 8 hours before you sell it, then 4 hours every 24 months." },
     ETHICS_RENEWAL(3, 2),
     OTHER,
   ],
@@ -738,7 +738,7 @@ export const CE_BY_STATE = {
     { key:"best_interest", label:"Annuity Best Interest training (4 hours)", required:true,
       note:"Texas requires this one-time course before you may sell an annuity, and the carrier has to see the certificate before it will let you write one." },
     { key:"ltc", lines:"health", label:"Long-Term Care training (8 hours)", required:false, advise:true,
-      note:"Only if you will write long-term care — it is a health-line product, so a Life-only licence does not need it at all. Texas wants 8 hours before you sell it, then 4 hours every 24 months." },
+      note:"Only if you will write long-term care — it is a health-line product, so a Life-only license does not need it at all. Texas wants 8 hours before you sell it, then 4 hours every 24 months." },
     ETHICS_RENEWAL(3, 2),
     OTHER,
   ],
@@ -748,7 +748,7 @@ export const CE_BY_STATE = {
     { key:"best_interest", label:"Annuity Best Interest training (4 hours)", required:true,
       note:"Utah requires this one-time course before you may sell an annuity, and the carrier has to see the certificate before it will let you write one." },
     { key:"ltc", lines:"health", label:"Long-Term Care training (3 hours)", required:false, advise:true,
-      note:"Only if you will write long-term care — it is a health-line product, so a Life-only licence does not need it at all. Utah wants 3 hours before you sell it, then 3 hours every 24 months." },
+      note:"Only if you will write long-term care — it is a health-line product, so a Life-only license does not need it at all. Utah wants 3 hours before you sell it, then 3 hours every 24 months." },
     ETHICS_RENEWAL(3, 2),
     OTHER,
   ],
@@ -758,7 +758,7 @@ export const CE_BY_STATE = {
     { key:"best_interest", label:"Annuity Best Interest training (4 hours)", required:true,
       note:"Virginia requires this one-time course before you may sell an annuity, and the carrier has to see the certificate before it will let you write one." },
     { key:"ltc", lines:"health", label:"Long-Term Care training (8 hours)", required:false, advise:true,
-      note:"Only if you will write long-term care — it is a health-line product, so a Life-only licence does not need it at all. Virginia wants 8 hours before you sell it, then 2 hours each renewal." },
+      note:"Only if you will write long-term care — it is a health-line product, so a Life-only license does not need it at all. Virginia wants 8 hours before you sell it, then 2 hours each renewal." },
     ETHICS_RENEWAL(3, 2),
     OTHER,
   ],
@@ -768,7 +768,7 @@ export const CE_BY_STATE = {
     { key:"best_interest", label:"Annuity Best Interest training", required:false, advise:true,
       note:"Our source lists no annuity training for Vermont, but every neighbouring state requires one. Confirm with your carrier before you write an annuity." },
     { key:"ltc", lines:"health", label:"Long-Term Care training (8 hours)", required:false, advise:true,
-      note:"Only if you will write long-term care — it is a health-line product, so a Life-only licence does not need it at all. Vermont wants 8 hours before you sell it, then 4 hours every 24 months." },
+      note:"Only if you will write long-term care — it is a health-line product, so a Life-only license does not need it at all. Vermont wants 8 hours before you sell it, then 4 hours every 24 months." },
     ETHICS_RENEWAL(3, 2),
     OTHER,
   ],
@@ -778,7 +778,7 @@ export const CE_BY_STATE = {
     { key:"best_interest", label:"Annuity Best Interest training (4 hours)", required:true,
       note:"Washington requires this one-time course before you may sell an annuity, and the carrier has to see the certificate before it will let you write one." },
     { key:"ltc", lines:"health", label:"Long-Term Care training (8 hours)", required:false, advise:true,
-      note:"Only if you will write long-term care — it is a health-line product, so a Life-only licence does not need it at all. Washington wants 8 hours before you sell it, then 4 hours each renewal." },
+      note:"Only if you will write long-term care — it is a health-line product, so a Life-only license does not need it at all. Washington wants 8 hours before you sell it, then 4 hours each renewal." },
     ETHICS_RENEWAL(3, 2),
     OTHER,
   ],
@@ -788,7 +788,7 @@ export const CE_BY_STATE = {
     { key:"best_interest", label:"Annuity Best Interest training (4 hours)", required:true,
       note:"Wisconsin requires this one-time course before you may sell an annuity, and the carrier has to see the certificate before it will let you write one." },
     { key:"ltc", lines:"health", label:"Long-Term Care training (8 hours)", required:false, advise:true,
-      note:"Only if you will write long-term care — it is a health-line product, so a Life-only licence does not need it at all. Wisconsin wants 8 hours before you sell it, then 4 hours every 24 months." },
+      note:"Only if you will write long-term care — it is a health-line product, so a Life-only license does not need it at all. Wisconsin wants 8 hours before you sell it, then 4 hours every 24 months." },
     ETHICS_RENEWAL(3, 2),
     OTHER,
   ],
@@ -798,7 +798,7 @@ export const CE_BY_STATE = {
     { key:"best_interest", label:"Annuity Best Interest training (4 hours)", required:true,
       note:"West Virginia requires this one-time course before you may sell an annuity, and the carrier has to see the certificate before it will let you write one." },
     { key:"ltc", lines:"health", label:"Long-Term Care training (8 hours)", required:false, advise:true,
-      note:"Only if you will write long-term care — it is a health-line product, so a Life-only licence does not need it at all. West Virginia wants 8 hours before you sell it, then 4 hours every 24 months." },
+      note:"Only if you will write long-term care — it is a health-line product, so a Life-only license does not need it at all. West Virginia wants 8 hours before you sell it, then 4 hours every 24 months." },
     ETHICS_RENEWAL(3, 2),
     OTHER,
   ],
@@ -808,14 +808,14 @@ export const CE_BY_STATE = {
     { key:"best_interest", label:"Annuity Best Interest training (4 hours)", required:true,
       note:"Wyoming requires this one-time course before you may sell an annuity, and the carrier has to see the certificate before it will let you write one." },
     { key:"ltc", lines:"health", label:"Long-Term Care training (8 hours)", required:false, advise:true,
-      note:"Only if you will write long-term care — it is a health-line product, so a Life-only licence does not need it at all. Wyoming wants 8 hours before you sell it, then 4 hours every 24 months." },
+      note:"Only if you will write long-term care — it is a health-line product, so a Life-only license does not need it at all. Wyoming wants 8 hours before you sell it, then 4 hours every 24 months." },
     ETHICS_RENEWAL(3, 2),
     OTHER,
   ],
 };
 
 /* What to actually put in the basket at Success CE, per state.
-   Pulled from their catalogue API on 28 August 2026.
+   Pulled from their catalog API on 28 August 2026.
 
    The AML course is chosen, not just listed. Agents write in more
    than one state, so the certificate has to travel: it must carry
@@ -911,7 +911,7 @@ export function ceCart(code, licenseType){
 const bEsc = (v) => String(v ?? "").replace(/[&<>"']/g, (c) =>
   ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[c]));
 
-export const CE_CATALOGUE_URL = "https://app.successce.com/v2Theme/Courses/SelectCourse.aspx";
+export const CE_CATALOG_URL = "https://app.successce.com/v2Theme/Courses/SelectCourse.aspx";
 export const CE_CAPTURED = "28 August 2026";
 
 export function ceBasketHTML(code, licenseType, playbook){
@@ -931,17 +931,17 @@ export function ceBasketHTML(code, licenseType, playbook){
     money(c) ? `<span class="cc-m">${bEsc(money(c))}</span>` : ""}</div>`;
 
   const steps = [];
-  steps.push({ t: "Open the course catalogue",
-    b: `<a class="btn btn-accent btn-sm" href="${CE_CATALOGUE_URL}" target="_blank" rel="noopener">Open Success CE</a>` });
+  steps.push({ t: "Open the course catalog",
+    b: `<a class="btn btn-accent btn-sm" href="${CE_CATALOG_URL}" target="_blank" rel="noopener">Open Success CE</a>` });
 
-  steps.push({ t: "Choose your state and licence",
+  steps.push({ t: "Choose your state and license",
     b: `<div class="cart-pick"><span>${bEsc(stateName)}</span><span>Life Only / Life &amp; Health / Annuity (Reg BI) / Ethics / LTC</span></div>` });
 
   steps.push({ t: "Add one all-inclusive package",
     b: `<p class="cart-note">${cart.packages} to choose from. Any single one of them meets ${bEsc(stateName)}&rsquo;s minimum hours, so pick the one that matches what you intend to sell &mdash; you do not need more than one.</p>` });
 
   if (cart.ltc.length) {
-    /* A generic course is one the catalogue stocks but the state does not
+    /* A generic course is one the catalog stocks but the state does not
        mandate. Saying so matters: an agent who buys it believing it clears
        a state requirement has bought the wrong thing. */
     const generic = cart.ltc.every((c) => c.generic);
@@ -990,16 +990,16 @@ export function ceBasketHTML(code, licenseType, playbook){
         <div class="cart-t">${s.t}</div>
         <div class="cart-b">${s.b}</div>
       </li>`).join("")}</ol>
-    <p class="hint cart-foot">Course names and prices read from Success CE&rsquo;s catalogue on ${CE_CAPTURED}${
-      health ? "" : ", for a Life-only licence &mdash; long-term care is left out because you cannot sell it on this licence"
+    <p class="hint cart-foot">Course names and prices read from Success CE&rsquo;s catalog on ${CE_CAPTURED}${
+      health ? "" : ", for a Life-only license &mdash; long-term care is left out because you cannot sell it on this license"
     }. If what you see in the basket differs, believe the basket and tell your coordinator.</p>`;
 }
 
 /* Long-term care is a health product line. An agent licensed Life only
    cannot sell it at all, so putting the training in front of them is
    noise at best and a wasted course fee at worst. Slots carrying
-   lines:"health" are dropped unless the licence includes health.
-   Called without a licence type -- as the admin console does when it is
+   lines:"health" are dropped unless the license includes health.
+   Called without a license type -- as the admin console does when it is
    just resolving a label for a certificate already on file -- nothing is
    filtered, so old certificates never lose their names. */
 const hasHealth = (lt) => /health/i.test(String(lt || ""));
@@ -1067,7 +1067,7 @@ export function fillTokens(str, vals){
 }
 
 /* The written steps for continuing education, in the same order as the
-   basket the agent actually sees. They exist so the command centre's
+   basket the agent actually sees. They exist so the command center's
    Steps pane is not blank for this one requirement, and so an agency can
    rewrite them the way it can rewrite every other step list.
 
@@ -1077,7 +1077,7 @@ export function fillTokens(str, vals){
    long-term-care line marked as health-only rather than dropped, since a
    coordinator reading this needs to see it either way. */
 /* ------------------------------------------------------------------
-   THE LICENCE APPLICATION
+   THE LICENSE APPLICATION
 
    Transcribed from the agency's own NIPR handout rather than written
    from the outside, because the click path is not guessable and getting
@@ -1102,7 +1102,7 @@ const NIPR_WARNING =
   "do not wait to be asked for them.";
 
 const NIPR_WARNING_ALT = (state, system) =>
-  `${state} does not use NIPR for a resident's first licence \u2014 you apply through ${system} instead. ` +
+  `${state} does not use NIPR for a resident's first license \u2014 you apply through ${system} instead. ` +
   "Everything else still holds: the state runs a FEDERAL background check going back at least ten years, " +
   "any discrepancy will delay approval, and if you answer YES to a background question, send the supporting " +
   "documents in straight away rather than waiting to be asked.";
@@ -1149,7 +1149,7 @@ export const APPLY_ELSEWHERE = {
 
 const ALT_STEPS = (state, system) => [
   `Open ${system} \u2014 ${state} residents apply there, not through NIPR.`,
-  "Apply for an initial resident Producer licence.",
+  "Apply for an initial resident Producer license.",
   "Select your line of authority \u2014 Life if that is what you passed, or both Life and Health if you passed both.",
   "Business address: use the same address as your mailing address.",
   "Employment history: give five consecutive years. Fill any gap with Self-Employed or Unemployed rather than leaving it blank.",
@@ -1164,8 +1164,8 @@ export function ceSteps(code){
   if (!c) return [];
   const name = (STATES[code] && STATES[code].name) || code;
   const out = [
-    `Open the Success CE course catalogue.`,
-    `Choose ${name}, and the licence category "Life Only / Life & Health / Annuity (Reg BI) / Ethics / LTC".`,
+    `Open the Success CE course catalog.`,
+    `Choose ${name}, and the license category "Life Only / Life & Health / Annuity (Reg BI) / Ethics / LTC".`,
     `Add ONE all-inclusive package \u2014 there ${c.packages === 1 ? "is 1" : "are " + c.packages} to choose from and any single one meets the state minimum.`,
   ];
   if (c.ltc.length) {
@@ -1185,6 +1185,80 @@ export function ceSteps(code){
   out.push(`Check out, then upload each certificate to the portal as it arrives.`);
   return out;
 }
+
+/* ==================================================================
+   THE ORDER OF THE JOURNEY
+
+   For most of the country the sequence is the same, and for years this
+   product assumed it was the same everywhere. It is not. Seven states
+   put the state application, the fingerprints or a supplemental document
+   BEFORE the exam, and in two of them -- Arkansas and North Carolina --
+   an agent who books the exam first has done the steps backwards.
+
+   So the order is data now, not code. Each state names its own sequence
+   and the dependency chain is rebuilt from it, which means a state can
+   be resequenced by editing one line rather than by rewriting the flow.
+
+   Steps a state does not have are dropped: only 34 states fingerprint
+   through this process and only 6 want a supplemental document, so the
+   rest never see those screens.
+   ================================================================== */
+export const STEP_ORDER_DEFAULT = [
+  "study_material", "exam", "fingerprinting", "nipr_application", "affidavit",
+  "license_number", "npn", "continuing_education", "eo",
+];
+
+/* Taken from the licensing sheet, where these seven carry an asterisk and
+   numbered links. The trailing steps -- license number, NPN, continuing
+   education, E&O -- never move: you cannot be issued a number before you
+   have applied for one. */
+const TAIL = ["license_number", "npn", "continuing_education", "eo"];
+
+export const STEP_ORDER = {
+  AR: ["study_material", "nipr_application", "fingerprinting", "exam", ...TAIL],
+  NC: ["study_material", "nipr_application", "fingerprinting", "exam", ...TAIL],
+  KY: ["study_material", "affidavit", "nipr_application", "exam", ...TAIL],
+  GA: ["study_material", "exam", "affidavit", "nipr_application", "fingerprinting", ...TAIL],
+  KS: ["study_material", "exam", "affidavit", "fingerprinting", "nipr_application", ...TAIL],
+  UT: ["study_material", "exam", "nipr_application", "fingerprinting", ...TAIL],
+  WI: ["study_material", "fingerprinting", "exam", "nipr_application", ...TAIL],
+  /* Wyoming mails the packet only after the application is filed, so
+     fingerprinting cannot come before it. */
+  WY: ["study_material", "exam", "nipr_application", "fingerprinting", ...TAIL],
+};
+
+export function stepOrder(code){
+  return (STEP_ORDER[code] || STEP_ORDER_DEFAULT).slice();
+}
+
+/* ------------------------------------------------------------------
+   THE SUPPLEMENTAL DOCUMENT
+
+   The sheet calls this column "Affidavit", but only Georgia's actually is
+   one. Kansas wants a tax clearance from the Department of Revenue,
+   Kentucky a court records check, Iowa a criminal-history request. Telling
+   a Kansas agent to find an affidavit sends them looking for the wrong
+   document, so each state names its own; `affidavit` survives only as the
+   internal key.
+------------------------------------------------------------------- */
+export const SUPPLEMENTAL = {
+  AL: { label: "Initial licensee form",
+        lead: "Alabama asks for its initial licensee form before your file can be cleared. Open it, follow the instructions on the page, and upload what it gives you." },
+  GA: { label: "Citizenship affidavit",
+        lead: "Georgia requires a citizenship affidavit. Open it, follow the instructions on the page, and upload the completed affidavit." },
+  IA: { label: "Criminal history request",
+        lead: "Iowa asks you to submit a criminal-history billing and request form. Open it, follow the instructions on the page, and upload your confirmation." },
+  KS: { label: "Tax clearance certificate",
+        lead: "Kansas asks for a tax clearance certificate from the Department of Revenue \u2014 not an affidavit. Request it, then upload the certificate." },
+  KY: { label: "Court records check",
+        lead: "Kentucky asks for a court records check. Open the courts site, follow the instructions there, and upload what it returns." },
+  /* The sheet's Arizona row carries Alabama's Department of Insurance URL
+     (aldoi.gov). Rather than send an Arizona agent to another state's
+     licensing form, this step says what we know and stops. */
+  AZ: { label: "Supplemental document",
+        lead: "Arizona has a supplemental requirement on file, but the link we hold points at another state's department. Ask your coordinator what Arizona needs before you act on it.",
+        unverified: true },
+};
 
 /* ------------------------------------------------------------------
    COPY THAT TWO SCREENS SHARE
@@ -1272,13 +1346,13 @@ export function playbookDefaults(code){
       vendor_key: prov || "",
       url: s.exam || "",
       /* Deliberately empty except where it has been checked. The exam's
-         name in the vendor's own catalogue varies state by state -- and
+         name in the vendor's own catalog varies state by state -- and
          guessing it sends somebody to sit the wrong paper. Blank reads
          as "nobody has filled this in", which is true and safe. */
       exam_name: s.examName || "",
       /* Where pre-licensing has a live component, the exam step has a gate
          in front of it that no other state has -- say so here rather than
-         letting somebody find out at the test centre door. */
+         letting somebody find out at the test center door. */
       note: PRELICENSE_LIVE[code]
         ? "Before you can book: Pearson VUE will not seat you without a current signed copy of your Pre-License Course Certificate, and you only get that once you have attended your webinar in full. If you have not sat it yet, go back and do that first."
         : "",
@@ -1330,7 +1404,7 @@ export function playbookDefaults(code){
       next_title: "Contracting begins",
       next_body:  "Once your file is cleared, the licensing and contracting team can start your carrier contracting straight away \u2014 everything they need is already in one place, which is the point of having done it in this order.",
       keep_title: "Your record stays here",
-      keep_body:  "Your licence number, NPN, certificates and E&O live in the menu, top left. Come back for them whenever contracting or a carrier asks.",
+      keep_body:  "Your license number, NPN, certificates and E&O live in the menu, top left. Come back for them whenever contracting or a carrier asks.",
     },
     fingerprinting: { url: fpHttp ? s.fp : "", note: s.fpNote || (s.fp && !fpHttp ? s.fp : "") },
     affidavit: { url: s.affidavit || "", note:"" },
