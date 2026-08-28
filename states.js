@@ -1066,6 +1066,43 @@ export function fillTokens(str, vals){
     vals[k] != null && vals[k] !== "" ? vals[k] : m);
 }
 
+/* The written steps for continuing education, in the same order as the
+   basket the agent actually sees. They exist so the command centre's
+   Steps pane is not blank for this one requirement, and so an agency can
+   rewrite them the way it can rewrite every other step list.
+
+   Built from CE_CART rather than typed out, because a hand-written copy
+   would drift from the basket the first time Success CE moves a course.
+   Written for a Life & Health agent -- the fuller case -- with the
+   long-term-care line marked as health-only rather than dropped, since a
+   coordinator reading this needs to see it either way. */
+export function ceSteps(code){
+  const c = CE_CART[code];
+  if (!c) return [];
+  const name = (STATES[code] && STATES[code].name) || code;
+  const out = [
+    `Open the Success CE course catalogue.`,
+    `Choose ${name}, and the licence category "Life Only / Life & Health / Annuity (Reg BI) / Ethics / LTC".`,
+    `Add ONE all-inclusive package \u2014 there ${c.packages === 1 ? "is 1" : "are " + c.packages} to choose from and any single one meets the state minimum.`,
+  ];
+  if (c.ltc.length) {
+    out.push(`Long-Term Care (only if the agent holds a health line): add "${c.ltc[0].n}"${
+      c.ltc[0].h ? ` \u2014 ${c.ltc[0].h} hours` : ""}${c.ltc[0].p ? `, ${c.ltc[0].p}` : ""}.${
+      c.ltc.length > 1 ? ` The ${c.ltc[1].h}-hour follow-up is for the next renewal, not now.` : ""}`);
+  } else {
+    out.push(`Long-Term Care: ${name} lists no course. Nothing to add \u2014 the carrier may still ask for one.`);
+  }
+  if (c.aml) {
+    out.push(`Add "${c.aml.n}" \u2014 ${c.aml.h} hours, ${c.aml.p}. It must be 2 hours AND carry CE credit so it travels to other states.`);
+    out.push(`Do NOT add "${AML_TRAP}". It is free because it carries no CE credit, and it sits right beside the right one.`);
+  }
+  if (c.extras.length) {
+    out.push(`${name} also requires: ${c.extras.map(x => `${x.n} (${x.h} hrs${x.p ? ", " + x.p : ""})`).join("; ")}.`);
+  }
+  out.push(`Check out, then upload each certificate to the portal as it arrives.`);
+  return out;
+}
+
 export function playbookDefaults(code){
   const s = STATES[code];
   if (!s) return null;
@@ -1089,7 +1126,7 @@ export function playbookDefaults(code){
     },
     study:     { vendor:"Xcel Solutions", vendor_key:"xcel", url:CONSTANTS.study, note:"", steps:PROVIDER_STEPS.xcel.slice() },
     state_app: { vendor:"NIPR", vendor_key:"nipr", url:CONSTANTS.nipr, note:"", steps:[] },
-    ce:        { vendor:"Success CE", vendor_key:"successce", url:`https://successce.com/insurance-ce-requirements-${code}/`, note:"", steps:[] },
+    ce:        { vendor:"Success CE", vendor_key:"successce", url:`https://successce.com/insurance-ce-requirements-${code}/`, note:"", steps:ceSteps(code) },
     eo:        { vendor:"NAPA", vendor_key:"napa", url:CONSTANTS.eo,
                  /* The single most asked question on this step, so it is
                     stated up front rather than left to be discovered. */
