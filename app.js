@@ -1,6 +1,6 @@
 import { supabase, isConfigured, requireSession, hardSignOut } from "./supabase.js?v=2";
-import { STATE_LIST, STATES, ceSlots, ceIsConfigured, resolvePlaybook,
-         fillTokens } from "./states.js?v=14";
+import { STATE_LIST, STATES, ceSlots, ceIsConfigured, ceCart, resolvePlaybook,
+         fillTokens } from "./states.js?v=15";
 import { resolveWalkthrough, factsFor, videoSource, isFile,
          fmtDuration, clockTime } from "./walkthrough.js?v=1";
 import * as F from "./flow.js?v=8";
@@ -1387,7 +1387,9 @@ function renderCE(r, st, head) {
       ${st==="action_required"||st==="rejected" ? `<div class="callout callout-warn"><span class="lab">Action required</span>${esc(meta._reject||"One certificate needs attention. Replace the flagged certificate below.")}</div>` : ""}
       ${factsPanel("continuing_education")}
       ${videoBlock("continuing_education","How to complete your continuing education")}
-      ${r.link ? `<div class="link-row"><a class="btn btn-accent btn-lg" href="${esc(r.link)}" target="_blank" rel="noopener">Open Success CE</a></div><div class="link-note">Review your state's continuing-education requirements.</div>` : ""}
+      ${r.link ? `<div class="link-row"><a class="btn btn-ghost btn-sm" href="${esc(r.link)}" target="_blank" rel="noopener">${esc(r.providerLabel || "Success CE")} &mdash; your state's rules</a></div>` : ""}
+
+      ${ceCartBlock(S.journey?.playbook)}
 
       ${(() => {
         const missing = ceMissing(certs);
@@ -1559,6 +1561,89 @@ const STUDY_TIPS = [
 /* Which certificates this agent needs comes from their licensing state
    now, not from a list hardcoded here -- see states.js. */
 function ceSlotList(){ return ceSlots(S.profile?.designated_state, S.profile?.license_type); }
+
+/* ------------------------------------------------------------------
+   THE BASKET
+
+   The guide below says what the state asks for. This says what to click
+   and what to put in the basket to satisfy it -- the same handout an
+   agency owner writes by hand for each state, except it is generated
+   from the provider's own catalogue and cannot drift out of date
+   quietly.
+
+   Two things it will not do. It will not show a Life-only agent the
+   long-term-care course, because LTC is a health-line product they
+   cannot sell. And it will not invent a course: where the catalogue
+   lists none, the step says so and points at the carrier.
+
+   Agencies that sell through a different provider override the CE link
+   in their state guide; the basket then hides itself rather than
+   telling their agents to shop somewhere else.
+------------------------------------------------------------------- */
+function ceCartBlock(playbook){
+  const code = S.profile?.designated_state;
+  const lt   = S.profile?.license_type;
+  const cart = ceCart(code, lt);
+  if (!cart) return "";
+
+  /* Only meaningful while the agency is actually sending people to
+     Success CE. A changed vendor means a changed basket. */
+  const vendorKey = (playbook?.ce?.vendor_key || "successce").toLowerCase();
+  if (vendorKey !== "successce") return "";
+
+  const stateName = STATES[code]?.name || "your state";
+  const money = (c) => [c.h ? `${c.h} hrs` : null, c.p || null].filter(Boolean).join(" · ");
+  const line  = (c) => `<div class="cart-course"><span class="cc-n">${esc(c.n)}</span>${
+    money(c) ? `<span class="cc-m">${esc(money(c))}</span>` : ""}</div>`;
+
+  const steps = [];
+  steps.push({ t: "Open the course catalogue",
+    b: `<a class="btn btn-accent btn-sm" href="https://app.successce.com/v2Theme/Courses/SelectCourse.aspx"
+          target="_blank" rel="noopener">Open Success CE</a>` });
+
+  steps.push({ t: "Choose your state and licence",
+    b: `<div class="cart-pick"><span>${esc(stateName)}</span><span>Life Only / Life &amp; Health / Annuity (Reg BI) / Ethics / LTC</span></div>` });
+
+  steps.push({ t: "Add one all-inclusive package",
+    b: `<p class="cart-note">${cart.packages} to choose from. Any single one of them meets ${esc(stateName)}&rsquo;s minimum hours, so pick the one that matches what you intend to sell &mdash; you do not need more than one.</p>` });
+
+  if (cart.ltc.length) {
+    steps.push({ t: "Add your long-term care course",
+      b: cart.ltc.map(line).join("") +
+         `<p class="cart-note">Take the initial course now. The follow-up is for your next renewal, not today.</p>` });
+  } else if (/health/i.test(String(lt || ""))) {
+    steps.push({ t: "Long-term care", b:
+      `<p class="cart-note">${esc(stateName)} lists no long-term-care course. If you intend to write LTC, ask your carrier what it wants &mdash; a carrier can ask for more than the state does.</p>` });
+  }
+
+  if (cart.aml) {
+    steps.push({ t: "Add anti-money laundering", b: line(cart.aml) +
+      `<p class="cart-note cart-warn">There is another AML course listed at $0.00. It carries <b>no</b> CE credit. Take the one named above.</p>` });
+  } else {
+    steps.push({ t: "Anti-money laundering", b:
+      `<p class="cart-note cart-warn">Success CE does not carry an AML course for ${esc(stateName)}. You still need one &mdash; carriers will not appoint you without it. Ask your coordinator where to take it.</p>` });
+  }
+
+  if (cart.extras.length) {
+    steps.push({ t: `Add ${esc(stateName)}&rsquo;s own courses`,
+      b: cart.extras.map(line).join("") +
+         `<p class="cart-note">${esc(stateName)} asks for these on top of the package. They are not optional.</p>` });
+  }
+
+  steps.push({ t: "Check out",
+    b: `<p class="cart-note">Then upload each certificate below as it comes through. You do not have to wait until you have all of them.</p>` });
+
+  return `
+    <div class="section-k" style="margin-top:24px">Your courses in ${esc(stateName)}</div>
+    <ol class="cart">${steps.map(s => `
+      <li class="cart-step">
+        <div class="cart-t">${s.t}</div>
+        <div class="cart-b">${s.b}</div>
+      </li>`).join("")}</ol>
+    <p class="hint cart-foot">Course names and prices read from Success CE&rsquo;s catalogue on 28 August 2026${
+      /health/i.test(String(lt || "")) ? "" : ", for a Life-only licence &mdash; long-term care is left out because you cannot sell it on this licence"
+    }. If what you see in the basket differs, believe the basket and tell your coordinator.</p>`;
+}
 
 /* A plain reading of what this agent's state asks of them, in the order
    it matters: what blocks contracting, then what applies only if they

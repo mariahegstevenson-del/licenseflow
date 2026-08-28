@@ -1004,6 +1004,55 @@ html.scene-on .desig{background:rgba(255,255,255,.78);backdrop-filter:blur(3px)}
    interpret. Required items read as required; advisory ones read as
    advisory, and are not styled to look like failures.
    ============================================================ */
+/* ------------------------------------------------------------------
+   THE BASKET
+
+   A numbered run of steps, because that is what the task is: open this,
+   pick that, add these, check out. The rail down the left carries the
+   agency's colour, so a Pacific Ridgeway agent and a demo agent see the
+   same instructions in their own house style rather than ours.
+------------------------------------------------------------------- */
+.cart{list-style:none;counter-reset:cs;margin:10px 0 0;padding:0;display:flex;flex-direction:column;gap:2px}
+.cart-step{
+  counter-increment:cs;position:relative;padding:12px 0 14px 44px;
+  border-left:2px solid var(--line,#DCE3EC);margin-left:13px
+}
+.cart-step:last-child{border-left-color:transparent}
+.cart-step::before{
+  content:counter(cs);position:absolute;left:-13px;top:11px;
+  width:26px;height:26px;border-radius:99px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:.72rem;font-weight:700;font-variant-numeric:tabular-nums;
+  background:var(--accent,#1E5FB4);color:#fff;
+  box-shadow:0 0 0 3px #fff
+}
+.cart-t{font-size:.95rem;font-weight:700;letter-spacing:-.01em;margin-bottom:7px}
+.cart-b{display:flex;flex-direction:column;gap:7px;align-items:flex-start}
+.cart-course{
+  width:100%;background:#fff;border:1px solid var(--line,#DCE3EC);border-radius:9px;
+  padding:10px 13px;display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap
+}
+.cc-n{font-size:.9rem;font-weight:600;letter-spacing:-.005em}
+.cc-m{
+  font-size:.76rem;font-weight:700;letter-spacing:.03em;white-space:nowrap;
+  color:var(--muted,#51637A);font-variant-numeric:tabular-nums
+}
+.cart-pick{display:flex;flex-direction:column;gap:3px;font-size:.87rem;color:var(--muted,#51637A)}
+.cart-pick span:first-child{font-weight:700;color:inherit;font-size:.92rem}
+.cart-note{margin:0;font-size:.87rem;line-height:1.55;color:var(--muted,#51637A)}
+.cart-warn{
+  background:#FEF8EC;border:1px solid #E8D8B0;border-radius:8px;
+  padding:9px 12px;color:#7A5A0C;width:100%
+}
+.cart-warn b{font-weight:700}
+.cart-foot{margin-top:12px}
+html.themed .cart-step::before{background:var(--agency-accent,var(--accent,#1E5FB4))}
+html.themed .cart-warn{
+  background:color-mix(in srgb,var(--agency-gold,#D4A12B) 9%,#fff);
+  border-color:color-mix(in srgb,var(--agency-gold,#D4A12B) 38%,#fff);
+  color:var(--agency-gold-ink,#7A5A0C)
+}
+
 .ce-guide{list-style:none;margin:10px 0 0;padding:0;display:flex;flex-direction:column;gap:10px}
 .ceg-row{
   background:#fff;border:1px solid var(--line,#DCE3EC);border-radius:10px;

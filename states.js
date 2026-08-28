@@ -234,11 +234,11 @@ export function buildWalkthrough(code) {
    the one entry marked required by default: a file with no AML
    certificate is not contractable, however complete the rest looks.
 
-   Everything else varies by state. Six states are pinned down below in
-   CE_BY_STATE, each checked against that state's own department of
-   insurance, statute or rule. Every other state falls back to CE_DEFAULT,
-   which says plainly that the state is not configured yet rather than
-   implying an answer we do not have.
+   Everything else varies by state. All fifty-one jurisdictions are held
+   in CE_BY_STATE below, pulled from Success CE -- the provider the agency
+   actually buys from -- so what the portal tells an agent and what they
+   see in the basket are the same thing. CE_DEFAULT survives only as the
+   fallback for a state code we do not recognise.
 
    Two findings from that research are worth keeping in view, because both
    contradict what the product used to imply:
@@ -252,8 +252,10 @@ export function buildWalkthrough(code) {
        annuity, and the insurer has to see it. California wants 8 hours;
        the rest want 4.
 
-   To add a state, add an entry to CE_BY_STATE with a source comment.
-   Do not infer one state's rules from its neighbour's.
+   CE_BY_STATE and CE_CART are generated, not hand-edited: a weekly audit
+   re-reads Success CE and reports what moved. Change them by regenerating
+   from that audit, or per agency through the state guide -- never by
+   inferring one state's rules from its neighbour's.
 ------------------------------------------------------------------ */
 /* Two tiers, and the difference matters. `required` blocks the step: the
    agent cannot finish continuing education without it, because a carrier
@@ -270,7 +272,7 @@ const OTHER = { key:"other", label:"Other", required:false,
    the wording says so -- but it is part of the CE package agents buy, so
    the slot is always here to upload into. */
 const ETHICS_RENEWAL = (hrs, yrs) => ({ key:"ethics", label:"Ethics", required:false, advise:true,
-  note:`Part of your CE package — take it. The state counts these ${hrs} hours toward your ${yrs}-year renewal cycle rather than requiring them before you start, so it will not hold this step up. Upload the certificate here as soon as you have it.` });
+  note:`Part of your CE package — take it. The state counts ${hrs === 1 ? "this hour" : `these ${hrs} hours`} toward your ${yrs}-year renewal cycle rather than requiring them before you start, so it will not hold this step up. Upload the certificate here as soon as you have it.` });
 
 export const CE_DEFAULT = [
   AML,
@@ -287,77 +289,597 @@ export const CE_DEFAULT = [
    department of insurance, statute or administrative rule in August 2026;
    sources are named so the next person can re-check them. Nothing here is
    inferred from a neighbouring state. */
+/* Per-state slot lists, generated from Success CE on 28 August 2026 --
+   the same source, and the same two clicks, an agency owner uses by hand:
+   pick the state, open the full requirements. All 51 jurisdictions are
+   here now, so no agent lands on a generic screen.
+
+   Long-term care carries lines:"health" throughout. It is a health-line
+   product: a Life-only agent cannot sell it, and putting the course in
+   front of them is a wasted fee. */
 export const CE_BY_STATE = {
-  /* Ins. Code s1749.8; CDI annuity-training FAQ; CDI 8-hour LTC outline (Mar 2025);
-     DHCS Partnership agent training. Ethics: CDI ethics-CE FAQ -- renewal only. */
+  /* Alaska — Success CE, captured 28 Aug 2026. */
+  AK: [
+    AML,
+    { key:"best_interest", label:"Annuity Best Interest training (4 hours)", required:true,
+      note:"Alaska requires this one-time course before you may sell an annuity, and the carrier has to see the certificate before it will let you write one." },
+    { key:"ltc", lines:"health", label:"Long-Term Care training (8 hours)", required:false, advise:true,
+      note:"Only if you will write long-term care — it is a health-line product, so a Life-only licence does not need it at all. Alaska wants 8 hours before you sell it, then 4 hours every 24 months." },
+    ETHICS_RENEWAL(3, 2),
+    OTHER,
+  ],
+  /* Alabama — Success CE, captured 28 Aug 2026. */
+  AL: [
+    AML,
+    { key:"best_interest", label:"Annuity Best Interest training (4 hours)", required:true,
+      note:"Alabama requires this one-time course before you may sell an annuity, and the carrier has to see the certificate before it will let you write one." },
+    { key:"ltc", lines:"health", label:"Long-Term Care training (8 hours)", required:false, advise:true,
+      note:"Only if you will write long-term care — it is a health-line product, so a Life-only licence does not need it at all. Alabama wants 8 hours before you sell it, then 4 hours every 24 months." },
+    ETHICS_RENEWAL(3, 2),
+    OTHER,
+  ],
+  /* Arkansas — Success CE, captured 28 Aug 2026. */
+  AR: [
+    AML,
+    { key:"best_interest", label:"Annuity Best Interest training (4 hours)", required:true,
+      note:"Arkansas requires this one-time course before you may sell an annuity, and the carrier has to see the certificate before it will let you write one." },
+    { key:"ltc", lines:"health", label:"Long-Term Care training (8 hours)", required:false, advise:true,
+      note:"Only if you will write long-term care — it is a health-line product, so a Life-only licence does not need it at all. Arkansas wants 8 hours before you sell it, then 4 hours every 24 months." },
+    ETHICS_RENEWAL(3, 2),
+    OTHER,
+  ],
+  /* Arizona — Success CE, captured 28 Aug 2026. */
+  AZ: [
+    AML,
+    { key:"best_interest", label:"Annuity Best Interest training (4 hours)", required:true,
+      note:"Arizona requires this one-time course before you may sell an annuity, and the carrier has to see the certificate before it will let you write one." },
+    { key:"ltc", lines:"health", label:"Long-Term Care training (8 hours)", required:false, advise:true,
+      note:"Only if you will write long-term care — it is a health-line product, so a Life-only licence does not need it at all. Arizona wants 8 hours before you sell it, then 4 hours every 24 months." },
+    ETHICS_RENEWAL(6, 4),
+    OTHER,
+  ],
+  /* California — Success CE, captured 28 Aug 2026. */
   CA: [
     AML,
     { key:"best_interest", label:"Annuity Best Interest training (8 hours)", required:true,
-      note:"California requires an 8-hour Best Interest course before you may sell any annuity, then 4 hours before each renewal. It is the longest of any state — book it early." },
+      note:"California wants 8 hours before you may sell any annuity — the longest of any state — then 4 hours before each renewal. Book it early." },
     { key:"ltc", lines:"health", label:"Long-Term Care training (8 hours)", required:false, advise:true,
-      note:"Needed before you sell long-term care, then 8 hours again each renewal. Partnership policies need a further 8 classroom hours on top." },
+      note:"Only if you will write long-term care — it is a health-line product, so a Life-only licence does not need it at all. California wants 8 hours before you sell it, then 8 hours each renewal." },
     ETHICS_RENEWAL(3, 2),
     OTHER,
   ],
-  /* Fla. Stat. s627.4554 (annuity, best-interest standard in statute);
-     Fla. Admin. Code 69O-157.1155 (LTC before selling); Fla. Stat. s626.2815 (CE). */
+  /* Colorado — Success CE, captured 28 Aug 2026. */
+  CO: [
+    AML,
+    { key:"best_interest", label:"Annuity Best Interest training (4 hours)", required:true,
+      note:"Colorado requires this one-time course before you may sell an annuity, and the carrier has to see the certificate before it will let you write one." },
+    { key:"ltc", lines:"health", label:"Long-Term Care training (16 hours)", required:false, advise:true,
+      note:"Only if you will write long-term care — it is a health-line product, so a Life-only licence does not need it at all. Colorado wants 16 hours before you sell it, then 8 hours each renewal." },
+    ETHICS_RENEWAL(3, 2),
+    OTHER,
+  ],
+  /* Connecticut — Success CE, captured 28 Aug 2026. */
+  CT: [
+    AML,
+    { key:"best_interest", label:"Annuity Best Interest training (4 hours)", required:true,
+      note:"Connecticut requires this one-time course before you may sell an annuity, and the carrier has to see the certificate before it will let you write one." },
+    { key:"ltc", lines:"health", label:"Long-Term Care training", required:false, advise:true,
+      note:"Only if you will write long-term care — it is a health-line product, so a Life-only licence does not need it at all. Connecticut's hour figure is not published by our source. The course is on the catalogue — confirm the length with your CE provider before you book it." },
+    ETHICS_RENEWAL(3, 2),
+    OTHER,
+  ],
+  /* District of Columbia — Success CE, captured 28 Aug 2026. */
+  DC: [
+    AML,
+    { key:"best_interest", label:"Annuity Best Interest training (4 hours)", required:true,
+      note:"District of Columbia requires this one-time course before you may sell an annuity, and the carrier has to see the certificate before it will let you write one." },
+    { key:"ltc", lines:"health", label:"Long-Term Care training", required:false, advise:true,
+      note:"Only if you will write long-term care — it is a health-line product, so a Life-only licence does not need it at all. District of Columbia lists no long-term-care course at all. If you intend to write LTC, ask your carrier what it wants — a carrier can ask for more than the state does." },
+    ETHICS_RENEWAL(3, 2),
+    OTHER,
+  ],
+  /* Delaware — Success CE, captured 28 Aug 2026. */
+  DE: [
+    AML,
+    { key:"best_interest", label:"Annuity Best Interest training (4 hours)", required:true,
+      note:"Delaware requires this one-time course before you may sell an annuity, and the carrier has to see the certificate before it will let you write one." },
+    { key:"ltc", lines:"health", label:"Long-Term Care training", required:false, advise:true,
+      note:"Only if you will write long-term care — it is a health-line product, so a Life-only licence does not need it at all. Delaware's hour figure is not published by our source. The course is on the catalogue — confirm the length with your CE provider before you book it." },
+    ETHICS_RENEWAL(3, 2),
+    OTHER,
+  ],
+  /* Florida — Success CE, captured 28 Aug 2026. */
   FL: [
     AML,
     { key:"best_interest", label:"Annuity Best Interest training (4 hours)", required:true,
-      note:"Florida requires a one-time 4-hour annuity course, and the insurer has to see it before it will let you sell an annuity." },
+      note:"Florida requires this one-time course before you may sell an annuity, and the carrier has to see the certificate before it will let you write one." },
     { key:"ltc", lines:"health", label:"Long-Term Care training", required:false, advise:true,
-      note:"Florida requires training before you sell, solicit or negotiate long-term care. Confirm the hours with your CE provider — the rule states the timing, not a number we could verify." },
-    { key:"ethics", label:"Law & Ethics update", required:false, advise:true,
-      note:"Part of your CE package — take it. Florida folds ethics into a 4-hour Law & Ethics update every 2 years, so it counts toward renewal rather than holding this step up. Upload it here as soon as you have it." },
+      note:"Only if you will write long-term care — it is a health-line product, so a Life-only licence does not need it at all. Florida's hour figure is not published by our source. The course is on the catalogue — confirm the length with your CE provider before you book it." },
+    ETHICS_RENEWAL(4, 2),
     OTHER,
   ],
-  /* GA OCI continuing-education page and Annuity Best Interest FAQ (Rule 120-2-94,
-     eff. 1 Aug 2023); Ga. Comp. R. & Regs. 120-2-16-.34 (LTC Partnership). */
+  /* Georgia — Success CE, captured 28 Aug 2026. */
   GA: [
     AML,
     { key:"best_interest", label:"Annuity Best Interest training (4 hours)", required:true,
-      note:"Georgia has required a one-time 4-hour Annuity Best Interest course since 1 August 2023 before you may sell annuities." },
-    { key:"ltc", lines:"health", label:"Long-Term Care Partnership training (8 hours)", required:false, advise:true,
-      note:"Needed before you sell a Partnership long-term-care policy, then 4 hours every 24 months." },
+      note:"Georgia requires this one-time course before you may sell an annuity, and the carrier has to see the certificate before it will let you write one." },
+    { key:"ltc", lines:"health", label:"Long-Term Care training (8 hours)", required:false, advise:true,
+      note:"Only if you will write long-term care — it is a health-line product, so a Life-only licence does not need it at all. Georgia wants 8 hours before you sell it, then 4 hours every 24 months." },
     ETHICS_RENEWAL(3, 2),
     OTHER,
   ],
-  /* Tex. Ins. Code ch. 1115 (annuity training, best-interest duty);
-     TDI long-term-care certification page; TDI agent CE page. */
-  TX: [
+  /* Hawaii — Success CE, captured 28 Aug 2026. */
+  HI: [
     AML,
-    { key:"best_interest", label:"Annuity Best Interest training (4 credits)", required:true,
-      note:"Texas requires a one-time 4-credit annuity course, and the insurer must verify it before letting you sell an annuity." },
-    { key:"ltc", lines:"health", label:"Long-Term Care Partnership training (8 hours)", required:false, advise:true,
-      note:"Needed before you act on a Partnership long-term-care policy, then 4 hours each reporting period." },
+    { key:"best_interest", label:"Annuity Best Interest training (4 hours)", required:true,
+      note:"Hawaii requires this one-time course before you may sell an annuity, and the carrier has to see the certificate before it will let you write one." },
+    { key:"ltc", lines:"health", label:"Long-Term Care training", required:false, advise:true,
+      note:"Only if you will write long-term care — it is a health-line product, so a Life-only licence does not need it at all. Hawaii lists no long-term-care course at all. If you intend to write LTC, ask your carrier what it wants — a carrier can ask for more than the state does." },
     ETHICS_RENEWAL(3, 2),
     OTHER,
   ],
-  /* NCDOI CE page and Long-Term Care Partnership FAQ. The annuity best-interest
-     rule is confirmed adopted (the old suitability statute, G.S. 58-60-150 to -180,
-     was repealed effective 1 Jan 2023) but the hour count comes from CE providers
-     rather than a rule we could read -- hence the wording below. */
-  NC: [
+  /* Iowa — Success CE, captured 28 Aug 2026. */
+  IA: [
+    AML,
+    { key:"best_interest", label:"Annuity Best Interest training (4 hours)", required:true,
+      note:"Iowa requires this one-time course before you may sell an annuity, and the carrier has to see the certificate before it will let you write one." },
+    { key:"ltc", lines:"health", label:"Long-Term Care training (8 hours)", required:false, advise:true,
+      note:"Only if you will write long-term care — it is a health-line product, so a Life-only licence does not need it at all. Iowa wants 8 hours before you sell it, then 4 hours every 24 months." },
+    ETHICS_RENEWAL(3, 3),
+    OTHER,
+  ],
+  /* Idaho — Success CE, captured 28 Aug 2026. */
+  ID: [
+    AML,
+    { key:"best_interest", label:"Annuity Best Interest training (4 hours)", required:true,
+      note:"Idaho requires this one-time course before you may sell an annuity, and the carrier has to see the certificate before it will let you write one." },
+    { key:"ltc", lines:"health", label:"Long-Term Care training (8 hours)", required:false, advise:true,
+      note:"Only if you will write long-term care — it is a health-line product, so a Life-only licence does not need it at all. Idaho wants 8 hours before you sell it, then 4 hours each renewal." },
+    { key:"ethics", label:"Ethics", required:false, advise:true,
+      note:"Part of your CE package — take it. Our source does not publish an ethics hour figure for Idaho, so buy the package and let the provider count the hours. It will not hold this step up." },
+    OTHER,
+  ],
+  /* Illinois — Success CE, captured 28 Aug 2026. */
+  IL: [
+    AML,
+    { key:"best_interest", label:"Annuity Best Interest training (4 hours)", required:true,
+      note:"Illinois requires this one-time course before you may sell an annuity, and the carrier has to see the certificate before it will let you write one." },
+    { key:"ltc", lines:"health", label:"Long-Term Care training (6 hours)", required:false, advise:true,
+      note:"Only if you will write long-term care — it is a health-line product, so a Life-only licence does not need it at all. Illinois wants 6 hours before you sell it, then 4 hours every 24 months." },
+    ETHICS_RENEWAL(3, 2),
+    OTHER,
+  ],
+  /* Indiana — Success CE, captured 28 Aug 2026. */
+  IN: [
     AML,
     { key:"best_interest", label:"Annuity Best Interest training", required:true,
-      note:"North Carolina replaced its old annuity suitability rule with a best-interest standard in January 2023. Training is required before you sell annuities — CE providers run it as a one-time 4-hour course; confirm the length with yours." },
-    { key:"ltc", lines:"health", label:"Long-Term Care Partnership training (8 hours)", required:false, advise:true,
-      note:"Needed before you sell a Partnership long-term-care policy, then 4 hours each compliance period." },
+      note:"Indiana requires this one-time course before you may sell an annuity, and the carrier has to see the certificate before it will let you write one." },
+    { key:"ltc", lines:"health", label:"Long-Term Care training (8 hours)", required:false, advise:true,
+      note:"Only if you will write long-term care — it is a health-line product, so a Life-only licence does not need it at all. Indiana wants 8 hours before you sell it, then 5 hours each renewal." },
     ETHICS_RENEWAL(3, 2),
     OTHER,
   ],
-  /* Ohio DOI annuity-suitability FAQ (eff. 14 Aug 2021); Ohio DOI specialty CE
-     training requirements PDF (LTC); Ohio DOI CE requirements page. */
+  /* Kansas — Success CE, captured 28 Aug 2026. */
+  KS: [
+    AML,
+    { key:"best_interest", label:"Annuity Best Interest training (4 hours)", required:true,
+      note:"Kansas requires this one-time course before you may sell an annuity, and the carrier has to see the certificate before it will let you write one." },
+    { key:"ltc", lines:"health", label:"Long-Term Care training (4 hours)", required:false, advise:true,
+      note:"Only if you will write long-term care — it is a health-line product, so a Life-only licence does not need it at all. Kansas wants 4 hours before you sell it, then 1 hour every 24 months." },
+    ETHICS_RENEWAL(3, 2),
+    OTHER,
+  ],
+  /* Kentucky — Success CE, captured 28 Aug 2026. */
+  KY: [
+    AML,
+    { key:"best_interest", label:"Annuity Best Interest training", required:true,
+      note:"Kentucky requires this one-time course before you may sell an annuity, and the carrier has to see the certificate before it will let you write one." },
+    { key:"ltc", lines:"health", label:"Long-Term Care training (8 hours)", required:false, advise:true,
+      note:"Only if you will write long-term care — it is a health-line product, so a Life-only licence does not need it at all. Kentucky wants 8 hours before you sell it, then 4 hours each renewal." },
+    { key:"ethics", label:"Ethics", required:false, advise:true,
+      note:"Part of your CE package — take it. Our source does not publish an ethics hour figure for Kentucky, so buy the package and let the provider count the hours. It will not hold this step up." },
+    OTHER,
+  ],
+  /* Louisiana — Success CE, captured 28 Aug 2026. */
+  LA: [
+    AML,
+    { key:"best_interest", label:"Annuity Best Interest training (4 hours)", required:true,
+      note:"Louisiana requires this one-time course before you may sell an annuity, and the carrier has to see the certificate before it will let you write one." },
+    { key:"ltc", lines:"health", label:"Long-Term Care training (8 hours)", required:false, advise:true,
+      note:"Only if you will write long-term care — it is a health-line product, so a Life-only licence does not need it at all. Louisiana wants 8 hours before you sell it, then 4 hours every 24 months." },
+    ETHICS_RENEWAL(3, 2),
+    OTHER,
+  ],
+  /* Massachusetts — Success CE, captured 28 Aug 2026. */
+  MA: [
+    AML,
+    { key:"best_interest", label:"Annuity Best Interest training (4 hours)", required:true,
+      note:"Massachusetts requires this one-time course before you may sell an annuity, and the carrier has to see the certificate before it will let you write one." },
+    { key:"ltc", lines:"health", label:"Long-Term Care training (8 hours)", required:false, advise:true,
+      note:"Only if you will write long-term care — it is a health-line product, so a Life-only licence does not need it at all. Massachusetts wants 8 hours before you sell it, then 4 hours every 24 months." },
+    ETHICS_RENEWAL(3, 3),
+    OTHER,
+  ],
+  /* Maryland — Success CE, captured 28 Aug 2026. */
+  MD: [
+    AML,
+    { key:"best_interest", label:"Annuity Best Interest training (4 hours)", required:true,
+      note:"Maryland requires this one-time course before you may sell an annuity, and the carrier has to see the certificate before it will let you write one." },
+    { key:"ltc", lines:"health", label:"Long-Term Care training (8 hours)", required:false, advise:true,
+      note:"Only if you will write long-term care — it is a health-line product, so a Life-only licence does not need it at all. Maryland wants 8 hours before you sell it, then 4 hours every 24 months." },
+    ETHICS_RENEWAL(3, 2),
+    OTHER,
+  ],
+  /* Maine — Success CE, captured 28 Aug 2026. */
+  ME: [
+    AML,
+    { key:"best_interest", label:"Annuity Best Interest training", required:true,
+      note:"Maine requires this one-time course before you may sell an annuity, and the carrier has to see the certificate before it will let you write one." },
+    { key:"ltc", lines:"health", label:"Long-Term Care training (8 hours)", required:false, advise:true,
+      note:"Only if you will write long-term care — it is a health-line product, so a Life-only licence does not need it at all. Maine wants 8 hours before you sell it, then 4 hours every 24 months." },
+    ETHICS_RENEWAL(3, 2),
+    OTHER,
+  ],
+  /* Michigan — Success CE, captured 28 Aug 2026. */
+  MI: [
+    AML,
+    { key:"best_interest", label:"Annuity Best Interest training (4 hours)", required:true,
+      note:"Michigan requires this one-time course before you may sell an annuity, and the carrier has to see the certificate before it will let you write one." },
+    { key:"ltc", lines:"health", label:"Long-Term Care training (8 hours)", required:false, advise:true,
+      note:"Only if you will write long-term care — it is a health-line product, so a Life-only licence does not need it at all. Michigan wants 8 hours before you sell it, then 4 hours every 24 months." },
+    ETHICS_RENEWAL(3, 2),
+    OTHER,
+  ],
+  /* Minnesota — Success CE, captured 28 Aug 2026. */
+  MN: [
+    AML,
+    { key:"best_interest", label:"Annuity Best Interest training (4 hours)", required:true,
+      note:"Minnesota requires this one-time course before you may sell an annuity, and the carrier has to see the certificate before it will let you write one." },
+    { key:"ltc", lines:"health", label:"Long-Term Care training", required:false, advise:true,
+      note:"Only if you will write long-term care — it is a health-line product, so a Life-only licence does not need it at all. Minnesota's hour figure is not published by our source. The course is on the catalogue — confirm the length with your CE provider before you book it." },
+    ETHICS_RENEWAL(3, 2),
+    OTHER,
+  ],
+  /* Missouri — Success CE, captured 28 Aug 2026. */
+  MO: [
+    AML,
+    { key:"best_interest", label:"Annuity Best Interest training (4 hours)", required:true,
+      note:"Missouri requires this one-time course before you may sell an annuity, and the carrier has to see the certificate before it will let you write one." },
+    { key:"ltc", lines:"health", label:"Long-Term Care training (8 hours)", required:false, advise:true,
+      note:"Only if you will write long-term care — it is a health-line product, so a Life-only licence does not need it at all. Missouri wants 8 hours before you sell it, then 4 hours every 24 months." },
+    ETHICS_RENEWAL(3, 2),
+    OTHER,
+  ],
+  /* Mississippi — Success CE, captured 28 Aug 2026. */
+  MS: [
+    AML,
+    { key:"best_interest", label:"Annuity Best Interest training (4 hours)", required:true,
+      note:"Mississippi requires this one-time course before you may sell an annuity, and the carrier has to see the certificate before it will let you write one." },
+    { key:"ltc", lines:"health", label:"Long-Term Care training", required:false, advise:true,
+      note:"Only if you will write long-term care — it is a health-line product, so a Life-only licence does not need it at all. Mississippi lists no long-term-care course at all. If you intend to write LTC, ask your carrier what it wants — a carrier can ask for more than the state does." },
+    ETHICS_RENEWAL(3, 2),
+    OTHER,
+  ],
+  /* Montana — Success CE, captured 28 Aug 2026. */
+  MT: [
+    AML,
+    { key:"best_interest", label:"Annuity Best Interest training (4 hours)", required:true,
+      note:"Montana requires this one-time course before you may sell an annuity, and the carrier has to see the certificate before it will let you write one." },
+    { key:"ltc", lines:"health", label:"Long-Term Care training (8 hours)", required:false, advise:true,
+      note:"Only if you will write long-term care — it is a health-line product, so a Life-only licence does not need it at all. Montana wants 8 hours before you sell it, then 4 hours every 24 months." },
+    { key:"ethics", label:"Ethics", required:false, advise:true,
+      note:"Part of your CE package — take it. Our source does not publish an ethics hour figure for Montana, so buy the package and let the provider count the hours. It will not hold this step up." },
+    OTHER,
+  ],
+  /* North Carolina — Success CE, captured 28 Aug 2026. */
+  NC: [
+    AML,
+    { key:"best_interest", label:"Annuity Best Interest training (4 hours)", required:true,
+      note:"North Carolina requires this one-time course before you may sell an annuity, and the carrier has to see the certificate before it will let you write one." },
+    { key:"ltc", lines:"health", label:"Long-Term Care training (8 hours)", required:false, advise:true,
+      note:"Only if you will write long-term care — it is a health-line product, so a Life-only licence does not need it at all. North Carolina wants 8 hours before you sell it, then 4 hours every 24 months." },
+    ETHICS_RENEWAL(3, 2),
+    OTHER,
+  ],
+  /* North Dakota — Success CE, captured 28 Aug 2026. */
+  ND: [
+    AML,
+    { key:"best_interest", label:"Annuity Best Interest training (4 hours)", required:true,
+      note:"North Dakota requires this one-time course before you may sell an annuity, and the carrier has to see the certificate before it will let you write one." },
+    { key:"ltc", lines:"health", label:"Long-Term Care training (8 hours)", required:false, advise:true,
+      note:"Only if you will write long-term care — it is a health-line product, so a Life-only licence does not need it at all. North Dakota wants 8 hours before you sell it, then 4 hours each renewal." },
+    ETHICS_RENEWAL(3, 2),
+    OTHER,
+  ],
+  /* Nebraska — Success CE, captured 28 Aug 2026. */
+  NE: [
+    AML,
+    { key:"best_interest", label:"Annuity Best Interest training (4 hours)", required:true,
+      note:"Nebraska requires this one-time course before you may sell an annuity, and the carrier has to see the certificate before it will let you write one." },
+    { key:"ltc", lines:"health", label:"Long-Term Care training (8 hours)", required:false, advise:true,
+      note:"Only if you will write long-term care — it is a health-line product, so a Life-only licence does not need it at all. Nebraska wants 8 hours before you sell it, then 4 hours every 24 months." },
+    ETHICS_RENEWAL(3, 2),
+    OTHER,
+  ],
+  /* New Hampshire — Success CE, captured 28 Aug 2026. */
+  NH: [
+    AML,
+    { key:"best_interest", label:"Annuity Best Interest training (4 hours)", required:true,
+      note:"New Hampshire requires this one-time course before you may sell an annuity, and the carrier has to see the certificate before it will let you write one." },
+    { key:"ltc", lines:"health", label:"Long-Term Care training (8 hours)", required:false, advise:true,
+      note:"Only if you will write long-term care — it is a health-line product, so a Life-only licence does not need it at all. New Hampshire wants 8 hours before you sell it, then 4 hours every 24 months." },
+    ETHICS_RENEWAL(3, 2),
+    OTHER,
+  ],
+  /* New Jersey — Success CE, captured 28 Aug 2026. */
+  NJ: [
+    AML,
+    { key:"best_interest", label:"Annuity Best Interest training (4 hours)", required:true,
+      note:"New Jersey requires this one-time course before you may sell an annuity, and the carrier has to see the certificate before it will let you write one." },
+    { key:"ltc", lines:"health", label:"Long-Term Care training (8 hours)", required:false, advise:true,
+      note:"Only if you will write long-term care — it is a health-line product, so a Life-only licence does not need it at all. New Jersey wants 8 hours before you sell it, then 4 hours every 24 months." },
+    ETHICS_RENEWAL(3, 2),
+    OTHER,
+  ],
+  /* New Mexico — Success CE, captured 28 Aug 2026. */
+  NM: [
+    AML,
+    { key:"best_interest", label:"Annuity Best Interest training (4 hours)", required:true,
+      note:"New Mexico requires this one-time course before you may sell an annuity, and the carrier has to see the certificate before it will let you write one." },
+    { key:"ltc", lines:"health", label:"Long-Term Care training (8 hours)", required:false, advise:true,
+      note:"Only if you will write long-term care — it is a health-line product, so a Life-only licence does not need it at all. New Mexico wants 8 hours before you sell it, then 4 hours every 24 months." },
+    ETHICS_RENEWAL(3, 2),
+    OTHER,
+  ],
+  /* Nevada — Success CE, captured 28 Aug 2026. */
+  NV: [
+    AML,
+    { key:"best_interest", label:"Annuity Best Interest training (4 hours)", required:true,
+      note:"Nevada requires this one-time course before you may sell an annuity, and the carrier has to see the certificate before it will let you write one." },
+    { key:"ltc", lines:"health", label:"Long-Term Care training (8 hours)", required:false, advise:true,
+      note:"Only if you will write long-term care — it is a health-line product, so a Life-only licence does not need it at all. Nevada wants 8 hours before you sell it, then 4 hours every 24 months." },
+    ETHICS_RENEWAL(3, 3),
+    OTHER,
+  ],
+  /* New York — Success CE, captured 28 Aug 2026. */
+  NY: [
+    AML,
+    { key:"best_interest", label:"Annuity Best Interest training", required:false, advise:true,
+      note:"New York runs Regulation 187, where the training duty sits with the insurer rather than with you. Ask your carrier what it wants before you write an annuity — do not assume you are exempt." },
+    { key:"ltc", lines:"health", label:"Long-Term Care training", required:false, advise:true,
+      note:"Only if you will write long-term care — it is a health-line product, so a Life-only licence does not need it at all. New York lists no long-term-care course at all. If you intend to write LTC, ask your carrier what it wants — a carrier can ask for more than the state does." },
+    ETHICS_RENEWAL(1, 2),
+    OTHER,
+  ],
+  /* Ohio — Success CE, captured 28 Aug 2026. */
   OH: [
     AML,
-    { key:"best_interest", label:"Annuity Best Interest training (4 credits)", required:true,
-      note:"Ohio has required a one-time 4-credit Annuity Best Interest course since 14 August 2021. Without it you are not eligible to sell annuities at all." },
+    { key:"best_interest", label:"Annuity Best Interest training (4 hours)", required:true,
+      note:"Ohio requires this one-time course before you may sell an annuity, and the carrier has to see the certificate before it will let you write one." },
     { key:"ltc", lines:"health", label:"Long-Term Care training (8 hours)", required:false, advise:true,
-      note:"Needed before you sell long-term care, then a 4-hour refresher each renewal period." },
+      note:"Only if you will write long-term care — it is a health-line product, so a Life-only licence does not need it at all. Ohio wants 8 hours before you sell it, then 4 hours every 24 months." },
+    ETHICS_RENEWAL(3, 2),
+    OTHER,
+  ],
+  /* Oklahoma — Success CE, captured 28 Aug 2026. */
+  OK: [
+    AML,
+    { key:"best_interest", label:"Annuity Best Interest training (4 hours)", required:true,
+      note:"Oklahoma requires this one-time course before you may sell an annuity, and the carrier has to see the certificate before it will let you write one." },
+    { key:"ltc", lines:"health", label:"Long-Term Care training (8 hours)", required:false, advise:true,
+      note:"Only if you will write long-term care — it is a health-line product, so a Life-only licence does not need it at all. Oklahoma wants 8 hours before you sell it, then 4 hours every 24 months." },
+    ETHICS_RENEWAL(3, 2),
+    OTHER,
+  ],
+  /* Oregon — Success CE, captured 28 Aug 2026. */
+  OR: [
+    AML,
+    { key:"best_interest", label:"Annuity Best Interest training (4 hours)", required:true,
+      note:"Oregon requires this one-time course before you may sell an annuity, and the carrier has to see the certificate before it will let you write one." },
+    { key:"ltc", lines:"health", label:"Long-Term Care training (8 hours)", required:false, advise:true,
+      note:"Only if you will write long-term care — it is a health-line product, so a Life-only licence does not need it at all. Oregon wants 8 hours before you sell it, then 4 hours each renewal." },
+    ETHICS_RENEWAL(3, 2),
+    OTHER,
+  ],
+  /* Pennsylvania — Success CE, captured 28 Aug 2026. */
+  PA: [
+    AML,
+    { key:"best_interest", label:"Annuity Best Interest training", required:false, advise:true,
+      note:"Our source lists no annuity training for Pennsylvania, but every neighbouring state requires one. Confirm with your carrier before you write an annuity." },
+    { key:"ltc", lines:"health", label:"Long-Term Care training (8 hours)", required:false, advise:true,
+      note:"Only if you will write long-term care — it is a health-line product, so a Life-only licence does not need it at all. Pennsylvania wants 8 hours before you sell it, then 4 hours every 24 months." },
+    ETHICS_RENEWAL(3, 2),
+    OTHER,
+  ],
+  /* Rhode Island — Success CE, captured 28 Aug 2026. */
+  RI: [
+    AML,
+    { key:"best_interest", label:"Annuity Best Interest training (4 hours)", required:true,
+      note:"Rhode Island requires this one-time course before you may sell an annuity, and the carrier has to see the certificate before it will let you write one." },
+    { key:"ltc", lines:"health", label:"Long-Term Care training", required:false, advise:true,
+      note:"Only if you will write long-term care — it is a health-line product, so a Life-only licence does not need it at all. Rhode Island's hour figure is not published by our source. The course is on the catalogue — confirm the length with your CE provider before you book it." },
+    ETHICS_RENEWAL(3, 2),
+    OTHER,
+  ],
+  /* South Carolina — Success CE, captured 28 Aug 2026. */
+  SC: [
+    AML,
+    { key:"best_interest", label:"Annuity Best Interest training (4 hours)", required:true,
+      note:"South Carolina requires this one-time course before you may sell an annuity, and the carrier has to see the certificate before it will let you write one." },
+    { key:"ltc", lines:"health", label:"Long-Term Care training (8 hours)", required:false, advise:true,
+      note:"Only if you will write long-term care — it is a health-line product, so a Life-only licence does not need it at all. South Carolina wants 8 hours before you sell it, then 4 hours every 24 months." },
+    ETHICS_RENEWAL(3, 2),
+    OTHER,
+  ],
+  /* South Dakota — Success CE, captured 28 Aug 2026. */
+  SD: [
+    AML,
+    { key:"best_interest", label:"Annuity Best Interest training (4 hours)", required:true,
+      note:"South Dakota requires this one-time course before you may sell an annuity, and the carrier has to see the certificate before it will let you write one." },
+    { key:"ltc", lines:"health", label:"Long-Term Care training (8 hours)", required:false, advise:true,
+      note:"Only if you will write long-term care — it is a health-line product, so a Life-only licence does not need it at all. South Dakota wants 8 hours before you sell it, then 4 hours every 24 months." },
+    { key:"ethics", label:"Ethics", required:false, advise:true,
+      note:"Part of your CE package — take it. Our source does not publish an ethics hour figure for South Dakota, so buy the package and let the provider count the hours. It will not hold this step up." },
+    OTHER,
+  ],
+  /* Tennessee — Success CE, captured 28 Aug 2026. */
+  TN: [
+    AML,
+    { key:"best_interest", label:"Annuity Best Interest training (4 hours)", required:true,
+      note:"Tennessee requires this one-time course before you may sell an annuity, and the carrier has to see the certificate before it will let you write one." },
+    { key:"ltc", lines:"health", label:"Long-Term Care training (8 hours)", required:false, advise:true,
+      note:"Only if you will write long-term care — it is a health-line product, so a Life-only licence does not need it at all. Tennessee wants 8 hours before you sell it, then 4 hours every 24 months." },
+    ETHICS_RENEWAL(3, 2),
+    OTHER,
+  ],
+  /* Texas — Success CE, captured 28 Aug 2026. */
+  TX: [
+    AML,
+    { key:"best_interest", label:"Annuity Best Interest training (4 hours)", required:true,
+      note:"Texas requires this one-time course before you may sell an annuity, and the carrier has to see the certificate before it will let you write one." },
+    { key:"ltc", lines:"health", label:"Long-Term Care training (8 hours)", required:false, advise:true,
+      note:"Only if you will write long-term care — it is a health-line product, so a Life-only licence does not need it at all. Texas wants 8 hours before you sell it, then 4 hours every 24 months." },
+    ETHICS_RENEWAL(3, 2),
+    OTHER,
+  ],
+  /* Utah — Success CE, captured 28 Aug 2026. */
+  UT: [
+    AML,
+    { key:"best_interest", label:"Annuity Best Interest training (4 hours)", required:true,
+      note:"Utah requires this one-time course before you may sell an annuity, and the carrier has to see the certificate before it will let you write one." },
+    { key:"ltc", lines:"health", label:"Long-Term Care training (3 hours)", required:false, advise:true,
+      note:"Only if you will write long-term care — it is a health-line product, so a Life-only licence does not need it at all. Utah wants 3 hours before you sell it, then 3 hours every 24 months." },
+    ETHICS_RENEWAL(3, 2),
+    OTHER,
+  ],
+  /* Virginia — Success CE, captured 28 Aug 2026. */
+  VA: [
+    AML,
+    { key:"best_interest", label:"Annuity Best Interest training (4 hours)", required:true,
+      note:"Virginia requires this one-time course before you may sell an annuity, and the carrier has to see the certificate before it will let you write one." },
+    { key:"ltc", lines:"health", label:"Long-Term Care training (8 hours)", required:false, advise:true,
+      note:"Only if you will write long-term care — it is a health-line product, so a Life-only licence does not need it at all. Virginia wants 8 hours before you sell it, then 2 hours each renewal." },
+    ETHICS_RENEWAL(3, 2),
+    OTHER,
+  ],
+  /* Vermont — Success CE, captured 28 Aug 2026. */
+  VT: [
+    AML,
+    { key:"best_interest", label:"Annuity Best Interest training", required:false, advise:true,
+      note:"Our source lists no annuity training for Vermont, but every neighbouring state requires one. Confirm with your carrier before you write an annuity." },
+    { key:"ltc", lines:"health", label:"Long-Term Care training (8 hours)", required:false, advise:true,
+      note:"Only if you will write long-term care — it is a health-line product, so a Life-only licence does not need it at all. Vermont wants 8 hours before you sell it, then 4 hours every 24 months." },
+    ETHICS_RENEWAL(3, 2),
+    OTHER,
+  ],
+  /* Washington — Success CE, captured 28 Aug 2026. */
+  WA: [
+    AML,
+    { key:"best_interest", label:"Annuity Best Interest training (4 hours)", required:true,
+      note:"Washington requires this one-time course before you may sell an annuity, and the carrier has to see the certificate before it will let you write one." },
+    { key:"ltc", lines:"health", label:"Long-Term Care training (8 hours)", required:false, advise:true,
+      note:"Only if you will write long-term care — it is a health-line product, so a Life-only licence does not need it at all. Washington wants 8 hours before you sell it, then 4 hours each renewal." },
+    ETHICS_RENEWAL(3, 2),
+    OTHER,
+  ],
+  /* Wisconsin — Success CE, captured 28 Aug 2026. */
+  WI: [
+    AML,
+    { key:"best_interest", label:"Annuity Best Interest training (4 hours)", required:true,
+      note:"Wisconsin requires this one-time course before you may sell an annuity, and the carrier has to see the certificate before it will let you write one." },
+    { key:"ltc", lines:"health", label:"Long-Term Care training (8 hours)", required:false, advise:true,
+      note:"Only if you will write long-term care — it is a health-line product, so a Life-only licence does not need it at all. Wisconsin wants 8 hours before you sell it, then 4 hours every 24 months." },
+    ETHICS_RENEWAL(3, 2),
+    OTHER,
+  ],
+  /* West Virginia — Success CE, captured 28 Aug 2026. */
+  WV: [
+    AML,
+    { key:"best_interest", label:"Annuity Best Interest training (4 hours)", required:true,
+      note:"West Virginia requires this one-time course before you may sell an annuity, and the carrier has to see the certificate before it will let you write one." },
+    { key:"ltc", lines:"health", label:"Long-Term Care training (8 hours)", required:false, advise:true,
+      note:"Only if you will write long-term care — it is a health-line product, so a Life-only licence does not need it at all. West Virginia wants 8 hours before you sell it, then 4 hours every 24 months." },
+    ETHICS_RENEWAL(3, 2),
+    OTHER,
+  ],
+  /* Wyoming — Success CE, captured 28 Aug 2026. */
+  WY: [
+    AML,
+    { key:"best_interest", label:"Annuity Best Interest training (4 hours)", required:true,
+      note:"Wyoming requires this one-time course before you may sell an annuity, and the carrier has to see the certificate before it will let you write one." },
+    { key:"ltc", lines:"health", label:"Long-Term Care training (8 hours)", required:false, advise:true,
+      note:"Only if you will write long-term care — it is a health-line product, so a Life-only licence does not need it at all. Wyoming wants 8 hours before you sell it, then 4 hours every 24 months." },
     ETHICS_RENEWAL(3, 2),
     OTHER,
   ],
 };
+
+/* What to actually put in the basket at Success CE, per state.
+   Pulled from their catalogue API on 28 August 2026. The packages
+   and the AML course are the same everywhere; the long-term-care
+   course is the only piece that genuinely changes by state. */
+export const CE_CART = {
+  AK: { packages:2, aml:{ n:"AML - The Battle Rages On", h:2, p:"$4.95" }, ltc:[{ n:"Alaska 8 Hour LTC Initial Training", h:8, p:"$9.95" }, { n:"Alaska 4 Hour LTC Follow-up", h:4, p:"$9.95" }], extras:[] },
+  AL: { packages:2, aml:{ n:"AML - The Battle Rages On", h:2, p:"$4.95" }, ltc:[{ n:"Alabama Long Term Care", h:8, p:"$9.95" }, { n:"Partnership LTC Follow up", h:4, p:"$9.95" }], extras:[] },
+  AR: { packages:2, aml:{ n:"AML - The Battle Rages On", h:2, p:"$4.95" }, ltc:[{ n:"Arkansas Long Term Care", h:8, p:"$9.95" }, { n:"Partnership LTC Follow up", h:4, p:"$9.95" }], extras:[] },
+  AZ: { packages:2, aml:{ n:"AML - The Battle Rages On", h:2, p:"$4.95" }, ltc:[{ n:"Arizona Partnership Long Term Care", h:8, p:"$9.95" }, { n:"Partnership LTC Follow up", h:4, p:"$9.95" }], extras:[] },
+  CA: { packages:4, aml:{ n:"AML - The Battle Rages On", h:2, p:"$4.95" }, ltc:[{ n:"New California Long-Term Care", h:8, p:"$9.95" }], extras:[{ n:"Life Insurance Policies", h:4, p:"$19.95" }, { n:"Comprehensive Annuity Training", h:8, p:"$19.95" }] },
+  CO: { packages:2, aml:{ n:"AML - The Battle Rages On", h:2, p:"$4.95" }, ltc:[{ n:"Colorado Long Term Care General", h:8, p:"$9.95" }], extras:[] },
+  CT: { packages:2, aml:null, ltc:[{ n:"Principles of Long-Term Care", h:10, p:"" }], extras:[] },
+  DC: { packages:2, aml:{ n:"AML - The Battle Rages On", h:2, p:"$4.95" }, ltc:[], extras:[] },
+  DE: { packages:2, aml:{ n:"AML - The Battle Rages On", h:2, p:"$4.95" }, ltc:[{ n:"Delaware Partnership LTC Follow-Up", h:3, p:"$9.95" }, { n:"Principles of Long-Term Care", h:8, p:"$9.95" }], extras:[] },
+  FL: { packages:2, aml:{ n:"AML - The Battle Rages On", h:2, p:"$4.95" }, ltc:[{ n:"Partnership LTC 4 hour Follow-up", h:4, p:"$9.95" }], extras:[{ n:"Law & Ethics Updates - 215", h:4, p:"" }] },
+  GA: { packages:2, aml:{ n:"AML - The Battle Rages On", h:2, p:"$4.95" }, ltc:[{ n:"Georgia Long Term Care Partnership", h:8, p:"$9.95" }, { n:"Partnership LTC Follow up", h:4, p:"$9.95" }], extras:[] },
+  HI: { packages:2, aml:{ n:"AML - The Battle Rages On", h:2, p:"$4.95" }, ltc:[], extras:[{ n:"Hawaii Insurance Rules & Regulations - L&H", h:5, p:"" }] },
+  IA: { packages:3, aml:{ n:"AML - The Battle Rages On", h:2, p:"$4.95" }, ltc:[{ n:"Partnership LTC Follow up", h:4, p:"$9.95" }], extras:[] },
+  ID: { packages:2, aml:{ n:"AML - The Battle Rages On", h:2, p:"$4.95" }, ltc:[{ n:"ID LTC Partnership", h:8, p:"$9.95" }, { n:"Principles of Long-Term Care", h:8, p:"$9.95" }], extras:[] },
+  IL: { packages:2, aml:{ n:"AML - The Battle Rages On", h:2, p:"$4.95" }, ltc:[{ n:"Partnership LTC Follow up", h:4, p:"$9.95" }], extras:[] },
+  IN: { packages:2, aml:{ n:"AML - The Battle Rages On", h:2, p:"$4.95" }, ltc:[{ n:"Long Term Care in Indiana", h:8, p:"$9.95" }, { n:"Indiana 5 Hour Long Term Care", h:5, p:"$9.95" }], extras:[] },
+  KS: { packages:2, aml:{ n:"AML - The Battle Rages On", h:2, p:"$4.95" }, ltc:[{ n:"Partnership LTC Initial Training", h:4, p:"$9.95" }, { n:"Partnership LTC Follow up", h:4, p:"$9.95" }], extras:[] },
+  KY: { packages:2, aml:{ n:"AML - The Battle Rages On", h:2, p:"$4.95" }, ltc:[{ n:"Kentucky Partnership Long Term Care", h:8, p:"$9.95" }, { n:"Partnership LTC Follow up", h:4, p:"$9.95" }], extras:[] },
+  LA: { packages:2, aml:{ n:"AML - The Battle Rages On", h:2, p:"$4.95" }, ltc:[{ n:"Louisiana Long Term Care Partnership", h:8, p:"$9.95" }, { n:"Partnership LTC Follow up", h:4, p:"$9.95" }], extras:[] },
+  MA: { packages:3, aml:{ n:"AML - The Battle Rages On", h:2, p:"$4.95" }, ltc:[{ n:"MA 8hr Partnership Long-Term Care", h:8, p:"$9.95" }, { n:"MA 4hr Partnership LTC Follow-up", h:4, p:"$9.95" }], extras:[] },
+  MD: { packages:2, aml:{ n:"AML - The Battle Rages On", h:2, p:"$4.95" }, ltc:[{ n:"Partnership LTC Follow up", h:4, p:"$9.95" }], extras:[] },
+  ME: { packages:2, aml:{ n:"AML - The Battle Rages On", h:2, p:"$4.95" }, ltc:[{ n:"Maine Long Term Care Partnership", h:8, p:"$9.95" }, { n:"Partnership LTC Follow up", h:4, p:"$9.95" }], extras:[] },
+  MI: { packages:2, aml:{ n:"AML - The Battle Rages On", h:2, p:"$4.95" }, ltc:[{ n:"Michigan Long Term Care Partnership", h:8, p:"$9.95" }, { n:"Partnership LTC Follow up", h:4, p:"$9.95" }], extras:[] },
+  MN: { packages:2, aml:null, ltc:[{ n:"Medical Assistance Eligibility & The LTC Partnership Program", h:8, p:"" }, { n:"Medical Assistance Eligibility and the LTC Partnership Program", h:4, p:"" }], extras:[] },
+  MO: { packages:2, aml:{ n:"AML - The Battle Rages On", h:2, p:"$4.95" }, ltc:[{ n:"Missouri Partnership LTC", h:8, p:"" }, { n:"Partnership LTC Follow up", h:4, p:"$9.95" }], extras:[] },
+  MS: { packages:2, aml:{ n:"AML - The Battle Rages On", h:2, p:"$4.95" }, ltc:[], extras:[] },
+  MT: { packages:2, aml:{ n:"AML - The Battle Rages On", h:2, p:"$4.95" }, ltc:[{ n:"Montana Long Term Care and Partnership Program", h:8, p:"$9.95" }, { n:"Partnership LTC Follow up", h:4, p:"$9.95" }], extras:[{ n:"Montana Legislative Updates", h:1, p:"" }] },
+  NC: { packages:2, aml:{ n:"AML - The Battle Rages On", h:2, p:"$4.95" }, ltc:[{ n:"North Carolina Partnership Long-Term Care", h:8, p:"$9.95" }, { n:"Partnership LTC Follow up", h:4, p:"$9.95" }], extras:[] },
+  ND: { packages:2, aml:{ n:"AML - The Battle Rages On", h:2, p:"$4.95" }, ltc:[{ n:"North Dakota Long Term Care Partnership", h:8, p:"$9.95" }, { n:"Partnership LTC Follow up", h:4, p:"$9.95" }], extras:[] },
+  NE: { packages:2, aml:{ n:"AML - The Battle Rages On", h:2, p:"$4.95" }, ltc:[{ n:"Nebraska LTC Partnership", h:8, p:"" }, { n:"Partnership LTC Follow up", h:4, p:"$9.95" }], extras:[] },
+  NH: { packages:2, aml:{ n:"AML - The Battle Rages On", h:2, p:"$4.95" }, ltc:[{ n:"New Hampshire Long Term Care", h:8, p:"$9.95" }, { n:"Partnership LTC Follow up", h:4, p:"$9.95" }], extras:[] },
+  NJ: { packages:2, aml:{ n:"AML - The Battle Rages On", h:2, p:"$4.95" }, ltc:[{ n:"New Jersey Partnership Long Term Care", h:8, p:"$9.95" }, { n:"Partnership LTC Follow up", h:4, p:"$9.95" }], extras:[] },
+  NM: { packages:2, aml:{ n:"AML - The Battle Rages On", h:2, p:"$4.95" }, ltc:[{ n:"New Mexico Long-Term Care Partnership Program", h:8, p:"$9.95" }, { n:"Partnership LTC Follow up", h:4, p:"$9.95" }], extras:[] },
+  NV: { packages:2, aml:{ n:"AML - The Battle Rages On", h:2, p:"$4.95" }, ltc:[{ n:"Partnership LTC Follow up", h:4, p:"$9.95" }], extras:[] },
+  NY: { packages:3, aml:{ n:"AML - The Battle Rages On", h:2, p:"$4.95" }, ltc:[], extras:[{ n:"New York Insurance Law", h:1, p:"" }, { n:"Professional Insurance Standards", h:3, p:"" }] },
+  OH: { packages:2, aml:{ n:"AML - The Battle Rages On", h:1, p:"$4.95" }, ltc:[{ n:"Ohio Partnership Long Term Care", h:8, p:"$9.95" }, { n:"Partnership LTC Follow up", h:4, p:"$9.95" }], extras:[] },
+  OK: { packages:2, aml:{ n:"AML - The Battle Rages On", h:2, p:"$4.95" }, ltc:[{ n:"Oklahoma Partnership Long Term Care", h:8, p:"$9.95" }, { n:"Partnership LTC Follow-Up", h:4, p:"" }], extras:[{ n:"Oklahoma Legislative Updates", h:2, p:"" }, { n:"Earthquake Insurance", h:1, p:"" }] },
+  OR: { packages:2, aml:{ n:"AML - The Battle Rages On", h:2, p:"$4.95" }, ltc:[{ n:"OR Long Term Care Partnership", h:8, p:"$9.95" }, { n:"Partnership LTC Follow up", h:4, p:"$9.95" }], extras:[{ n:"Oregon Statutes & Regulations", h:3, p:"" }] },
+  PA: { packages:2, aml:{ n:"AML - The Battle Rages On", h:2, p:"$4.95" }, ltc:[{ n:"Partnership LTC Follow up", h:4, p:"$9.95" }], extras:[] },
+  RI: { packages:2, aml:{ n:"AML - The Battle Rages On", h:2, p:"$4.95" }, ltc:[{ n:"Rhode Island Partnership Long Term Care", h:8, p:"$9.95" }, { n:"Partnership LTC Follow up", h:4, p:"$9.95" }], extras:[] },
+  SC: { packages:2, aml:{ n:"AML - The Battle Rages On", h:2, p:"$4.95" }, ltc:[{ n:"South Carolina Partnership Long Term Care", h:8, p:"$9.95" }, { n:"Partnership LTC Follow-up", h:4, p:"$9.95" }], extras:[] },
+  SD: { packages:2, aml:{ n:"AML - The Battle Rages On", h:2, p:"$4.95" }, ltc:[{ n:"South Dakota Partnership Long Term Care", h:8, p:"$9.95" }, { n:"Partnership LTC Follow Up", h:4, p:"$9.95" }], extras:[{ n:"South Dakota Medicaid", h:1, p:"" }] },
+  TN: { packages:2, aml:{ n:"AML - The Battle Rages On", h:2, p:"$4.95" }, ltc:[{ n:"Tennessee Partnership Long Term Care", h:8, p:"$9.95" }, { n:"Partnership LTC Follow up", h:4, p:"$9.95" }], extras:[] },
+  TX: { packages:3, aml:{ n:"AML - The Battle Rages On", h:2, p:"$4.95" }, ltc:[{ n:"Texas Partnership Long Term Care", h:8, p:"$9.95" }, { n:"Partnership LTC Follow up", h:4, p:"$9.95" }], extras:[{ n:"Texas Annuities", h:8, p:"" }] },
+  UT: { packages:2, aml:{ n:"AML - The Battle Rages On", h:2, p:"$4.95" }, ltc:[{ n:"Utah Long Term Care Initial Training", h:3, p:"" }, { n:"Partnership LTC Follow up", h:3, p:"" }], extras:[] },
+  VA: { packages:2, aml:{ n:"AML - The Battle Rages On", h:2, p:"$4.95" }, ltc:[{ n:"Virginia Partnership LTC", h:8, p:"" }, { n:"Partnership LTC Follow up", h:4, p:"$9.95" }], extras:[] },
+  VT: { packages:2, aml:{ n:"AML - The Battle Rages On", h:2, p:"$4.95" }, ltc:[{ n:"Vermont LTC Partnership Program and Medicaid", h:8, p:"$9.95" }, { n:"Partnership LTC Follow up", h:4, p:"$9.95" }], extras:[] },
+  WA: { packages:2, aml:{ n:"AML - The Battle Rages On", h:2, p:"$4.95" }, ltc:[{ n:"WA LTC Initial 8 Hour Course", h:8, p:"" }, { n:"WA LTC Refresher 4 hour Course", h:4, p:"" }], extras:[] },
+  WI: { packages:2, aml:{ n:"AML - The Battle Rages On", h:2, p:"$4.95" }, ltc:[{ n:"WI Partnership LTC & Medicaid Training", h:8, p:"" }, { n:"Partnership LTC Follow up", h:4, p:"$9.95" }], extras:[{ n:"Specific Medicaid & LTC Information Training", h:2, p:"" }] },
+  WV: { packages:2, aml:{ n:"AML - The Battle Rages On", h:2, p:"$4.95" }, ltc:[{ n:"West Virginia Partnership Long Term Care", h:8, p:"$9.95" }, { n:"Partnership LTC Follow up", h:4, p:"$9.95" }], extras:[] },
+  WY: { packages:2, aml:{ n:"AML - The Battle Rages On", h:2, p:"$4.95" }, ltc:[{ n:"Wyoming Partnership Long Term Care", h:8, p:"$9.95" }, { n:"Partnership LTC Follow up", h:4, p:"$9.95" }], extras:[] },
+};
+
+export function ceCart(code, licenseType){
+  const c = CE_CART[code];
+  if (!c) return null;
+  /* Long-term care is a health-line product. A Life-only agent cannot
+     sell it, so the course is dropped rather than sold to them. */
+  const health = licenseType == null || /health/i.test(String(licenseType));
+  return { ...c, ltc: health ? c.ltc : [] };
+}
 
 /* Long-term care is a health product line. An agent licensed Life only
    cannot sell it at all, so putting the training in front of them is
