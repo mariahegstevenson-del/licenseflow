@@ -1186,6 +1186,49 @@ export function ceSteps(code){
   return out;
 }
 
+/* ------------------------------------------------------------------
+   PRE-LICENSING THAT HAS TO BE SCHEDULED
+
+   Illinois is the only state of the fifty-one that makes part of
+   pre-licensing LIVE. Twenty hours per line of authority, of which 7.5
+   must be a classroom or a live webinar -- so a Life & Health candidate
+   sits through two of them, one for Life and one for Health, and has to
+   attend the whole session to get the certificate. Pearson VUE will not
+   seat anybody without a current signed copy of it.
+
+   That breaks the advice this product gives everywhere else. The study
+   step normally says "buy it and go book your exam, you don't have to
+   finish the course first", which is true where the whole requirement is
+   self-study and false in Illinois: the webinar runs on somebody else's
+   calendar, and until it has been attended there is no certificate and
+   therefore no exam.
+
+   The fix is not to warn them later. Xcel lets an agent book the webinar
+   at the moment they buy the course, so the instruction belongs in the
+   study step, on day one, while they are already on the site.
+
+   Verified on the Illinois DOI's own producer page and on Xcel's Illinois
+   requirements page, August 2026. Every other state allows the whole
+   requirement by self-study, or has no pre-licensing requirement at all.
+------------------------------------------------------------------- */
+export const PRELICENSE_LIVE = {
+  IL: {
+    live_hours: 7.5,
+    lead: "Buy your state-approved course \u2014 and book your webinar dates in the same sitting. " +
+          "Illinois is the one state where part of pre-licensing has to be attended live, so unlike " +
+          "everywhere else you cannot book your exam until that is done.",
+    note: "Illinois requires 20 hours per line of authority, and 7.5 of them must be a classroom or " +
+          "live webinar. Licensing for Life and Health means TWO webinars \u2014 one for each line \u2014 " +
+          "and you have to attend the whole session to get your certificate.",
+    steps: [
+      "Book your webinar dates while you are buying the course. Xcel lets you do both in one go, and the dates fill up.",
+      "Licensing for both Life and Health? Book two webinars \u2014 one for each line. They are separate sessions.",
+      "Attend the whole session. Leaving early means no certificate, and the certificate is what gets you into the exam.",
+      "Keep the signed certificate. Pearson VUE will not seat you without a current copy of it \u2014 a photo on your phone is fine.",
+    ],
+  },
+};
+
 export function playbookDefaults(code){
   const s = STATES[code];
   if (!s) return null;
@@ -1204,10 +1247,24 @@ export function playbookDefaults(code){
          guessing it sends somebody to sit the wrong paper. Blank reads
          as "nobody has filled this in", which is true and safe. */
       exam_name: s.examName || "",
-      note: "",
+      /* Where pre-licensing has a live component, the exam step has a gate
+         in front of it that no other state has -- say so here rather than
+         letting somebody find out at the test centre door. */
+      note: PRELICENSE_LIVE[code]
+        ? "Before you can book: Pearson VUE will not seat you without a current signed copy of your Pre-License Course Certificate, and you only get that once you have attended your webinar in full. If you have not sat it yet, go back and do that first."
+        : "",
       steps: (PROVIDER_STEPS[prov] || []).slice(),
     },
-    study:     { vendor:"Xcel Solutions", vendor_key:"xcel", url:CONSTANTS.study, note:"", steps:PROVIDER_STEPS.xcel.slice() },
+    study:     (() => {
+      const live = PRELICENSE_LIVE[code];
+      const base = { vendor:"Xcel Solutions", vendor_key:"xcel", url:CONSTANTS.study,
+                     note:"", steps:PROVIDER_STEPS.xcel.slice() };
+      if (!live) return base;
+      /* The live-webinar states get the booking instruction first, because
+         it is the thing with a deadline attached. */
+      return { ...base, lead: live.lead, note: live.note,
+               steps: live.steps.concat(base.steps) };
+    })(),
     /* Seven states do not take a resident's first application through NIPR
        at all -- see APPLY_ELSEWHERE. An agent sent to NIPR in one of them
        spends an afternoon on a site that cannot process their file. */

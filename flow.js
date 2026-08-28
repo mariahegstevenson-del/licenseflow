@@ -3,7 +3,7 @@
    The system owns configuration (state, license, exam provider,
    URLs). The agent only provides personal/action data.
    ============================================================ */
-import { STATES, buildWalkthrough, examProvider, PROVIDER_LABEL } from "./states.js?v=21";
+import { STATES, buildWalkthrough, examProvider, PROVIDER_LABEL } from "./states.js?v=22";
 
 /* ---------------- status vocabulary ---------------- */
 export const ST = {
@@ -136,6 +136,10 @@ export function buildJourney(code, playbook) {
          provider-specific instructions. */
       if (pb.url) out.link = pb.url;
       if (pb.vendor) out.providerLabel = pb.vendor;
+      /* A state can rewrite the opening line of a step, not just its
+         links and steps. Illinois needs it: the standard "go and book
+         your exam, you don't have to finish first" is false there. */
+      if (pb.lead) out.lead = pb.lead;
       if (Array.isArray(pb.steps) && pb.steps.length) out.instructions = pb.steps;
       if (pb.note) out.stateNote = pb.note;
       if (r.key === "exam" && pb.exam_name) out.examName = pb.exam_name;
