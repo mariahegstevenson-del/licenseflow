@@ -1,6 +1,6 @@
 import { supabase, isConfigured, requireSession, hardSignOut } from "./supabase.js?v=2";
-import { STATE_LIST, STATES, ceSlots, ceIsConfigured, ceBasketHTML, resolvePlaybook,
-         fillTokens } from "./states.js?v=22";
+import { STATE_LIST, STATES, ceSlots, ceIsConfigured, ceBasketHTML, STUDY_TIPS, EXAM_BRING, resolvePlaybook,
+         fillTokens } from "./states.js?v=23";
 import { resolveWalkthrough, factsFor, videoSource, isFile,
          fmtDuration, clockTime } from "./walkthrough.js?v=1";
 import * as F from "./flow.js?v=10";
@@ -1334,7 +1334,7 @@ function renderExam(r, st, head) {
       <div class="step-top"><span></span><span class="badge ${scheduled?"s-green":"s-gray"}">${scheduled?"Scheduled":"Not scheduled"}</span></div>
       <h2 style="margin-top:.4rem">Schedule your exam</h2>
       <p class="step-desc">${esc(info.examTitle)}. We've prepared the correct examination information for you. You can book this as soon as you've bought your course \u2014 you don't need to have finished studying.</p>
-      <div class="callout"><span class="lab">Bring to your exam</span>Have your certificate of completion ready by your exam date, along with photo ID. If your course issues one, you will not be seated without it.</div>
+      <div class="callout"><span class="lab">${esc(EXAM_BRING.label)}</span>${esc(EXAM_BRING.body)}</div>
 
       ${factsPanel("exam")}
       <p class="facts-use">Use the exam name shown above when you choose your examination. Exams are
@@ -1552,16 +1552,6 @@ function videoEmbed(url){
    no extra queries. Credentials and E&O come off the requirement
    metadata; CE certificates and other files off documents.
    ============================================================ */
-/* Ordered by what actually moves a score, not by the order you meet them
-   in the course. Practice questions go first: these exams turn on how a
-   question is worded, and reading the material through once does not
-   prepare anybody for that. */
-const STUDY_TIPS = [
-  "<b>Take the practice quizzes and tests over and over.</b> This is the part that matters &#8212; far more than reading the material through again.",
-  "<b>Focus on vocabulary.</b> Most exam questions turn on knowing the exact term, and the wording is deliberately tricky.",
-  "<b>Watch the videos.</b> They carry the course &#8212; don't skip ahead to the text.",
-  "<b>Review your notes and the chapter summaries</b> rather than re-reading whole chapters.",
-];
 
 /* Which certificates this agent needs comes from their licensing state
    now, not from a list hardcoded here -- see states.js. */

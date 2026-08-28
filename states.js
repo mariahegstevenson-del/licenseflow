@@ -1187,6 +1187,35 @@ export function ceSteps(code){
 }
 
 /* ------------------------------------------------------------------
+   COPY THAT TWO SCREENS SHARE
+
+   The agent's step and the state guide's preview of that step have to say
+   the same thing. When this text lived inside app.js the preview silently
+   showed an older version, which is worse than useless -- the whole point
+   of the preview is to check what an agent will actually see.
+
+   Ordered by what moves a score, not by the order you meet them in the
+   course. Practice questions first: these exams turn on how a question is
+   worded, and reading the material through once does not prepare anybody
+   for that.
+------------------------------------------------------------------- */
+export const STUDY_TIPS = [
+  "<b>Take the practice quizzes and tests over and over.</b> This is the part that matters \u2014 far more than reading the material through again.",
+  "<b>Focus on vocabulary.</b> Most exam questions turn on knowing the exact term, and the wording is deliberately tricky.",
+  "<b>Watch the videos.</b> They carry the course \u2014 don't skip ahead to the text.",
+  "<b>Review your notes and the chapter summaries</b> rather than re-reading whole chapters.",
+];
+
+/* One instruction, identical in every state. Seventeen states issue a
+   certificate and thirty-three do not, but an agent does not need that
+   taxonomy -- they either have one in hand or they don't. */
+export const EXAM_BRING = {
+  label: "Bring to your exam",
+  body: "Have your certificate of completion ready by your exam date, along with photo ID. " +
+        "If your course issues one, you will not be seated without it.",
+};
+
+/* ------------------------------------------------------------------
    PRE-LICENSING THAT HAS TO BE SCHEDULED
 
    Illinois is the only state of the fifty-one that makes part of

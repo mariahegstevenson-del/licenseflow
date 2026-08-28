@@ -1,6 +1,6 @@
 import { supabase, isConfigured, requireSession, hardSignOut } from "./supabase.js?v=2";
-import { STATES, STATE_LIST, ceSlots, ceBasketHTML, PLAYBOOK_SECTIONS, playbookDefaults,
-         resolvePlaybook, COMPLETE_FIELDS, fillTokens } from "./states.js?v=22";
+import { STATES, STATE_LIST, ceSlots, ceBasketHTML, STUDY_TIPS, EXAM_BRING, PLAYBOOK_SECTIONS, playbookDefaults,
+         resolvePlaybook, COMPLETE_FIELDS, fillTokens } from "./states.js?v=23";
 import { WALKTHROUGH_REQS, resolveWalkthrough, vendorKeyFor, videoSource,
          fmtDuration, RECORDING_STANDARD } from "./walkthrough.js?v=1";
 import * as F from "./flow.js?v=10";
@@ -1358,6 +1358,11 @@ function renderPlaybookAgent(code){
               <ol>${req.instructions.map(i => `<li>${esc(i)}</li>`).join("")}</ol></details>` : ""}
           ${req.key === "continuing_education"
             ? ceBasketHTML(code, lic, r) : ""}
+          ${req.key === "exam"
+            ? `<div class="callout"><span class="lab">${esc(EXAM_BRING.label)}</span>${esc(EXAM_BRING.body)}</div>` : ""}
+          ${req.key === "study_material"
+            ? `<div class="section-k" style="margin-top:22px">How to study</div>
+               <div class="lf-tips">${STUDY_TIPS.map(t => `<div class="lf-tip"><i></i><p>${t}</p></div>`).join("")}</div>` : ""}
           <div class="form-block">
             <h3 style="margin:22px 0 6px;font-size:1.02rem">${req.render === "eo" ? "Upload your certificate" : "Record what you did"}</h3>
             ${(req.fields || []).map(f => `<label>${esc(f.label)}${f.required ? " *" : ""}</label>
