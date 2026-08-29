@@ -1,4 +1,4 @@
-import { supabase, isConfigured, requireSession } from "./supabase.js";
+import { supabase, isConfigured, requireSession } from "./supabase.js?v=3";
 
 const D = window.LF_DATA;
 let session = null;

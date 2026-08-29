@@ -13,7 +13,7 @@
      #access_token=...            implicit flow (older templates)
      ?error=...                   the provider or Supabase said no
 ------------------------------------------------------------ */
-import { supabase, isConfigured } from "./supabase.js";
+import { supabase, isConfigured } from "./supabase.js?v=3";
 
 const el = (id) => document.getElementById(id);
 const params = new URLSearchParams(location.search);

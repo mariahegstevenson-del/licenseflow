@@ -11,7 +11,7 @@
    opened after the link expired), which is what the session check
    below is for.
 ------------------------------------------------------------ */
-import { supabase, isConfigured } from "./supabase.js";
+import { supabase, isConfigured } from "./supabase.js?v=3";
 
 const el = (id) => document.getElementById(id);
 const A = el("alert");

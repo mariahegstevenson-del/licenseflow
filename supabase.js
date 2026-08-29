@@ -10,19 +10,40 @@ const configured =
 
 export const isConfigured = configured;
 
+/* ------------------------------------------------------------
+   Exactly one client per page, and it has to stay that way.
+
+   A browser treats "./supabase.js" and "./supabase.js?v=3" as two
+   different modules and runs both, so a single mismatched import
+   anywhere gives the page two Supabase clients sharing one storage
+   key. Both then run their own refresh timer against the same
+   rotating token: the first refresh invalidates the token the second
+   is still holding, that one fails with "refresh token already used",
+   and the session is dropped mid-visit. It is intermittent, it looks
+   like a random logout, and it hurts new accounts most because their
+   first refresh falls inside their first session.
+
+   Keeping the instance on window means the second copy of this module
+   -- if one is ever introduced again -- hands back the first copy's
+   client instead of building a rival.
+------------------------------------------------------------ */
+function makeClient() {
+  return createClient(cfg.SUPABASE_URL, cfg.SUPABASE_ANON_KEY, {
+    auth: {
+      // PKCE is the right flow for a browser app and is what the
+      // ?code=... link in confirmation / OAuth redirects uses.
+      flowType: "pkce",
+      persistSession: true,
+      autoRefreshToken: true,
+      // We handle the redirect ourselves on auth-callback.html so that
+      // no other page tries to consume the code out from under it.
+      detectSessionInUrl: false,
+    },
+  });
+}
+
 export const supabase = configured
-  ? createClient(cfg.SUPABASE_URL, cfg.SUPABASE_ANON_KEY, {
-      auth: {
-        // PKCE is the right flow for a browser app and is what the
-        // ?code=... link in confirmation / OAuth redirects uses.
-        flowType: "pkce",
-        persistSession: true,
-        autoRefreshToken: true,
-        // We handle the redirect ourselves on auth-callback.html so that
-        // no other page tries to consume the code out from under it.
-        detectSessionInUrl: false,
-      },
-    })
+  ? (window.__lfSupabase || (window.__lfSupabase = makeClient()))
   : null;
 
 /* Absolute URL of the page that finishes a sign-in redirect.

@@ -13,7 +13,7 @@
    an altered host can do is show the wrong name above the wrong empty
    page.
 ------------------------------------------------------------ */
-import { supabase, isConfigured } from "./supabase.js";
+import { supabase, isConfigured } from "./supabase.js?v=3";
 
 const APP_DOMAIN = "lifelicenseflow.com";
 

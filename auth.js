@@ -1,12 +1,18 @@
-import { supabase, isConfigured, callbackUrl, hardSignOut } from "./supabase.js?v=2";
-import { loadTenant, renderUnknownAgency, applyTenantChrome } from "./tenant.js?v=4";
+import { supabase, isConfigured, callbackUrl, hardSignOut } from "./supabase.js?v=3";
+import { loadTenant, renderUnknownAgency, applyTenantChrome } from "./tenant.js?v=5";
 
-/* LicenseFlow is sold per agency: accounts are created for agents, never
-   self-served. This screen therefore has exactly two states -- log in, and
-   "email me a reset link". Sign-up is also disabled server-side in Supabase
-   (Authentication -> Sign In / Providers -> allow new users to sign up), and
-   that is what actually enforces it: removing the form alone would still
-   leave the API and the Google button able to mint new accounts. */
+/* LicenseFlow is sold per agency. Whether a recruit can make their own
+   account is the agency's decision, held in agencies.open_signup, and
+   this screen shows the Create account tab only where that is on.
+
+   What stops a stranger joining an agency is not this form and not the
+   Supabase sign-up setting -- sign-ups are open at the project level,
+   because agencies that take open registrations need them. It is the
+   lf_stamp_agency trigger on licensing_profiles: on insert it checks
+   the registration key against the agency and, if it doesn't match,
+   quietly sets agency_id to null. So the worst an unrecognised person
+   can do is create a login attached to nobody, which sees nothing.
+   Treat the PIN check in this file as courtesy, not enforcement. */
 let mode = "login";
 const el = (id) => document.getElementById(id);
 const A = el("alert");
@@ -30,8 +36,9 @@ function friendly(err) {
   if (/password should be at least/i.test(msg)) return "Please use a password of at least 8 characters.";
   if (/rate limit|too many requests|only request this after|for security purposes/i.test(msg)) return "Too many attempts just now. Please wait a minute and try again.";
   if (/error sending confirmation|error sending email|smtp/i.test(msg)) return "We couldn't send that email. Please contact support so we can get you sorted.";
-  /* Sign-ups are off by design, so this is what an unrecognised Google
-     account hits. Say what to do about it rather than "not allowed". */
+  /* Kept for agencies that don't take open registrations, and for the
+     day sign-ups are switched off at the project level. Says what to do
+     about it rather than "not allowed". */
   if (/signups not allowed|signup is disabled|user not allowed|not allowed for this instance/i.test(msg)) return "There's no LicenseFlow account for that email yet. Accounts are created by your agency — ask your licensing coordinator to add you.";
   if (/provider is not enabled/i.test(msg)) return "Google sign-in isn't switched on for this site yet.";
   if (/failed to fetch|network/i.test(msg)) return "We couldn't reach the server. Check your connection and try again.";

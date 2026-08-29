@@ -62,15 +62,23 @@ export const PROVIDER_STEPS = {
     "Send your agency your name, state, test date and time.",
   ],
   /* Alabama contracts its producer testing to the University of Alabama's
-     continuing-education arm, so the path is a city page rather than a
-     national catalog. Source: aldoi.gov/licensing/examsites.aspx */
+     continuing-education arm, so this is a course catalog, not a testing
+     vendor -- and it behaves like one. You book a free "session" and the
+     exam itself is an add-on line underneath it. Walked end to end on the
+     live site; every step below was seen on screen. */
   ua: [
-    "Click the link for Alabama insurance testing.",
-    "Choose the city you want to test in — Birmingham, Huntsville, Mobile, Tuscaloosa or Montgomery.",
-    'Select "Register Today", then "Registration".',
-    'Choose the "Producer Combined Life and Health" exam and pick a date.',
-    "Pay the exam fee and save your confirmation.",
-    "Send your agency your name, state, test date and time.",
+    "Open the link for Alabama insurance testing. This is the University of Alabama's own catalog — Alabama does not use PSI or Pearson VUE.",
+    "Scroll to the month you want. Sessions are listed by city and start time, so one city can appear more than once — a 9:00 am listing and a 1:00 pm listing are separate. If your date isn't under one, look under the other.",
+    "Click the date you want to sit. That opens the session page.",
+    "Check the location, and where the page tells you to use Google Maps rather than Apple Maps, do that — it says so because the Apple pin is wrong.",
+    'The session shows a price of $0.00. That is not a mistake and it is not your total: your exam is charged as an add-on further down.',
+    'Scroll to "Add-Ons" and tick "Life and Health Combined" ($75). Set the quantity to 1 — it starts at nothing.',
+    'Do not tick "Life Only" and "Health Only" as a pair. That books two separate exams and costs $100 instead of $75.',
+    'Click "Add to Cart". The "you might also be interested in" list underneath is a suggestion, not part of your booking — ignore it.',
+    "Open the cart and check it reads the session at $0.00 plus Life and Health Combined at $75.00, for a grand total of $75.00.",
+    'Sign in, or create a profile if this is your first time. On the sign-up form, leave "skip this if you are not affiliated with a Company" ticked unless your agency is paying the university directly.',
+    "Add yourself as the attendee. The cart will refuse to check out without one, even with your exam already sitting in it.",
+    "Pay, and save your confirmation. Then send your agency your name, state, test date and time.",
   ],
   prometric: [
     "Click your state-specific link.",
@@ -1242,6 +1250,12 @@ export const STEP_ORDER = {
    steps in full.
 ------------------------------------------------------------------- */
 export const STATE_GOTCHA = {
+  /* Alabama's booking page shows $0.00 and means it -- the exam is a
+     separate add-on line below the session. An agent who reads the zero
+     as the price adds the session to their cart, checks out, and turns
+     up to a seat they never paid for. */
+  AL: { step: "exam",
+        text: "The session page shows a price of $0.00. That is not your total — your exam is an add-on further down the same page. Tick “Life and Health Combined” ($75) and set the quantity to 1. Ticking “Life Only” and “Health Only” as a pair books two exams and costs $100." },
   KS: { step: "fingerprinting",
         text: "Two things to have ready before you go. The fingerprint code is KSINSFP \u2014 they will ask for it. And bring the Kansas DCF-FP1020 form with you: insurance.ks.gov/documents/agentagency/DCF-FP1020.pdf. Afterwards, upload your clearance to NIPR as an ALD." },
   PA: { step: "fingerprinting",

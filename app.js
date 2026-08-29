@@ -1,10 +1,10 @@
-import { supabase, isConfigured, requireSession, hardSignOut } from "./supabase.js?v=2";
+import { supabase, isConfigured, requireSession, hardSignOut } from "./supabase.js?v=3";
 import { STATE_LIST, STATES, ceSlots, ceIsConfigured, ceBasketHTML, STUDY_TIPS, EXAM_BRING, resolvePlaybook,
-         fillTokens } from "./states.js?v=25";
+         fillTokens } from "./states.js?v=26";
 import { resolveWalkthrough, factsFor, videoSource, isFile,
-         fmtDuration, clockTime } from "./walkthrough.js?v=1";
-import * as F from "./flow.js?v=12";
-import { loadTenant, renderUnknownAgency, applyTenantChrome, urlForAgency } from "./tenant.js?v=4";
+         fmtDuration, clockTime } from "./walkthrough.js?v=2";
+import * as F from "./flow.js?v=13";
+import { loadTenant, renderUnknownAgency, applyTenantChrome, urlForAgency } from "./tenant.js?v=5";
 
 const el = (id) => document.getElementById(id);
 const root = el("root");
@@ -156,6 +156,31 @@ function firstName(){ return (S.profile?.answers?.first_name) || (S.profile?.ful
 function docFor(key){ return S.docs.find(d => d.doc_key === key); }
 function sysLine(){ return `Licensing state: <strong>${esc(stateName(S.profile.designated_state))}</strong> &nbsp;·&nbsp; License: <strong>${esc(S.profile.license_type)}</strong>`; }
 async function audit(event, before, after, meta={}) { await supabase.from("audit_events").insert({ user_id:S.user.id, event, status_before:before||null, status_after:after||null, source:"agent", meta }); }
+
+/* ------------------------------------------------------------
+   Writes that must not fail quietly.
+
+   supabase-js resolves rather than throws: a refused insert comes back
+   as { error }, so `await supabase.from(...).upsert(...)` sitting
+   inside a try/catch counts as success and the catch never runs. The
+   agent is moved to the next screen while nothing was saved, and finds
+   the work gone on their next visit. It is worst at registration,
+   where the missing row puts them straight back on the form they just
+   filled in, with no idea why.
+
+   Anything the agent would have to redo goes through here. Audit rows
+   and exception rows deliberately do not -- those are our bookkeeping,
+   and losing one should never stop somebody getting licensed.
+------------------------------------------------------------ */
+async function mustWrite(q, what) {
+  const r = await q;
+  if (r && r.error) {
+    const e = new Error(`Couldn't save ${what}. ${r.error.message || "Please try again."}`);
+    e.cause = r.error;
+    throw e;
+  }
+  return r;
+}
 function stepIndex(key){ return S.journey ? S.journey.reqs.findIndex(r=>r.key===key) : -1; }
 /* ------------------------------------------------------------
    THE WALKTHROUGH PANEL
@@ -756,8 +781,21 @@ async function submitReg() {
   const path = F.determinePathway(payload);
   payload.pathway_confidence = path.confidence;
   if (path.designated) payload.designated_state = path.designated;
-  await supabase.from("licensing_profiles").upsert(payload);
-  await supabase.from("profiles").upsert({ id:S.user.id, email:S.user.email, full_name:payload.full_name, state:resident, license_type:loa });
+  /* This is the one write nobody can shrug off. If it doesn't land, the
+     agent has typed their details for nothing and the next page load
+     will ask for them again. Say so here rather than letting them find
+     out tomorrow. */
+  try {
+    await mustWrite(supabase.from("licensing_profiles").upsert(payload), "your registration");
+    await mustWrite(
+      supabase.from("profiles").upsert({ id:S.user.id, email:S.user.email, full_name:payload.full_name, state:resident, license_type:loa }),
+      "your details");
+  } catch (e) {
+    A.className="alert show alert-error";
+    A.textContent = (e.message || "We couldn't save that.") + " Nothing has been lost — press Continue to try again.";
+    el("regGo").disabled=false; el("regGo").textContent="Continue";
+    return;
+  }
   await audit("registration", null, "complete", { military, confidence:path.confidence, designated:path.designated||null });
   if (path.exception) await createException(military?"ambiguous_military_pathway":"missing_data", path.exception, path.confidence);
   forgetJoinKey();
@@ -1307,12 +1345,12 @@ async function submitGeneric(r) {
     if (newFile) {
       const path = await uploadFile(newFile, r.key);
       const detected = detectType(newFile.name);
-      await supabase.from("documents").upsert({ user_id:S.user.id, doc_key:r.key, label:r.doc.label, status:"uploaded", note:newFile.name, file_url:path, meta_detected:detected, updated_at:new Date().toISOString() }, { onConflict:"user_id,doc_key" });
+      await mustWrite(supabase.from("documents").upsert({ user_id:S.user.id, doc_key:r.key, label:r.doc.label, status:"uploaded", note:newFile.name, file_url:path, meta_detected:detected, updated_at:new Date().toISOString() }, { onConflict:"user_id,doc_key" }), "your upload");
     }
     const before = F.reqStatus(r.key, S.sm);
     const status = F.submissionStatus(r, meta, hasDoc);
     const clean = { ...meta }; delete clean._reject;
-    await supabase.from("requirement_instances").upsert({ user_id:S.user.id, requirement_key:r.key, label:r.label, status, meta:clean, completed_at:F.isDone(status)?new Date().toISOString():null, updated_at:new Date().toISOString() }, { onConflict:"user_id,requirement_key" });
+    await mustWrite(supabase.from("requirement_instances").upsert({ user_id:S.user.id, requirement_key:r.key, label:r.label, status, meta:clean, completed_at:F.isDone(status)?new Date().toISOString():null, updated_at:new Date().toISOString() }, { onConflict:"user_id,requirement_key" }), "this step");
     await audit(`requirement:${r.key}`, before, status, { method:r.verify==="admin"?"submitted_for_review":"self_validated" });
     await load();
     /* If that was the last thing they had to do, say so properly rather
@@ -1370,11 +1408,18 @@ function renderExam(r, st, head) {
     if(!d){ A.className="alert show alert-error"; A.textContent="Please enter your exam date."; return; }
     el("submitStep").disabled=true; el("submitStep").textContent="Saving…";
     const before=F.reqStatus(r.key,S.sm);
-    await supabase.from("requirement_instances").upsert({ user_id:S.user.id, requirement_key:r.key, label:r.label, status:F.ST.COMPLETE, meta:{ exam_date:d, provider:vendor, exam_name:r.examName||null, exam_type:S.profile.license_type }, completed_at:new Date().toISOString(), updated_at:new Date().toISOString() }, { onConflict:"user_id,requirement_key" });
-    await audit("requirement:exam", before, "scheduled", { exam_date:d });
-    await load();
-    const ns=F.nextStep(S.journey,S.sm);
-    if (ns.type==="do" && ns.req.key!==r.key) goto("#/step/"+ns.req.key); else goto("#/dashboard");
+    try {
+      await mustWrite(supabase.from("requirement_instances").upsert({ user_id:S.user.id, requirement_key:r.key, label:r.label, status:F.ST.COMPLETE, meta:{ exam_date:d, provider:vendor, exam_name:r.examName||null, exam_type:S.profile.license_type }, completed_at:new Date().toISOString(), updated_at:new Date().toISOString() }, { onConflict:"user_id,requirement_key" }), "your exam booking");
+      await audit("requirement:exam", before, "scheduled", { exam_date:d });
+      await load();
+      const ns=F.nextStep(S.journey,S.sm);
+      if (ns.type==="do" && ns.req.key!==r.key) goto("#/step/"+ns.req.key); else goto("#/dashboard");
+    } catch(e){
+      /* Without this the button sits on "Saving…" for ever and the agent
+         has no idea their exam date didn't take. */
+      A.className="alert show alert-error"; A.textContent="Something went wrong: "+(e.message||e);
+      el("submitStep").disabled=false; el("submitStep").textContent="Save & continue";
+    }
   };
 }
 
@@ -1508,7 +1553,7 @@ async function submitCE(r) {
                  : (allVerified ? F.ST.COMPLETE : F.ST.PENDING);
     const before = F.reqStatus(r.key, S.sm);
     const clean = { certs }; // drop _reject on resubmit
-    await supabase.from("requirement_instances").upsert({ user_id:S.user.id, requirement_key:r.key, label:r.label, status, meta:clean, completed_at:F.isDone(status)?new Date().toISOString():null, updated_at:new Date().toISOString() }, { onConflict:"user_id,requirement_key" });
+    await mustWrite(supabase.from("requirement_instances").upsert({ user_id:S.user.id, requirement_key:r.key, label:r.label, status, meta:clean, completed_at:F.isDone(status)?new Date().toISOString():null, updated_at:new Date().toISOString() }, { onConflict:"user_id,requirement_key" }), "this step");
     await audit("requirement:continuing_education", before, status, { count:certs.length, missing:missing.map(m=>m.key) });
     ceRows = [];
     await load();

@@ -13,8 +13,8 @@
    be an agent using the wrong door, so they get pointed at the right one
    and keep their session.
 ------------------------------------------------------------ */
-import { supabase, isConfigured, callbackUrl, hardSignOut } from "./supabase.js?v=2";
-import { loadTenant, renderUnknownAgency, applyTenantChrome } from "./tenant.js?v=4";
+import { supabase, isConfigured, callbackUrl, hardSignOut } from "./supabase.js?v=3";
+import { loadTenant, renderUnknownAgency, applyTenantChrome } from "./tenant.js?v=5";
 
 const el = (id) => document.getElementById(id);
 const A = el("alert");
