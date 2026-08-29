@@ -4,7 +4,7 @@
    URLs). The agent only provides personal/action data.
    ============================================================ */
 import { STATES, buildWalkthrough, examProvider, PROVIDER_LABEL,
-         stepOrder, SUPPLEMENTAL, STATE_GOTCHA } from "./states.js?v=26";
+         stepOrder, SUPPLEMENTAL, STATE_GOTCHA } from "./states.js?v=27";
 
 /* ---------------- status vocabulary ---------------- */
 export const ST = {

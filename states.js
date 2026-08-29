@@ -39,27 +39,50 @@ export const PROVIDER_STEPS = {
     "Register for a new account.",
     "Proceed to checkout and skip add-ons (no promo code — the link is partner-specific; you are paying for your material).",
   ],
+  /* Walked on the live site. Kept short on purpose: an agent reads these
+     with the vendor open in the next tab, so each line is one thing to
+     do. The only sentences that earn extra words are the ones where
+     getting it wrong costs money. */
   pearson: [
-    "Click your state-specific link.",
-    'Opt in to permissions & "Register for New Account".',
-    "Fill out all fields marked with an asterisk and validate your info.",
-    "Once your account is created you can share your screen with your trainer.",
-    "View the tests available.",
-    'Register for the "Life & Health Exam".',
-    "Choose a test-center location, date, and time (in person preferred).",
-    "Proceed to checkout.",
-    "Send your agency your name, state, test date and time.",
+    'Open your state\'s link and choose "Create a Web Account".',
+    "Enter your name exactly as it appears on the ID you will bring. If it does not match on the day, you will not be allowed to sit and you will not get your fee back.",
+    "Enter your date of birth and Social Security number, then your email twice.",
+    "Finish the account, then sign in.",
+    "Choose your exam from the list.",
+    "Read the policies and agree. Two of them cost money: arrive 30 minutes early, and rescheduling or cancelling inside 48 hours forfeits your fee.",
+    "Pick a test center, then a date. Only dates with seats left can be selected.",
+    "Check your name, date of birth and phone number on the cart page, then proceed to checkout.",
+    "Pay, and save your confirmation email.",
+    "Come back here and enter your exam date.",
   ],
   psi: [
-    "Click your state-specific link.",
-    "Sign in / Create Account (top right).",
-    "Fill out all fields marked with an asterisk and validate your info.",
-    "Once your account is created you can share your screen with your trainer.",
-    "View the tests available.",
-    'Register for the "Life & Health Exam" (in person preferred).',
-    "Choose a test-center location, date, and time.",
-    "Proceed to checkout.",
-    "Send your agency your name, state, test date and time.",
+    'Open your state\'s link and choose "Create Account".',
+    "PSI asks for your Social Security number first, twice. Type it carefully — a wrong number here delays your license, not just your exam.",
+    "Enter your name exactly as it appears on the ID you will bring.",
+    "Confirm your email, then sign in.",
+    "Find your exam and open it. Check the fee before you continue: the cancellation protection listed beside it is optional and you do not have to buy it.",
+    "Continue booking. On the candidate details page, choose your pre-licensing school from the dropdown — Xcel Solutions LLC. That is how PSI matches you to the course you bought.",
+    "Enter your address and phone number.",
+    "Search by city or ZIP, then pick a test center, date and time.",
+    "On the payment page, everything with a tick box beside it is optional — cancellation protection, practice tests, study packs. Your exam fee is the line already in the order summary.",
+    "Pay, and save your confirmation email.",
+    "Come back here and enter your exam date.",
+  ],
+  /* Maryland, Utah, Vermont and Virginia. This list did not exist until
+     the path was walked; before that, agents in those four states were
+     handed a link and nothing else. */
+  prometric: [
+    'Open your state\'s link and choose "Create account".',
+    "Pick a username, enter your email address twice, and set a password.",
+    "Tick the privacy policy box, type the letters from the picture, and create the account.",
+    "Sign in and fill in your profile. Your name has to match the ID you will bring to the test center exactly.",
+    "Prometric asks for your Social Security number on this screen. It is required — and it is a screen nobody else should be looking at.",
+    'Save and continue, then choose to schedule an appointment.',
+    "Read the appointment page before you click on. It names your exam and tells you that you need TWO forms of current ID, the first a government photo ID with your signature.",
+    "Enter your city or ZIP, choose a start and end date to search between, type the letters from the picture, and continue.",
+    "Pick a test center, then a date and time.",
+    "Check the fee, then pay. A countdown starts here — you have about 15 minutes before the slot is released.",
+    "Save your confirmation email, then come back here and enter your exam date.",
   ],
   /* Alabama contracts its producer testing to the University of Alabama's
      continuing-education arm, so this is a course catalog, not a testing
@@ -79,14 +102,6 @@ export const PROVIDER_STEPS = {
     'Sign in, or create a profile if this is your first time. On the sign-up form, leave "skip this if you are not affiliated with a Company" ticked unless your agency is paying the university directly.',
     "Add yourself as the attendee. The cart will refuse to check out without one, even with your exam already sitting in it.",
     "Pay, and save your confirmation. Then send your agency your name, state, test date and time.",
-  ],
-  prometric: [
-    "Click your state-specific link.",
-    'Scroll down under "Test Center Exams" and select "Schedule".',
-    "Opt in to permissions & select your test.",
-    "Find & schedule your test center. We recommend testing about 14 days out.",
-    "Purchase your exam and create your account.",
-    "Fill out all fields marked with an asterisk and validate your info.",
   ],
 };
 

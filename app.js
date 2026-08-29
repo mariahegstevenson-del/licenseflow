@@ -1,9 +1,9 @@
 import { supabase, isConfigured, requireSession, hardSignOut } from "./supabase.js?v=3";
 import { STATE_LIST, STATES, ceSlots, ceIsConfigured, ceBasketHTML, STUDY_TIPS, EXAM_BRING, resolvePlaybook,
-         fillTokens } from "./states.js?v=26";
+         fillTokens } from "./states.js?v=27";
 import { resolveWalkthrough, factsFor, videoSource, isFile,
-         fmtDuration, clockTime } from "./walkthrough.js?v=2";
-import * as F from "./flow.js?v=13";
+         fmtDuration, clockTime } from "./walkthrough.js?v=3";
+import * as F from "./flow.js?v=14";
 import { loadTenant, renderUnknownAgency, applyTenantChrome, urlForAgency } from "./tenant.js?v=5";
 
 const el = (id) => document.getElementById(id);
