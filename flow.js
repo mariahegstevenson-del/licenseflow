@@ -4,7 +4,7 @@
    URLs). The agent only provides personal/action data.
    ============================================================ */
 import { STATES, buildWalkthrough, examProvider, PROVIDER_LABEL,
-         stepOrder, SUPPLEMENTAL, STATE_GOTCHA } from "./states.js?v=27";
+         stepOrder, SUPPLEMENTAL, STATE_GOTCHA } from "./states.js?v=28";
 
 /* ---------------- status vocabulary ---------------- */
 export const ST = {
@@ -148,6 +148,30 @@ export function buildJourney(code, playbook) {
   if (!w) return null;
   const links = {};
   w.steps.forEach(s => { links[s.key] = { link:s.link, instructions:s.instructions||null, video:s.video||null }; });
+
+  /* ------------------------------------------------------------
+     Whose pre-licensing course is this?
+
+     LicenseFlow is sold to agencies, and they do not all buy their
+     study material from the same provider. Any step that has to name
+     that provider writes {study_vendor} instead and gets it filled in
+     here, from the same resolved playbook the study step itself uses --
+     so an agency that switches provider changes one field and every
+     mention follows.
+
+     PSI's booking form is the reason this exists: it makes an agent
+     pick their school from a dropdown of hundreds, and the name has to
+     match the course they actually bought. Hardcoding ours would send
+     every other agency's agents to the wrong entry.
+
+     With no provider configured it falls back to a phrase that is true
+     everywhere rather than a name that is true here.
+  ------------------------------------------------------------ */
+  const studyVendor = (playbook && playbook.study && playbook.study.vendor)
+    || "the provider you bought your course from";
+  const fillStudyVendor = (s) =>
+    typeof s === "string" ? s.split("{study_vendor}").join(studyVendor) : s;
+
   const reqs = REQS.map(r => {
     const wk = WALK_KEY[r.key]; const ex = wk && links[wk] ? links[wk] : {};
     const out = { ...r, link:ex.link||null, instructions:ex.instructions||null,
@@ -164,7 +188,7 @@ export function buildJourney(code, playbook) {
          links and steps. Illinois needs it: the standard "go and book
          your exam, you don't have to finish first" is false there. */
       if (pb.lead) out.lead = pb.lead;
-      if (Array.isArray(pb.steps) && pb.steps.length) out.instructions = pb.steps;
+      if (Array.isArray(pb.steps) && pb.steps.length) out.instructions = pb.steps.map(fillStudyVendor);
       if (pb.note) out.stateNote = pb.note;
       if (r.key === "exam" && pb.exam_name) out.examName = pb.exam_name;
     }

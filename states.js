@@ -61,7 +61,11 @@ export const PROVIDER_STEPS = {
     "Enter your name exactly as it appears on the ID you will bring.",
     "Confirm your email, then sign in.",
     "Find your exam and open it. Check the fee before you continue: the cancellation protection listed beside it is optional and you do not have to buy it.",
-    "Continue booking. On the candidate details page, choose your pre-licensing school from the dropdown — Xcel Solutions LLC. That is how PSI matches you to the course you bought.",
+    /* {study_vendor} is filled in at journey time from whichever
+       pre-licensing provider this agency actually uses -- see
+       fillStudyVendor in flow.js. Naming ours here would send every
+       other agency's agents to the wrong entry in a very long list. */
+    "Continue booking. On the candidate details page, choose your pre-licensing school from the dropdown — {study_vendor}. That is how PSI matches you to the course you bought.",
     "Enter your address and phone number.",
     "Search by city or ZIP, then pick a test center, date and time.",
     "On the payment page, everything with a tick box beside it is optional — cancellation protection, practice tests, study packs. Your exam fee is the line already in the order summary.",
