@@ -365,14 +365,24 @@ const NAV = [
   {v:"issued",      label:"License issued",  c:"issued"},
   {v:"compliant",   label:"Fully compliant", c:"compliant"},
   {grp:"Content"},
-  {v:"videos",   label:"Step videos",     c:"videos"},
-  {v:"walk",     label:"Walkthroughs",    c:"walk"},
+  {v:"videos",   label:"Step videos",     c:"videos", platform:true},
+  {v:"walk",     label:"Walkthroughs",    c:"walk",   platform:true},
   {v:"playbooks",label:"State guide",     c:"playbooks"},
 ];
+
+/* Screens only LicenseFlow staff may open.
+
+   The recording library is authored once by us and inherited by every
+   agency, and step videos are a single platform-wide row rather than one
+   per agency. Neither is an agency's to edit, and the database already
+   refuses those writes. Hiding them stops the console offering work that
+   cannot be saved -- and stops an agency reading "nothing recorded yet"
+   on a shelf whose contents their agents are in fact being shown. */
+const PLATFORM_VIEWS = new Set(["videos", "walk", "walkedit"]);
 function renderNav(){
   const c = counts(), cur = A.view.name;
   const active = {review:"overview", agent:"agents"}[cur] || cur;
-  navEl.innerHTML = NAV.map(n=>{
+  navEl.innerHTML = NAV.filter(n => !n.platform || A.platform).map(n=>{
     if(n.grp) return `<div class="grp">${esc(n.grp)}</div>`;
     const val = c[n.c] ?? 0;
     const tone = val && n.tone ? " "+n.tone : "";
@@ -515,6 +525,10 @@ function render(){
 }
 
 function renderView(){
+  /* Hidden in the nav above, and refused here as well: a stale view left
+     over from a previous session, or a hand-typed one, must not open a
+     screen this account cannot save from. */
+  if (!A.platform && PLATFORM_VIEWS.has(A.view.name)) A.view = { name:"overview" };
   renderTabs(); renderNav(); renderRail();
   /* Re-bound on every render, because the panel is rebuilt each time. */
   setTimeout(wireNotices, 0);
