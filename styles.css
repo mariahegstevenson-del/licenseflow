@@ -1134,7 +1134,11 @@ html.themed .progress.dual > b{background:var(--brand)}
 html.themed .facts{border-color:color-mix(in srgb,var(--agency-gold,#D4A12B) 34%,#fff)}
 
 /* the walkthrough itself */
-.wtb{margin:6px 0 20px}
+/* The player, its title, its controls and its notes are one object.
+   Pinned to the same column as the picture, because a heading that
+   reaches out past both edges of the video makes the video look adrift
+   rather than centred. */
+.wtb{max-width:720px;margin:6px auto 20px}
 .wtb-h{display:flex;align-items:flex-end;justify-content:space-between;gap:14px;
   flex-wrap:wrap;margin-bottom:8px}
 .wtb-h b{display:block;font-size:1.06rem;font-weight:700;letter-spacing:-.015em;margin-top:2px}
