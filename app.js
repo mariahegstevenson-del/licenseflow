@@ -2,7 +2,7 @@ import { supabase, isConfigured, requireSession, hardSignOut } from "./supabase.
 import { STATE_LIST, STATES, ceSlots, ceIsConfigured, ceBasketHTML, STUDY_TIPS, EXAM_BRING, resolvePlaybook,
          fillTokens } from "./states.js?v=28";
 import { resolveWalkthrough, factsFor, videoSource, isFile,
-         fmtDuration, clockTime } from "./walkthrough.js?v=5";
+         fmtDuration, clockTime, WALKTHROUGH_REQS } from "./walkthrough.js?v=5";
 import * as F from "./flow.js?v=16";
 import { loadTenant, renderUnknownAgency, applyTenantChrome, urlForAgency } from "./tenant.js?v=5";
 
@@ -228,9 +228,19 @@ function factsPanel(key){
    portal supplies the facts and the video only teaches the procedure --
    this is the line that says so, on the steps where money is on screen. */
 const PRICED_REQS = new Set([
-  "study_material", "exam", "nipr_application", "fingerprinting",
+  "study_material", "exam", "nipr_application",
   "eo", "continuing_education",
 ]);
+
+/* Steps that can carry a recording at all -- the same list the library is
+   built from, so the two can never disagree.
+
+   Fingerprinting is an appointment at a physical location and the
+   supplemental document is a state's own paper form: there is no screen
+   to record, and the admin console offers no slot to put one in. Telling
+   an agent a walkthrough is "coming soon" for either is a promise nobody
+   is ever going to keep, so those steps show nothing at all. */
+const CAN_HAVE_WALKTHROUGH = new Set(WALKTHROUGH_REQS.map((r) => r.key));
 
 const priceNote = (key) => PRICED_REQS.has(key)
   ? `<p class="wtb-price">Any price you see in this recording is the one for the state it was
@@ -239,6 +249,7 @@ const priceNote = (key) => PRICED_REQS.has(key)
   : "";
 
 function videoBlock(key, fallbackTitle){
+  if (!CAN_HAVE_WALKTHROUGH.has(key)) return "";
   const w = walkthroughFor(key);
   const legacy = S.videos?.[key];
 
