@@ -3,7 +3,7 @@ import { STATE_LIST, STATES, ceSlots, ceIsConfigured, ceBasketHTML, STUDY_TIPS, 
          fillTokens } from "./states.js?v=28";
 import { resolveWalkthrough, factsFor, videoSource, isFile,
          fmtDuration, clockTime } from "./walkthrough.js?v=5";
-import * as F from "./flow.js?v=15";
+import * as F from "./flow.js?v=16";
 import { loadTenant, renderUnknownAgency, applyTenantChrome, urlForAgency } from "./tenant.js?v=5";
 
 const el = (id) => document.getElementById(id);
@@ -454,11 +454,25 @@ function stepBarHTML(r, idx, total){
     const done = F.isDone(F.reqStatus(req.key, S.sm));
     segs += `<i class="${i === idx ? "now" : (done ? "done" : "")}"></i>`;
   }
+  /* Walk the journey in order, without having to save anything to move.
+     Both arrows are always in the same place; the one at either end is
+     shown greyed rather than removed, so the row never shifts. */
+  const prev = F.stepBefore(S.journey, r.key);
+  const next = F.stepAfter(S.journey, r.key);
+  const arrow = (req, glyph, label) => req
+    ? `<a class="sb-step" href="#/step/${esc(req.key)}" title="${esc(label)}: ${esc(req.label || req.heading || "")}"
+         aria-label="${esc(label)}: ${esc(req.label || req.heading || "")}">${glyph}</a>`
+    : `<span class="sb-step is-off" aria-hidden="true">${glyph}</span>`;
+
   return `<div class="sb-in">
     <div class="sb-top">
       <a class="sb-back" href="#/dashboard">&larr; Your journey</a>
       <span class="sb-now">${esc(r.label || r.heading || "")}</span>
-      <span class="sb-count">Step <b>${idx + 1}</b> of ${total}</span>
+      <span class="sb-count">
+        ${arrow(prev, "&larr;", "Previous step")}
+        Step <b>${idx + 1}</b> of ${total}
+        ${arrow(next, "&rarr;", "Next step")}
+      </span>
     </div>
     <div class="sb-seg" role="img" aria-label="Step ${idx + 1} of ${total}">${segs}</div>
   </div>`;
@@ -1400,9 +1414,10 @@ async function submitGeneric(r) {
     /* If that was the last thing they had to do, say so properly rather
        than dropping them back on a dashboard of ticks. */
     if (F.allSubmitted(S.journey, S.sm)) { goto("#/complete"); return; }
-    const ns = F.nextStep(S.journey, S.sm);
     if (status===F.ST.PENDING) { goto("#/dashboard"); return; }
-    if (ns.type==="do" && ns.req.key!==r.key) goto("#/step/"+ns.req.key); else goto("#/dashboard");
+    /* Forward one place in the journey, whatever is or isn't finished. */
+    const after = F.stepAfter(S.journey, r.key);
+    if (after) goto("#/step/"+after.key); else goto("#/dashboard");
   } catch (e) { A.className="alert show alert-error"; A.textContent="Something went wrong: "+(e.message||e); el("submitStep").disabled=false; el("submitStep").textContent=r.verify==="admin"?"Submit for review":"Save & continue"; }
 }
 
@@ -1456,8 +1471,8 @@ function renderExam(r, st, head) {
       await mustWrite(supabase.from("requirement_instances").upsert({ user_id:S.user.id, requirement_key:r.key, label:r.label, status:F.ST.COMPLETE, meta:{ exam_date:d, provider:vendor, exam_name:r.examName||null, exam_type:S.profile.license_type }, completed_at:new Date().toISOString(), updated_at:new Date().toISOString() }, { onConflict:"user_id,requirement_key" }), "your exam booking");
       await audit("requirement:exam", before, "scheduled", { exam_date:d });
       await load();
-      const ns=F.nextStep(S.journey,S.sm);
-      if (ns.type==="do" && ns.req.key!==r.key) goto("#/step/"+ns.req.key); else goto("#/dashboard");
+      const after = F.stepAfter(S.journey, r.key);
+      if (after) goto("#/step/"+after.key); else goto("#/dashboard");
     } catch(e){
       /* Without this the button sits on "Saving…" for ever and the agent
          has no idea their exam date didn't take. */

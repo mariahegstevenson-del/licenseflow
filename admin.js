@@ -3,7 +3,7 @@ import { STATES, STATE_LIST, ceSlots, ceBasketHTML, STUDY_TIPS, EXAM_BRING, PLAY
          resolvePlaybook, COMPLETE_FIELDS, fillTokens } from "./states.js?v=28";
 import { WALKTHROUGH_REQS, resolveWalkthrough, vendorKeyFor, videoSource,
          fmtDuration, RECORDING_STANDARD } from "./walkthrough.js?v=5";
-import * as F from "./flow.js?v=15";
+import * as F from "./flow.js?v=16";
 import { loadTenant, renderUnknownAgency, applyTenantChrome, urlForAgency } from "./tenant.js?v=5";
 
 const el = (id) => document.getElementById(id);

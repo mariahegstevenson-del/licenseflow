@@ -291,6 +291,26 @@ export function allSubmitted(journey, sm){
   });
 }
 
+/* Where "Save & continue" goes: the next step in the journey, in order.
+
+   Deliberately NOT the next unfinished one. Somebody who has already
+   passed their exam and comes back to tidy up their study material
+   expects the button to walk them forward one place -- not to teleport
+   them past a step that is still sitting there in the progress bar.
+   Predictable beats clever. nextStep() below answers a different
+   question, the one the dashboard asks: what still needs doing. */
+export function stepAfter(journey, key){
+  const reqs = (journey && journey.reqs) || [];
+  const i = reqs.findIndex(r => r.key === key);
+  return (i >= 0 && i + 1 < reqs.length) ? reqs[i + 1] : null;
+}
+
+export function stepBefore(journey, key){
+  const reqs = (journey && journey.reqs) || [];
+  const i = reqs.findIndex(r => r.key === key);
+  return i > 0 ? reqs[i - 1] : null;
+}
+
 export function nextStep(journey, sm){
   for (const r of journey.reqs){
     const s = reqStatus(r.key, sm);

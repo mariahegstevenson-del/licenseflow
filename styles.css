@@ -775,7 +775,15 @@ html.scene-on .desig{background:rgba(255,255,255,.78);backdrop-filter:blur(3px)}
 .sb-back:hover{text-decoration:underline}
 .sb-now{font-family:var(--ff-display);font-weight:600;font-size:1.2rem;color:var(--ink);
   letter-spacing:-.018em;margin:0 auto;text-align:center}
-.sb-count{font-size:.9rem;color:var(--muted);font-variant-numeric:tabular-nums;flex:0 0 auto}
+.sb-count{font-size:.9rem;color:var(--muted);font-variant-numeric:tabular-nums;flex:0 0 auto;
+  display:inline-flex;align-items:center;gap:10px}
+/* One place forward, one place back -- in journey order, never skipping. */
+.sb-step{display:inline-grid;place-items:center;width:26px;height:26px;border-radius:7px;
+  border:1px solid var(--line,#DCE3EC);color:var(--brand);text-decoration:none;
+  font-size:.95rem;line-height:1;background:#fff}
+.sb-step:hover{border-color:var(--brand);background:var(--brand);color:#fff}
+.sb-step:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
+.sb-step.is-off{color:var(--line,#DCE3EC);border-color:var(--line,#DCE3EC);background:transparent}
 .sb-count b{color:var(--agency-gold-ink,var(--brand));font-weight:700}
 .sb-seg{display:flex;gap:6px}
 .sb-seg i{flex:1;height:10px;border-radius:99px;background:var(--line);display:block}
