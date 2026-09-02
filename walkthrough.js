@@ -164,6 +164,17 @@ function vendorLabelFor(key){
    A file we host gets the native player plus a captions track when one
    exists. Either way the calling code does not care which it got.
 ------------------------------------------------------------------- */
+/* A recording we host is kept in a private bucket, so the link stored on
+   the row is an identifier rather than something a browser can fetch.
+   This pulls the object's path back out of it. Anything that is not ours
+   -- YouTube, Vimeo, a file on somebody else's server -- returns null and
+   is used exactly as written. */
+export function storagePath(url, bucket = "walkthroughs"){
+  const m = String(url || "").match(
+    new RegExp(`/storage/v1/object/(?:public|sign|authenticated)/${bucket}/([^?#]+)`));
+  return m ? decodeURIComponent(m[1]) : null;
+}
+
 export function videoSource(w){
   const url = (w && w.video_url) || "";
   if (!url) return null;
@@ -175,7 +186,7 @@ export function videoSource(w){
     return { kind: "iframe", src: `https://player.vimeo.com/video/${m[1]}` };
   if (kind === "loom" && (m = url.match(/loom\.com\/(?:share|embed)\/([\w-]+)/)))
     return { kind: "iframe", src: `https://www.loom.com/embed/${m[1]}` };
-  if (kind === "mp4") return { kind: "file", src: url };
+  if (kind === "mp4") return { kind: "file", src: url, path: storagePath(url) };
   return { kind: "iframe", src: url };
 }
 

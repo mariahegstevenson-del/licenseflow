@@ -2,7 +2,7 @@ import { supabase, isConfigured, requireSession, hardSignOut } from "./supabase.
 import { STATE_LIST, STATES, ceSlots, ceIsConfigured, ceBasketHTML, STUDY_TIPS, EXAM_BRING, resolvePlaybook,
          fillTokens } from "./states.js?v=28";
 import { resolveWalkthrough, factsFor, videoSource, isFile,
-         fmtDuration, clockTime } from "./walkthrough.js?v=4";
+         fmtDuration, clockTime } from "./walkthrough.js?v=5";
 import * as F from "./flow.js?v=15";
 import { loadTenant, renderUnknownAgency, applyTenantChrome, urlForAgency } from "./tenant.js?v=5";
 
@@ -264,7 +264,9 @@ function videoBlock(key, fallbackTitle){
       ${src?.kind === "file"
         ? `<video id="wtV" preload="metadata" playsinline controls
              ${w.thumbnail_url ? `poster="${esc(w.thumbnail_url)}"` : ""}
-             src="${esc(src.src)}#t=${resume || 0}">
+             ${src.path
+                ? `data-obj="${esc(src.path)}" data-at="${resume || 0}"`
+                : `src="${esc(src.src)}#t=${resume || 0}"`}>
              ${w.captions_url ? `<track kind="captions" srclang="en" label="Captions" default src="${esc(w.captions_url)}"/>` : ""}
            </video>`
         : `<iframe src="${esc(src.src)}" allowfullscreen loading="lazy"
@@ -319,6 +321,28 @@ function wireWalkthrough(){
        honestly record is that they opened the step with it on screen. */
     wtTrack(id, { requirement_key: req, version_watched: ver });
     return;
+  }
+
+  /* Our own recordings live in a private bucket, so the page is served
+     without a playable link and mints a short-lived one here. Only a
+     signed-in agent can mint it, and it expires within the hour, so a URL
+     copied out of the page is worth nothing to anyone outside. */
+  const obj = v.dataset.obj;
+  if (obj) {
+    supabase.storage.from("walkthroughs").createSignedUrl(obj, 3600)
+      .then(({ data, error }) => {
+        if (error || !data?.signedUrl) throw error || new Error("no link");
+        v.src = `${data.signedUrl}#t=${v.dataset.at || 0}`;
+      })
+      .catch(() => {
+        /* Say so rather than leaving a player that will never start. */
+        const shell = v.closest(".video");
+        if (!shell) return;
+        shell.className = "video is-soon";
+        shell.innerHTML = `<div class="ph"><div class="pi"></div>
+          <b>This recording didn&rsquo;t load</b>
+          <span>Reload the page. If it keeps happening, tell your coordinator.</span></div>`;
+      });
   }
 
   let started = false, lastSave = 0;
