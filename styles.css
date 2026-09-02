@@ -1155,4 +1155,10 @@ html.themed .facts{border-color:color-mix(in srgb,var(--agency-gold,#D4A12B) 34%
 .wtb-tx{margin-top:12px;font-size:.9rem}
 .wtb-tx summary{cursor:pointer;font-weight:600;color:var(--muted,#51637A)}
 .wtb-tx > div{margin-top:9px;color:var(--muted,#51637A);line-height:1.62;white-space:pre-wrap}
+/* Prices in a recording belong to the state it was filmed in. Quiet, but
+   present wherever money is on screen -- a caution, not an alarm. */
+.wtb-price{margin:12px 0 0;padding:10px 14px;font-size:.85rem;line-height:1.55;
+  color:#8a5a00;background:var(--warn-050,#fdf6ea);border:1px solid #F0DEB8;
+  border-radius:10px}
+
 .wtb-foot{margin:11px 0 0;font-size:.82rem;color:var(--faint,#5E7089);text-align:center}

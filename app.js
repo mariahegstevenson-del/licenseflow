@@ -221,6 +221,23 @@ function factsPanel(key){
   </div>`;
 }
 
+/* Steps where the agent pays somebody.
+
+   Every recording is filmed in one state, so every price in one is that
+   state's. A state can also change its own fees whenever it likes. The
+   portal supplies the facts and the video only teaches the procedure --
+   this is the line that says so, on the steps where money is on screen. */
+const PRICED_REQS = new Set([
+  "study_material", "exam", "nipr_application", "fingerprinting",
+  "eo", "continuing_education",
+]);
+
+const priceNote = (key) => PRICED_REQS.has(key)
+  ? `<p class="wtb-price">Any price you see in this recording is the one for the state it was
+     filmed in. Your state may charge something different, and states change their fees
+     &mdash; go by the amount on your own screen when you book.</p>`
+  : "";
+
 function videoBlock(key, fallbackTitle){
   const w = walkthroughFor(key);
   const legacy = S.videos?.[key];
@@ -231,7 +248,8 @@ function videoBlock(key, fallbackTitle){
     if (legacy && legacy.active && legacy.url) {
       return `<div class="section-k center-k">${esc(legacy.title || fallbackTitle || "Watch")}</div>
         <div class="video">${videoEmbed(legacy.url)}</div>
-        ${legacy.description ? `<p class="link-note" style="margin-top:-12px">${esc(legacy.description)}</p>` : ""}`;
+        ${legacy.description ? `<p class="link-note" style="margin-top:-12px">${esc(legacy.description)}</p>` : ""}
+        ${priceNote(key)}`;
     }
     return `<div class="section-k center-k">Watch this step</div>
       <div class="video is-soon">
@@ -283,6 +301,8 @@ function videoBlock(key, fallbackTitle){
 
     ${w.transcript ? `<details class="wtb-tx"><summary>Read it instead</summary>
       <div>${esc(w.transcript)}</div></details>` : ""}
+
+    ${priceNote(key)}
 
     <p class="wtb-foot">Watching is not the same as doing &mdash; this step still needs completing below.</p>
   </div>`;
