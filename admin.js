@@ -740,20 +740,47 @@ function renderView(){
 function shell(title, sub, inner){
   root.innerHTML = `<div class="cc-h"><div><h1>${esc(title)}</h1><p>${esc(sub)}</p></div></div>${inner}`;
   bindCommon();
+  const sum = el("ccSum");
+  if (sum) sum.onclick = () => {
+    A.tilesOpen = !A.tilesOpen;
+    render();
+  };
 }
 
+/* Three lines and a badge, up in the corner where the eye lands first.
+   The other three figures are still here — they are just behind a click,
+   because "how many are waiting and are any of them late" is the
+   question being asked ninety-nine mornings in a hundred. */
 function renderTiles(){
   const c = counts();
-  const s = windowStats(30,0);
-  return `<div class="cc-tiles">
-    <div class="cc-tile"><div class="l">Waiting on you</div>
-      <div class="v${c.pending?" warn":""}">${c.pending}</div><div class="d">submissions</div></div>
-    <div class="cc-tile"><div class="l">Overdue past ${OVERDUE_HOURS}h</div>
-      <div class="v${c.overdue?" crit":""}">${c.overdue}</div><div class="d">of those</div></div>
-    <div class="cc-tile"><div class="l">Handled automatically</div>
-      <div class="v">${s.autoRate==null?"—":s.autoRate+"%"}</div><div class="d">last 30 days</div></div>
-    <div class="cc-tile"><div class="l">Active agents</div>
-      <div class="v">${c.agents}</div><div class="d">${c.compliant} fully compliant</div></div>
+  const s = windowStats(30, 0);
+  const alert = c.overdue > 0;
+  const open  = A.tilesOpen === true;
+
+  return `<div class="cc-summary">
+    <button class="cc-sum${alert ? " alert" : ""}${open ? " open" : ""}"
+      id="ccSum" type="button" aria-expanded="${open}">
+      <span class="cc-sum-b${alert ? " red" : ""}">${c.pending}</span>
+      <span class="cc-sum-t">
+        <span class="l1">Waiting on you</span>
+        <span class="l2">${c.pending} ${c.pending === 1 ? "submission" : "submissions"}</span>
+        <span class="l3${alert ? " bad" : ""}">${alert
+          ? `${c.overdue} overdue past ${OVERDUE_HOURS}h &mdash; needs action`
+          : "Nothing overdue"}</span>
+      </span>
+      <span class="cc-sum-x">${open ? "&minus;" : "+"}</span>
+    </button>
+
+    <div class="cc-tiles" ${open ? "" : "hidden"}>
+      <div class="cc-tile"><div class="l">Waiting on you</div>
+        <div class="v${c.pending ? " warn" : ""}">${c.pending}</div><div class="d">submissions</div></div>
+      <div class="cc-tile"><div class="l">Overdue past ${OVERDUE_HOURS}h</div>
+        <div class="v${c.overdue ? " crit" : ""}">${c.overdue}</div><div class="d">of those</div></div>
+      <div class="cc-tile"><div class="l">Handled automatically</div>
+        <div class="v">${s.autoRate == null ? "—" : s.autoRate + "%"}</div><div class="d">last 30 days</div></div>
+      <div class="cc-tile"><div class="l">Active agents</div>
+        <div class="v">${c.agents}</div><div class="d">${c.compliant} fully compliant</div></div>
+    </div>
   </div>`;
 }
 
