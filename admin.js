@@ -86,7 +86,7 @@ const within = (t, from, to) => t != null && t >= from && t < to;
 })();
 
 async function load() {
-  const [p, inst, ex, vids, docs, notes, pb, ags, wtl, wta, wtv] = await Promise.all([
+  const [p, inst, ex, vids, docs, notes, pb, ags, wtl, wta, wtv, ctc, ctn, ctd] = await Promise.all([
     supabase.from("licensing_profiles").select("*"),
     supabase.from("requirement_instances").select("*"),
     supabase.from("exceptions").select("*").order("created_at",{ascending:false}),
@@ -98,6 +98,9 @@ async function load() {
     supabase.from("walkthroughs").select("*").order("requirement_key"),
     supabase.from("walkthrough_assignments").select("*"),
     supabase.from("walkthrough_views").select("walkthrough_id,user_id,completed_at"),
+    supabase.from("contracting_carriers").select("*").order("sort"),
+    supabase.from("contracting_nodes").select("*").order("sort"),
+    supabase.from("contracting_docs").select("*"),
   ]);
   A.profiles=p.data||[]; A.instances=inst.data||[]; A.exceptions=ex.data||[]; A.videos=vids.data||[];
   A.docs = docs.data || [];
@@ -111,6 +114,11 @@ async function load() {
   A.wtLib    = wtl.data || [];
   A.wtAssign = wta.data || [];
   A.wtViews  = wtv.data || [];
+  /* Contracting is agency-owned end to end: RLS returns only rows for
+     agencies this admin may see, so no splitting is needed. */
+  A.ctCarriers = ctc.data || [];
+  A.ctNodes    = ctn.data || [];
+  A.ctDocs     = ctd.data || [];
 
   /* An agency administrator is already limited to their own agency by
      the database, so this narrowing does nothing for them. It is for
@@ -277,6 +285,7 @@ function counts(){
     videos:    A.videos.filter(v=>v.active).length,
     playbooks: pbEditedCount(),
     walk:      (A.wtLib || []).filter(w => w.status === "active").length,
+    contracting: (A.ctNodes || []).length,
     unread:    (A.notes||[]).filter(n=>!n.read_at).length,
     overdue:   at.overdue,
     pre:        pipe.pre,
@@ -364,6 +373,8 @@ const NAV = [
   {v:"applied",     label:"Applied",         c:"applied"},
   {v:"issued",      label:"License issued",  c:"issued"},
   {v:"compliant",   label:"Fully compliant", c:"compliant"},
+  {grp:"Contracting", agencyOnly:true},
+  {v:"contracting", label:"Carrier hubs", c:"contracting", agencyOnly:true},
   {grp:"Content"},
   {v:"videos",   label:"Step videos",     c:"videos", platform:true},
   {v:"walk",     label:"Walkthroughs",    c:"walk",   platform:true},
@@ -379,10 +390,21 @@ const NAV = [
    cannot be saved -- and stops an agency reading "nothing recorded yet"
    on a shelf whose contents their agents are in fact being shown. */
 const PLATFORM_VIEWS = new Set(["videos", "walk", "walkedit"]);
+
+/* The contracting hub is an agency's own record of its carrier
+   hierarchies -- never shared, never inherited. It appears for
+   LicenseFlow staff, who set the carriers up, and for an agency's own
+   admins once they have carriers. An agency that does not do its
+   contracting here never sees the tab at all. */
+function showContracting(){
+  return A.platform || (A.ctCarriers || []).length > 0;
+}
+const CONTRACTING_VIEWS = new Set(["contracting", "carrier"]);
 function renderNav(){
   const c = counts(), cur = A.view.name;
   const active = {review:"overview", agent:"agents"}[cur] || cur;
-  navEl.innerHTML = NAV.filter(n => !n.platform || A.platform).map(n=>{
+  navEl.innerHTML = NAV.filter(n => (!n.platform || A.platform)
+                                 && (!n.agencyOnly || showContracting())).map(n=>{
     if(n.grp) return `<div class="grp">${esc(n.grp)}</div>`;
     const val = c[n.c] ?? 0;
     const tone = val && n.tone ? " "+n.tone : "";
@@ -529,6 +551,7 @@ function renderView(){
      over from a previous session, or a hand-typed one, must not open a
      screen this account cannot save from. */
   if (!A.platform && PLATFORM_VIEWS.has(A.view.name)) A.view = { name:"overview" };
+  if (!showContracting() && CONTRACTING_VIEWS.has(A.view.name)) A.view = { name:"overview" };
   renderTabs(); renderNav(); renderRail();
   /* Re-bound on every render, because the panel is rebuilt each time. */
   setTimeout(wireNotices, 0);
@@ -536,6 +559,8 @@ function renderView(){
   if (v.name==="review") return renderReview(v.arg);
   if (v.name==="agent")  return renderAgent(v.arg);
   if (v.name==="videos")     return shell("Step videos","Paste a link; agents see it on that step.", renderVideos());
+  if (v.name==="contracting") return renderContracting();
+  if (v.name==="carrier")     return renderCarrier(v.arg, v.node);
   if (v.name==="walk")       return renderWalkLibrary();
   if (v.name==="walkedit")   return renderWalkEdit(v.arg);
   if (v.name==="playbooks")  return renderPlaybookGrid();
@@ -1980,6 +2005,339 @@ function renderWalkEdit(arg){
     A.view = { name:"walk" };
     await load();
   };
+}
+
+/* ============================================================
+   CONTRACTING HUB
+
+   A carrier hierarchy is a picture of who sits under whom, and the
+   paperwork each of those people owes. It is the agency's own record --
+   never shared, never inherited, never visible to an agent.
+
+   A node holds a typed name rather than an agent id, because most of a
+   hierarchy is people the portal has never heard of: uplines at the
+   carrier, recruits who have not signed up. Where the person IS one of
+   your agents, linking them lets the bubble show their licensing state
+   too, without the two ever having to agree on spelling.
+   ============================================================ */
+
+const CT_DOCS = [
+  { k:"aml",           label:"AML" },
+  { k:"eo",            label:"E&O" },
+  { k:"best_interest", label:"Best Interest" },
+];
+
+/* Whose hub. The agency tab decides, exactly as it does for playbooks. */
+const ctOwner = () => pbOwner();
+const ctCarriersFor = () => (A.ctCarriers || [])
+  .filter(c => c.agency_id === ctOwner())
+  .sort((a, b) => (a.sort - b.sort) || a.name.localeCompare(b.name));
+const ctNodesFor = (carrierId) => (A.ctNodes || []).filter(n => n.carrier_id === carrierId);
+const ctDocsFor  = (nodeId)    => (A.ctDocs  || []).filter(d => d.node_id === nodeId);
+
+/* Every write goes through here so a refusal is never silent. */
+async function ctWrite(q, what){
+  const r = await q;
+  if (r && r.error) throw new Error(`Couldn't save ${what}. ${r.error.message || ""}`);
+  return r;
+}
+function ctSay(msg, bad){
+  const n = el("ctMsg"); if (!n) return;
+  n.textContent = msg || "";
+  n.className = "ct-msg" + (msg ? " on" : "") + (bad ? " bad" : "");
+  if (msg && !bad) setTimeout(() => { if (el("ctMsg")) el("ctMsg").className = "ct-msg"; }, 2500);
+}
+
+/* ---------------- the four boxes ---------------- */
+function renderContracting(){
+  if (!ctOwner()) {
+    root.innerHTML = `
+      <div class="cc-h"><div><h1>Carrier hubs</h1>
+        <p>A contracting hierarchy belongs to one agency.</p></div></div>
+      <div class="cc-panel"><div class="pad">
+        <p class="muted">Pick an agency from the tabs above to see its carriers.</p>
+      </div></div>`;
+    return;
+  }
+  const list = ctCarriersFor();
+  const card = (c) => {
+    const nodes = ctNodesFor(c.id);
+    const docs  = nodes.reduce((n, x) => n + ctDocsFor(x.id).length, 0);
+    const need  = nodes.length * CT_DOCS.length;
+    return `<button class="ct-card" data-carrier="${esc(c.id)}" type="button">
+      <span class="ct-name">${esc(c.name)}</span>
+      <span class="ct-sub">${nodes.length} ${nodes.length === 1 ? "person" : "people"}</span>
+      <span class="ct-foot">
+        <span>${c.kit_url ? "Kit linked" : "No kit yet"}</span>
+        <span>${need ? `${docs} of ${need} documents` : "No documents yet"}</span>
+      </span>
+    </button>`;
+  };
+
+  root.innerHTML = `
+    <div class="cc-h"><div><h1>Carrier hubs</h1>
+      <p>One hierarchy per carrier, with the contracting kit and the paperwork each
+      person owes. ${esc(pbAgencyName(ctOwner()))}&rsquo;s own &mdash; no other agency sees it.</p></div></div>
+    <div class="ct-grid">${list.map(card).join("")}</div>
+    ${list.length ? "" : `<p class="wl-empty">No carriers yet.</p>`}
+    <div class="ct-add">
+      <input id="ctNewCarrier" type="text" placeholder="Add another carrier"/>
+      <button class="btn btn-ghost btn-sm" id="ctAddCarrier" type="button">Add</button>
+      <span class="ct-msg" id="ctMsg"></span>
+    </div>`;
+
+  root.querySelectorAll("[data-carrier]").forEach(b =>
+    b.onclick = () => { A.view = { name:"carrier", arg:b.dataset.carrier }; render(); });
+
+  el("ctAddCarrier").onclick = async () => {
+    const name = (el("ctNewCarrier").value || "").trim();
+    if (!name) return ctSay("Give the carrier a name.", true);
+    try {
+      await ctWrite(supabase.from("contracting_carriers").insert({
+        agency_id: ctOwner(), name, sort: (ctCarriersFor().length + 1) }), "the carrier");
+      await load();
+    } catch (e) { ctSay(e.message, true); }
+  };
+}
+
+/* ---------------- one carrier: kit, link, tree ---------------- */
+function renderCarrier(carrierId, openNode){
+  const c = (A.ctCarriers || []).find(x => x.id === carrierId);
+  if (!c) { A.view = { name:"contracting" }; return render(); }
+  const nodes = ctNodesFor(c.id);
+
+  /* Children of a node, in the order they were given. */
+  const kids = (pid) => nodes.filter(n => (n.parent_id || null) === (pid || null))
+                             .sort((a, b) => (a.sort - b.sort) || a.name.localeCompare(b.name));
+
+  const bubble = (n) => {
+    const have = ctDocsFor(n.id).length;
+    const cls = have === CT_DOCS.length ? "full" : have ? "part" : "none";
+    return `<button class="ct-bub ${cls}${openNode === n.id ? " on" : ""}"
+      data-node="${esc(n.id)}" type="button">
+      <span class="ct-bn">${esc(n.name)}</span>
+      ${n.contract_level ? `<span class="ct-bl">${esc(n.contract_level)}</span>` : ""}
+      <span class="ct-bd">${have}/${CT_DOCS.length}</span>
+    </button>`;
+  };
+  const branch = (pid, depth) => {
+    const list = kids(pid);
+    if (!list.length) return "";
+    return `<ul class="ct-tree${depth ? "" : " root"}">${list.map(n =>
+      `<li>${bubble(n)}${branch(n.id, depth + 1)}</li>`).join("")}</ul>`;
+  };
+
+  root.innerHTML = `
+    <div class="cc-h"><div><h1>${esc(c.name)}</h1>
+      <p>${esc(pbAgencyName(c.agency_id))} &middot; ${nodes.length}
+        ${nodes.length === 1 ? "person" : "people"} in the hierarchy</p></div></div>
+    <button class="btn btn-ghost btn-sm" id="ctBack" style="margin-bottom:14px">&larr; All carriers</button>
+
+    <div class="cc-panel pb-sec"><div class="cc-panel-h"><h2>Getting started</h2></div><div class="pad">
+      <label for="ct_kit">Contracting kit / steps</label>
+      <input id="ct_kit" type="url" value="${esc(c.kit_url || "")}" placeholder="https://…"/>
+      <input id="ct_kitnote" type="text" value="${esc(c.kit_note || "")}" placeholder="A note about the kit — what's in it, who to chase"/>
+
+      <label for="ct_invite" style="margin-top:16px">Link to send agents</label>
+      <input id="ct_invite" type="url" value="${esc(c.invite_url || "")}" placeholder="https://…"/>
+      <input id="ct_invitenote" type="text" value="${esc(c.invite_note || "")}" placeholder="A note — what they're being asked to do"/>
+
+      <div class="wt-actions" style="margin-top:14px">
+        <button class="btn btn-primary btn-sm" id="ctSaveCarrier" type="button">Save</button>
+        ${c.kit_url ? `<a class="btn btn-ghost btn-sm" href="${esc(c.kit_url)}" target="_blank" rel="noopener">Open kit</a>` : ""}
+        ${c.invite_url ? `<button class="btn btn-ghost btn-sm" id="ctCopy" type="button">Copy agent link</button>` : ""}
+        <span class="ct-msg" id="ctMsg"></span>
+      </div>
+    </div></div>
+
+    <div class="cc-panel pb-sec"><div class="cc-panel-h"><h2>Hierarchy</h2>
+      <span class="sub">Click anyone to open their record</span></div><div class="pad">
+      ${nodes.length ? branch(null, 0)
+        : `<p class="muted">Nobody in this hierarchy yet. Add the top of the tree below.</p>`}
+      <div class="ct-add" style="margin-top:16px">
+        <input id="ctNewName" type="text" placeholder="Add a person"/>
+        <select id="ctNewParent">
+          <option value="">Top of the tree</option>
+          ${nodes.map(n => `<option value="${esc(n.id)}">under ${esc(n.name)}</option>`).join("")}
+        </select>
+        <button class="btn btn-ghost btn-sm" id="ctAddNode" type="button">Add</button>
+      </div>
+    </div></div>
+
+    <div id="ctNodePanel">${openNode ? ctNodeEditor(nodes.find(n => n.id === openNode), nodes) : ""}</div>`;
+
+  el("ctBack").onclick = () => { A.view = { name:"contracting" }; render(); };
+
+  root.querySelectorAll("[data-node]").forEach(b =>
+    b.onclick = () => { A.view = { name:"carrier", arg:c.id, node:b.dataset.node }; render(); });
+
+  el("ctSaveCarrier").onclick = async () => {
+    try {
+      await ctWrite(supabase.from("contracting_carriers").update({
+        kit_url:     el("ct_kit").value.trim()      || null,
+        kit_note:    el("ct_kitnote").value.trim()  || null,
+        invite_url:  el("ct_invite").value.trim()   || null,
+        invite_note: el("ct_invitenote").value.trim() || null,
+        updated_at:  new Date().toISOString(),
+      }).eq("id", c.id), "the carrier");
+      ctSay("Saved.");
+      await load();
+    } catch (e) { ctSay(e.message, true); }
+  };
+
+  const copy = el("ctCopy");
+  if (copy) copy.onclick = async () => {
+    try { await navigator.clipboard.writeText(c.invite_url); ctSay("Link copied."); }
+    catch (_) { ctSay("Couldn't copy — select the field and copy it by hand.", true); }
+  };
+
+  el("ctAddNode").onclick = async () => {
+    const name = (el("ctNewName").value || "").trim();
+    if (!name) return ctSay("Give them a name.", true);
+    try {
+      await ctWrite(supabase.from("contracting_nodes").insert({
+        agency_id: c.agency_id, carrier_id: c.id,
+        parent_id: el("ctNewParent").value || null,
+        name, sort: nodes.length + 1, updated_by: A.me?.id || null }), "this person");
+      await load();
+    } catch (e) { ctSay(e.message, true); }
+  };
+
+  if (openNode) wireNodeEditor(c, nodes.find(n => n.id === openNode));
+}
+
+/* ---------------- one person's record ---------------- */
+function ctNodeEditor(n, nodes){
+  if (!n) return "";
+  const agents = (A.profiles || []).filter(p => p.agency_id === n.agency_id);
+  const docRow = (d) => {
+    const have = ctDocsFor(n.id).find(x => x.kind === d.k);
+    return `<div class="ct-doc">
+      <span class="ct-dk">${esc(d.label)}</span>
+      ${have
+        ? `<span class="ct-dhave">&#10003; ${esc(have.file_name || "on file")}</span>
+           <button class="btn btn-ghost btn-sm" data-dl="${esc(d.k)}" type="button">Open</button>
+           <button class="btn btn-ghost btn-sm" data-rm="${esc(d.k)}" type="button">Remove</button>`
+        : `<span class="ct-dnone">Not on file</span>
+           <button class="btn btn-ghost btn-sm" data-up="${esc(d.k)}" type="button">Upload</button>`}
+      <input type="file" hidden data-file="${esc(d.k)}"
+        accept=".pdf,.png,.jpg,.jpeg,.heic,.webp,.doc,.docx"/>
+    </div>`;
+  };
+
+  return `<div class="cc-panel pb-sec ct-node"><div class="cc-panel-h">
+      <h2>${esc(n.name)}</h2><span class="sub">Contracting record</span></div><div class="pad">
+    <label for="ct_name">Name</label>
+    <input id="ct_name" type="text" value="${esc(n.name)}"/>
+
+    <label for="ct_parent">Upline</label>
+    <select id="ct_parent">
+      <option value="">Top of the tree</option>
+      ${nodes.filter(x => x.id !== n.id).map(x =>
+        `<option value="${esc(x.id)}"${(n.parent_id === x.id) ? " selected" : ""}>${esc(x.name)}</option>`).join("")}
+    </select>
+
+    <label for="ct_level">Contract level</label>
+    <input id="ct_level" type="text" value="${esc(n.contract_level || "")}" placeholder="e.g. 95%"/>
+
+    <label for="ct_init">Contracting initiated</label>
+    <input id="ct_init" type="date" value="${esc(n.initiated_on || "")}"/>
+
+    <label for="ct_user">Also an agent in the portal</label>
+    <select id="ct_user">
+      <option value="">Not linked</option>
+      ${agents.map(p => `<option value="${esc(p.user_id)}"${n.user_id === p.user_id ? " selected" : ""}>${
+        esc([p.first_name, p.last_name].filter(Boolean).join(" ") || p.email || p.user_id)}</option>`).join("")}
+    </select>
+    <span class="hint">Optional. Links this bubble to their licensing record.</span>
+
+    <div class="ct-docs">${CT_DOCS.map(docRow).join("")}</div>
+
+    <label for="ct_notes" style="margin-top:16px">Notes</label>
+    <textarea id="ct_notes" rows="4" placeholder="Anything worth remembering about this contract">${esc(n.notes || "")}</textarea>
+
+    <div class="wt-actions" style="margin-top:14px">
+      <button class="btn btn-primary btn-sm" id="ctSaveNode" type="button">Save</button>
+      <button class="btn btn-ghost btn-sm" id="ctCloseNode" type="button">Close</button>
+      <button class="btn btn-ghost btn-sm ct-del" id="ctDelNode" type="button">Remove from hierarchy</button>
+      <span class="ct-msg" id="ctMsg"></span>
+    </div>
+  </div></div>`;
+}
+
+function wireNodeEditor(c, n){
+  if (!n) return;
+  const panel = el("ctNodePanel");
+
+  el("ctSaveNode").onclick = async () => {
+    try {
+      await ctWrite(supabase.from("contracting_nodes").update({
+        name:           el("ct_name").value.trim() || n.name,
+        parent_id:      el("ct_parent").value || null,
+        contract_level: el("ct_level").value.trim() || null,
+        initiated_on:   el("ct_init").value || null,
+        user_id:        el("ct_user").value || null,
+        notes:          el("ct_notes").value.trim() || null,
+        updated_at:     new Date().toISOString(),
+        updated_by:     A.me?.id || null,
+      }).eq("id", n.id), "this record");
+      ctSay("Saved.");
+      await load();
+    } catch (e) { ctSay(e.message, true); }
+  };
+
+  el("ctCloseNode").onclick = () => { A.view = { name:"carrier", arg:c.id }; render(); };
+
+  el("ctDelNode").onclick = async () => {
+    /* Anyone under them would be orphaned, so say so rather than
+       silently re-parenting a branch. */
+    const under = (A.ctNodes || []).filter(x => x.parent_id === n.id).length;
+    if (under) return ctSay(`${under} ${under === 1 ? "person sits" : "people sit"} under ${n.name}. Move them first.`, true);
+    if (!confirm(`Remove ${n.name} from this hierarchy? Their uploaded documents go too.`)) return;
+    try {
+      await ctWrite(supabase.from("contracting_nodes").delete().eq("id", n.id), "the removal");
+      A.view = { name:"carrier", arg:c.id };
+      await load();
+    } catch (e) { ctSay(e.message, true); }
+  };
+
+  panel.querySelectorAll("[data-up]").forEach(b => b.onclick = () =>
+    panel.querySelector(`[data-file="${b.dataset.up}"]`).click());
+
+  panel.querySelectorAll("[data-file]").forEach(inp => inp.onchange = async () => {
+    const f = inp.files[0]; if (!f) return;
+    const kind = inp.dataset.file;
+    const path = `${n.agency_id}/${n.id}/${kind}-${Date.now()}-${f.name}`.replace(/\s+/g, "_");
+    ctSay("Uploading…");
+    try {
+      const up = await supabase.storage.from("contracting").upload(path, f, { upsert:true });
+      if (up.error) throw up.error;
+      await ctWrite(supabase.from("contracting_docs").upsert({
+        agency_id: n.agency_id, node_id: n.id, kind,
+        file_path: path, file_name: f.name,
+        uploaded_at: new Date().toISOString(), uploaded_by: A.me?.id || null,
+      }, { onConflict:"node_id,kind" }), "the document");
+      ctSay("Uploaded.");
+      await load();
+    } catch (e) { ctSay(e.message || String(e), true); }
+  });
+
+  panel.querySelectorAll("[data-dl]").forEach(b => b.onclick = async () => {
+    const d = ctDocsFor(n.id).find(x => x.kind === b.dataset.dl); if (!d) return;
+    const { data, error } = await supabase.storage.from("contracting").createSignedUrl(d.file_path, 300);
+    if (error || !data) return ctSay("Couldn't open that file.", true);
+    window.open(data.signedUrl, "_blank", "noopener");
+  });
+
+  panel.querySelectorAll("[data-rm]").forEach(b => b.onclick = async () => {
+    const d = ctDocsFor(n.id).find(x => x.kind === b.dataset.rm); if (!d) return;
+    if (!confirm(`Remove the ${d.kind.replace("_", " ")} document for ${n.name}?`)) return;
+    try {
+      await supabase.storage.from("contracting").remove([d.file_path]);
+      await ctWrite(supabase.from("contracting_docs").delete().eq("id", d.id), "the removal");
+      await load();
+    } catch (e) { ctSay(e.message, true); }
+  });
 }
 
 /* ---------------- videos ---------------- */

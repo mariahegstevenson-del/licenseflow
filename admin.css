@@ -521,3 +521,63 @@ body.cc-locked .cc-nav,body.cc-locked .cc-rail{display:none}
 .wl-foot{display:flex;justify-content:space-between;gap:10px;font-size:.73rem;
   color:var(--faint,#5E7089);border-top:1px solid #EDF1F6;padding-top:7px;margin-top:2px}
 .wl-card.s-retired{opacity:.6}
+
+/* ============================================================
+   CONTRACTING HUB
+
+   A hierarchy reads as a hierarchy: an indented tree with a rule down
+   the side, not a free-floating graph. It survives a narrow window, it
+   prints, and depth is countable at a glance -- which a scattered
+   bubble map never is.
+   ============================================================ */
+.ct-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(228px,1fr));gap:12px}
+.ct-card{text-align:left;background:#fff;border:1px solid var(--line);border-radius:11px;
+  padding:15px 17px;cursor:pointer;display:grid;gap:5px;
+  transition:border-color .12s,box-shadow .12s,transform .08s}
+.ct-card:hover{border-color:var(--accent);box-shadow:0 3px 12px rgba(12,61,130,.13);transform:translateY(-1px)}
+.ct-card:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.ct-name{font-family:var(--ff-display,inherit);font-weight:700;font-size:1.04rem;color:var(--ink)}
+.ct-sub{font-size:.86rem;color:var(--muted)}
+.ct-foot{display:flex;justify-content:space-between;gap:10px;margin-top:4px;
+  font-size:.76rem;color:var(--faint)}
+
+.ct-add{display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin-top:16px}
+.ct-add input[type=text]{flex:1 1 200px;max-width:320px;margin:0}
+.ct-add select{flex:0 1 200px;margin:0}
+
+.ct-msg{font-size:.84rem;color:var(--ok);opacity:0;transition:opacity .15s}
+.ct-msg.on{opacity:1}
+.ct-msg.bad{color:#A32019;opacity:1}
+
+/* the tree */
+.ct-tree{list-style:none;margin:0;padding:0}
+.ct-tree.root{padding-left:0}
+.ct-tree:not(.root){margin-left:15px;padding-left:17px;border-left:1.5px solid var(--line)}
+.ct-tree li{position:relative;margin:6px 0}
+.ct-tree:not(.root) > li:before{content:"";position:absolute;left:-17px;top:17px;
+  width:13px;height:1.5px;background:var(--line)}
+
+.ct-bub{display:inline-flex;align-items:center;gap:9px;background:#fff;
+  border:1px solid var(--line);border-radius:99px;padding:6px 14px;cursor:pointer;
+  font:inherit;font-size:.9rem;transition:border-color .12s,box-shadow .12s}
+.ct-bub:hover{border-color:var(--accent);box-shadow:0 2px 8px rgba(12,61,130,.12)}
+.ct-bub:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.ct-bub.on{border-color:var(--accent);background:var(--accent-050);box-shadow:none}
+.ct-bn{font-weight:600;color:var(--ink)}
+.ct-bl{font-size:.74rem;color:var(--muted);background:var(--soft);
+  border-radius:99px;padding:2px 8px}
+.ct-bd{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:.7rem;font-weight:700;
+  border-radius:99px;padding:2px 7px}
+.ct-bub.none .ct-bd{background:#FBEDED;color:#A32019}
+.ct-bub.part .ct-bd{background:var(--warn-050);color:var(--warn)}
+.ct-bub.full .ct-bd{background:var(--ok-050);color:var(--ok)}
+
+/* one person's paperwork */
+.ct-docs{display:grid;gap:8px;margin-top:18px;padding-top:16px;border-top:1px solid var(--line-2)}
+.ct-doc{display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+  background:var(--soft);border:1px solid var(--line);border-radius:10px;padding:9px 13px}
+.ct-dk{font-weight:650;color:var(--ink);min-width:104px}
+.ct-dhave{flex:1 1 auto;font-size:.86rem;color:var(--ok)}
+.ct-dnone{flex:1 1 auto;font-size:.86rem;color:var(--faint)}
+.ct-del{margin-left:auto;color:#A32019}
+.ct-del:hover{border-color:#A32019;color:#A32019}
