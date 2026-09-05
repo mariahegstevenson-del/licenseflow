@@ -51,6 +51,23 @@ export const WALKTHROUGH_REQS = [
   { key: "contracting",          label: "Contracting handoff" },
 ];
 
+/* Steps that show no video block on the agent's screen.
+
+   Looking up a number the state has already issued you, or uploading a
+   certificate somebody else wrote, is a field to fill in -- there is no
+   procedure worth screen-recording, and a "walkthrough coming soon" on
+   one is a promise nobody intends to keep.
+
+   They stay in WALKTHROUGH_REQS deliberately: anything already drafted
+   against them is still reachable and editable in the library. This
+   list only decides whether the step screen shows a player. */
+export const NO_STEP_VIDEO = new Set(["license_number", "npn", "eo"]);
+
+/* The single answer to "does this step show a video?", used by the agent
+   app and by the console's preview of it, so the two cannot drift. */
+export const showsVideo = (key) =>
+  WALKTHROUGH_REQS.some((r) => r.key === key) && !NO_STEP_VIDEO.has(key);
+
 /* Vendor keys are stable identifiers, not display names. An agency may
    call Pearson VUE whatever it likes in its own guide without detaching
    the recording from the twenty-seven states that use it. */

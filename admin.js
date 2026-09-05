@@ -2,7 +2,7 @@ import { supabase, isConfigured, requireSession, hardSignOut } from "./supabase.
 import { STATES, STATE_LIST, ceSlots, ceBasketHTML, STUDY_TIPS, EXAM_BRING, PLAYBOOK_SECTIONS, playbookDefaults,
          resolvePlaybook, COMPLETE_FIELDS, fillTokens } from "./states.js?v=28";
 import { WALKTHROUGH_REQS, resolveWalkthrough, vendorKeyFor, videoSource,
-         fmtDuration, RECORDING_STANDARD } from "./walkthrough.js?v=5";
+         fmtDuration, RECORDING_STANDARD, showsVideo } from "./walkthrough.js?v=6";
 import * as F from "./flow.js?v=16";
 import { loadTenant, renderUnknownAgency, applyTenantChrome, urlForAgency } from "./tenant.js?v=5";
 
@@ -1743,18 +1743,14 @@ function renderPlaybookAgent(code){
 const WT_WHY = { assigned:"chosen for this state", agency:"your own recording",
                  library:"from the shared library" };
 
-/* The same set the agent app uses. Fingerprinting and the affidavit are
-   deliberately not in it -- there is nothing to screen-record about
-   walking into a vendor's office -- so those steps get no video block at
-   all, not a "coming soon" that will never come. */
-const CAN_HAVE_WALKTHROUGH = new Set(WALKTHROUGH_REQS.map(r => r.key));
-
 function pvWalkthrough(key, code, playbook, lic){
   const soon = (title, line) => `<div class="section-k center-k">Watch this step</div>
     <div class="video is-soon"><div class="ph"><div class="pi"></div>
       <b>${title}</b><span>${line}</span></div></div>`;
 
-  if (!CAN_HAVE_WALKTHROUGH.has(key)) return "";
+  /* showsVideo() is shared with the agent app, so the preview and the
+     real screen can never disagree about which steps carry a recording. */
+  if (!showsVideo(key)) return "";
 
   let w = null;
   try {

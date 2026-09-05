@@ -2,7 +2,7 @@ import { supabase, isConfigured, requireSession, hardSignOut } from "./supabase.
 import { STATE_LIST, STATES, ceSlots, ceIsConfigured, ceBasketHTML, STUDY_TIPS, EXAM_BRING, resolvePlaybook,
          fillTokens } from "./states.js?v=28";
 import { resolveWalkthrough, factsFor, videoSource, isFile,
-         fmtDuration, clockTime, WALKTHROUGH_REQS } from "./walkthrough.js?v=5";
+         fmtDuration, clockTime, showsVideo } from "./walkthrough.js?v=6";
 import * as F from "./flow.js?v=16";
 import { loadTenant, renderUnknownAgency, applyTenantChrome, urlForAgency } from "./tenant.js?v=5";
 
@@ -240,7 +240,6 @@ const PRICED_REQS = new Set([
    to record, and the admin console offers no slot to put one in. Telling
    an agent a walkthrough is "coming soon" for either is a promise nobody
    is ever going to keep, so those steps show nothing at all. */
-const CAN_HAVE_WALKTHROUGH = new Set(WALKTHROUGH_REQS.map((r) => r.key));
 
 const priceNote = (key) => PRICED_REQS.has(key)
   ? `<p class="wtb-price">Any price you see in this recording is the one for the state it was
@@ -249,7 +248,7 @@ const priceNote = (key) => PRICED_REQS.has(key)
   : "";
 
 function videoBlock(key, fallbackTitle){
-  if (!CAN_HAVE_WALKTHROUGH.has(key)) return "";
+  if (!showsVideo(key)) return "";
   const w = walkthroughFor(key);
   const legacy = S.videos?.[key];
 
