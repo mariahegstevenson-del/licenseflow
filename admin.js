@@ -2291,9 +2291,10 @@ function ctCentreChart(size){
   const cv = el("ctCanvas"); if (!cv) return;
   const s = A.ctChart, w = size.w * s.z, h = size.h * s.z;
   s.x = cv.clientWidth / 2 - w / 2;
-  /* Top of the tree near the top of the canvas. A hierarchy read from
-     the middle of the box looks like it is falling out of it. */
-  s.y = h <= cv.clientHeight - 28 ? Math.max(18, (cv.clientHeight - h) / 3) : 18;
+  /* Top of the tree near the top of the canvas, whatever the canvas
+     height. Centring it vertically leaves a collapsed chart floating
+     in the middle of a mostly empty box. */
+  s.y = 22;
   ctApplyZoom();
 }
 
@@ -2451,41 +2452,62 @@ function renderCarrier(carrierId, openNode){
     <button class="btn btn-ghost btn-sm" id="ctBack" style="margin-bottom:14px">&larr; ${
       parent ? esc(parent.name) : "All hubs"}</button>
 
-    <div class="cc-panel pb-sec"><div class="cc-panel-h"><h2>Getting started</h2></div><div class="pad">
-      <label for="ct_kit">Contracting kit / steps</label>
-      <input id="ct_kit" type="url" value="${esc(c.kit_url || "")}" placeholder="https://…"/>
-      <input id="ct_kitnote" type="text" value="${esc(c.kit_note || "")}" placeholder="A note about the kit — what's in it, who to chase"/>
+    <div class="cc-panel pb-sec ct-hier"><div class="cc-panel-h"><h2>Hierarchy</h2>
+      ${hierHead}</div><div class="pad">
+      ${nodes.length ? ctChartShell()
+        : `<p class="muted">Nobody here yet. People appear as they fill in the
+           link you send them &mdash; or add someone by hand below.</p>`}
 
-      <label for="ct_invite" style="margin-top:16px">Link to send agents</label>
-      <input id="ct_invite" type="url" value="${esc(c.invite_url || "")}" placeholder="https://…"/>
-      <input id="ct_invitenote" type="text" value="${esc(c.invite_note || "")}" placeholder="A note — what they're being asked to do"/>
-
-      <div class="wt-actions" style="margin-top:14px">
-        <button class="btn btn-primary btn-sm" id="ctSaveCarrier" type="button">Save</button>
-        ${c.kit_url ? `<a class="btn btn-ghost btn-sm" href="${esc(c.kit_url)}" target="_blank" rel="noopener">Open kit</a>` : ""}
-        ${c.invite_url ? `<button class="btn btn-ghost btn-sm" id="ctCopy" type="button">Copy agent link</button>` : ""}
-        <span class="ct-msg" id="ctMsg"></span>
-      </div>
+      <!-- Almost everyone arrives through the form, so the by-hand
+           controls are folded away rather than sitting under the chart
+           as though they were the normal route in. -->
+      <details class="ct-manual"${nodes.length ? "" : " open"}>
+        <summary>Manual input</summary>
+        <div class="ct-add">
+          <input id="ctNewName" type="text" placeholder="Name"/>
+          <select id="ctNewParent">
+            <option value="">Top of the tree</option>
+            ${nodes.slice().sort(ctSort).map(n =>
+              `<option value="${esc(n.id)}">under ${esc(n.name)}</option>`).join("")}
+          </select>
+          <button class="btn btn-ghost btn-sm" id="ctAddNode" type="button">Add</button>
+        </div>
+      </details>
     </div></div>
+
+    <div id="ctNodePanel">${openNode ? ctNodeEditor(nodes.find(n => n.id === openNode), nodes) : ""}</div>
 
     ${carriersPanel}
 
-    <div class="cc-panel pb-sec"><div class="cc-panel-h"><h2>Hierarchy</h2>
-      ${hierHead}</div><div class="pad">
-      ${nodes.length ? ctChartShell()
-        : `<p class="muted">Nobody in this hierarchy yet. Add the top of the tree below.</p>`}
-      <div class="ct-add" style="margin-top:16px">
-        <input id="ctNewName" type="text" placeholder="Add a person"/>
-        <select id="ctNewParent">
-          <option value="">Top of the tree</option>
-          ${nodes.slice().sort(ctSort).map(n =>
-            `<option value="${esc(n.id)}">under ${esc(n.name)}</option>`).join("")}
-        </select>
-        <button class="btn btn-ghost btn-sm" id="ctAddNode" type="button">Add</button>
-      </div>
-    </div></div>
+    <div class="cc-panel pb-sec"><div class="cc-panel-h"><h2>Getting started</h2></div><div class="pad">
+      <div class="ct-form">
+        <div class="ct-field">
+          <label for="ct_kit">Contracting kit / steps
+            <span>What you send someone so they can get contracted.</span></label>
+          <div class="ct-fin">
+            <input id="ct_kit" type="url" value="${esc(c.kit_url || "")}" placeholder="https://…"/>
+            <input id="ct_kitnote" type="text" value="${esc(c.kit_note || "")}" placeholder="A note about the kit — what's in it, who to chase"/>
+          </div>
+        </div>
 
-    <div id="ctNodePanel">${openNode ? ctNodeEditor(nodes.find(n => n.id === openNode), nodes) : ""}</div>`;
+        <div class="ct-field">
+          <label for="ct_invite">Link to send agents
+            <span>The form that builds the hierarchy above. Whoever fills it
+              in appears there as a new person.</span></label>
+          <div class="ct-fin">
+            <input id="ct_invite" type="url" value="${esc(c.invite_url || "")}" placeholder="https://…"/>
+            <input id="ct_invitenote" type="text" value="${esc(c.invite_note || "")}" placeholder="A note — what they're being asked to do"/>
+          </div>
+        </div>
+
+        <div class="wt-actions">
+          <button class="btn btn-primary btn-sm" id="ctSaveCarrier" type="button">Save</button>
+          ${c.kit_url ? `<a class="btn btn-ghost btn-sm" href="${esc(c.kit_url)}" target="_blank" rel="noopener">Open kit</a>` : ""}
+          ${c.invite_url ? `<button class="btn btn-ghost btn-sm" id="ctCopy" type="button">Copy agent link</button>` : ""}
+          <span class="ct-msg" id="ctMsg"></span>
+        </div>
+      </div>
+    </div></div>`;
 
   el("ctBack").onclick = () => {
     A.view = parent ? { name:"carrier", arg:parent.id } : { name:"contracting" };
