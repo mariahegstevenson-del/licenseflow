@@ -1233,3 +1233,96 @@ body.nav-open .cc-nav{transform:none}
 /* the add-a-hub row lines up under the centred grid */
 .ct-add{max-width:1080px;margin-inline:auto}
 @media (max-width:1040px){ .ct-tile{min-height:200px;padding:22px 24px 20px} }
+
+/* ============================================================
+   LIGHT TEXT ON THE NAVY, DARK TEXT ON THE CARDS
+
+   The page background is the brand navy. Up to now only the few
+   elements I happened to look at were re-coloured for it, so any screen
+   that puts a heading, a paragraph, a tab strip or a chip straight onto
+   the page -- the state playbooks especially -- was drawing near-black
+   text on near-black navy. Unreadable, and it made the console look
+   half-finished.
+
+   The fix is one rule rather than a patch per screen. Inside the main
+   column the ink tokens become light, so anything sitting on the navy
+   is legible by default. Every white surface then puts the dark tokens
+   back for itself and its contents, so a card is still black-on-white.
+   Two layers, no third case.
+   ============================================================ */
+.cc-main{
+  --ink:#FFFFFF; --ink-2:#E4EBF6; --muted:#B3C4DD; --faint:#98ADCB;
+  --line:rgba(255,255,255,.22); --line-2:rgba(255,255,255,.13);
+  --line-3:rgba(255,255,255,.3);
+  --soft:rgba(255,255,255,.07); --panel-2:rgba(255,255,255,.08);
+  --accent-050:rgba(255,255,255,.13);
+  color:var(--ink);
+}
+
+/* Every light surface in the main column, and everything inside it,
+   goes back to reading as paper. */
+.cc-main .cc-panel,   .cc-main .cc-tile,     .cc-main .cc-tiles,
+.cc-main .cc-sum,     .cc-main .cc-win,      .cc-main .card,
+.cc-main .ct-tile,    .cc-main .lc-card,     .cc-main .ct-modal-card,
+.cc-main .wl-card,    .cc-main .wl-std,      .cc-main .fc-mini,
+.cc-main .pv-frame,   .cc-main .pv-note,     .cc-main .pv-chip,
+.cc-main .pv-move,    .cc-main .pv-lic,      .cc-main .pb-b,
+.cc-main .btn,        .cc-main .ct-add,
+.cc-main input,       .cc-main select,       .cc-main textarea{
+  --ink:#0A1A33; --ink-2:#16294A; --muted:#54667F; --faint:#61738C;
+  --line:#DCE3EC; --line-2:#EDF1F6; --line-3:#C9D4E2;
+  --soft:#F5F7FA; --panel-2:#F5F7FA; --accent-050:#EAF0F8;
+}
+/* only the surfaces that actually paint themselves white take the ink;
+   .btn and the inputs colour themselves already. */
+.cc-main .cc-panel, .cc-main .cc-tile,  .cc-main .cc-tiles,
+.cc-main .cc-sum,   .cc-main .cc-win,   .cc-main .card,
+.cc-main .ct-tile,  .cc-main .lc-card,  .cc-main .ct-modal-card,
+.cc-main .wl-card,  .cc-main .wl-std,   .cc-main .fc-mini,
+.cc-main .pv-frame{ color:var(--ink) }
+
+/* the preview of the agent's own screens is a white page, not a navy
+   one -- it is showing what a recruit sees, and they see white. */
+.cc-main .pv-frame{background:#FFFFFF}
+
+/* ---- the pieces that name a dark brand colour outright ---- */
+
+/* pane tabs: Steps at a glance / What the agent sees / Edit */
+.cc-main .pb-panes{border-bottom-color:rgba(255,255,255,.2)}
+.cc-main .pb-pt{color:var(--on-blue-2)}
+.cc-main .pb-pt:hover{background:rgba(255,255,255,.1);color:#fff}
+.cc-main .pb-pt.on{color:#fff;background:rgba(255,255,255,.13);
+  border-bottom-color:var(--gold)}
+.cc-main .pb-pt:focus-visible{outline-color:var(--gold)}
+
+/* the step chips above the preview */
+.cc-main .pv-chipwrap{background:var(--bg);border-bottom-color:rgba(255,255,255,.16)}
+.cc-main .pv-chip.on{background:var(--gold);border-color:var(--gold);color:#0A2036}
+.cc-main .pv-chip.on .pv-cn{background:rgba(10,32,54,.18);color:#0A2036}
+.cc-main .pv-count{color:var(--on-blue-2)}
+.cc-main .pv-foot{color:var(--on-blue-2)}
+.cc-main .pv-move.is-off{color:rgba(255,255,255,.45)}
+.cc-main .pv-move.next{background:var(--gold);border-color:var(--gold-600);color:#0A2036}
+.cc-main .pv-move.next:hover{background:var(--gold-600)}
+.cc-main .pv-lead,.cc-main .wl-owner{color:var(--on-blue-2)}
+
+/* the walkthrough library's group headings sit on the navy too */
+.cc-main .wl-gh{border-bottom-color:rgba(255,255,255,.2)}
+.cc-main .wl-gh h2{color:var(--on-blue)}
+.cc-main .wl-empty{color:var(--on-blue-2)}
+
+/* "← All states" and any other ghost button on the navy */
+.cc-main > .btn-ghost{background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.28);
+  color:#FFFFFF}
+.cc-main > .btn-ghost:hover{background:rgba(255,255,255,.2);border-color:var(--gold-200)}
+
+/* Two class-name collisions with styles.css, which the navy background
+   finally made obvious. `.top` there is the landing page's sticky white
+   header, and `.next` is the big call-to-action block; the preview's
+   own `.pv-nav.top` and `.pv-move.next` were quietly inheriting both --
+   which is where the white band above the preview came from. */
+.cc-main .pv-nav.top{position:static;height:auto;z-index:auto;
+  background:none;border-bottom:0;backdrop-filter:none}
+.cc-main .pv-move.next{position:static;margin-bottom:0;padding:9px 15px;
+  border-radius:9px}
+.cc-main .pv-move.next::before,.cc-main .pv-move.next::after{content:none}
