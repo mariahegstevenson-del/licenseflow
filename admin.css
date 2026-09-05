@@ -776,6 +776,14 @@ body.cc-locked .cc-nav,body.cc-locked .cc-rail{display:none}
 .ct-pend-n{margin:11px 0 0;font-size:.82rem;color:var(--muted)}
 .ct-pend .wt-actions{margin-top:12px}
 
+/* a value that belongs to the hub, shown here read-only */
+.ct-inherit{display:flex;align-items:center;gap:9px;flex-wrap:wrap;
+  background:var(--soft);border:1px solid var(--line);border-radius:9px;
+  padding:7px 8px 7px 12px}
+.ct-ikit{flex:1 1 180px;min-width:0;font-size:.86rem;color:var(--ink-2);
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ct-ikit.none{color:var(--faint)}
+
 /* the intake address, shown as an address rather than an editable box */
 .ct-link{display:flex;align-items:center;gap:8px;flex-wrap:wrap;
   background:var(--soft);border:1px solid var(--line);border-radius:9px;

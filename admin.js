@@ -2425,18 +2425,20 @@ function renderCarrier(carrierId, openNode){
     : "";
   ctChartState(c.id, nodes);
 
+  /* No kit line on a carrier tile: the kit is the hub's, and repeating
+     "no kit yet" nineteen times would read as nineteen missing kits. */
   const kidTile = (k) => {
-    const kn = ctNodesFor(k.id);
-    const have = kn.reduce((t, n) => t + ctDocsFor(n.id).length, 0);
-    const need = kn.length * CT_DOCS.length;
+    const kn   = ctNodesFor(k.id);
+    const live = kn.filter(n => n.status !== "pending");
+    const wait = kn.length - live.length;
+    const have = live.reduce((t, n) => t + ctDocsFor(n.id).length, 0);
+    const need = live.length * CT_DOCS.length;
     const cls  = !need ? "" : have === need ? "full" : have ? "part" : "none";
     return `<button class="ct-tile sm" data-carrier="${esc(k.id)}" type="button">
       <span class="ct-tname">${esc(k.name)}</span>
-      <span class="ct-tsub">${kn.length} ${kn.length === 1 ? "person" : "people"}</span>
-      <span class="ct-tfoot">
-        <span class="ct-tp">${k.kit_url ? "Kit linked" : "No kit yet"}</span>
-        ${need ? `<span class="ct-tdoc ${cls}">${have}/${need}</span>` : ""}
-      </span>
+      <span class="ct-tsub">${live.length} ${live.length === 1 ? "person" : "people"}${
+        wait ? `<em class="ct-twait">+${wait} waiting</em>` : ""}</span>
+      ${need ? `<span class="ct-tfoot"><span class="ct-tdoc ${cls}">${have}/${need} documents</span></span>` : ""}
     </button>`;
   };
 
@@ -2452,6 +2454,36 @@ function renderCarrier(carrierId, openNode){
         <button class="btn btn-ghost btn-sm" id="ctAddKid" type="button">Add</button>
       </div>
     </div></div>`;
+
+  /* One kit per hub, not one per carrier. You contract through Brokers
+     Alliance once; the nineteen carriers behind it are not nineteen
+     separate sets of paperwork. A carrier page therefore shows its
+     hub's kit read-only, with a way back to edit it in the one place
+     it lives. */
+  const kitField = isHub ? `
+        <div class="ct-field">
+          <label for="ct_kit">Contracting kit / steps
+            <span>What you send someone so they can get contracted.
+              ${kids.length ? `Shared by all ${kids.length} carriers under ${esc(c.name)}.` : ""}</span></label>
+          <div class="ct-fin">
+            <input id="ct_kit" type="url" value="${esc(c.kit_url || "")}" placeholder="https://…"/>
+            <input id="ct_kitnote" type="text" value="${esc(c.kit_note || "")}" placeholder="A note about the kit — what's in it, who to chase"/>
+          </div>
+        </div>` : `
+        <div class="ct-field">
+          <label>Contracting kit / steps
+            <span>Kept on ${esc(parent ? parent.name : "the hub")}, because that is
+              where the contracting happens.</span></label>
+          <div class="ct-fin">
+            <div class="ct-inherit">
+              ${parent && parent.kit_url
+                ? `<span class="ct-ikit">${esc(parent.kit_note || parent.kit_url)}</span>
+                   <a class="btn btn-ghost btn-sm" href="${esc(parent.kit_url)}" target="_blank" rel="noopener">Open kit</a>`
+                : `<span class="ct-ikit none">No kit on ${esc(parent ? parent.name : "the hub")} yet.</span>`}
+              <button class="btn btn-ghost btn-sm" id="ctEditKit" type="button">Edit on ${esc(parent ? parent.name : "the hub")}</button>
+            </div>
+          </div>
+        </div>`;
 
   const hierHead = waiting.length
     ? `<span class="sub"><button class="ct-wait" id="ctWaiting" type="button">${
@@ -2498,14 +2530,7 @@ function renderCarrier(carrierId, openNode){
 
     <div class="cc-panel pb-sec"><div class="cc-panel-h"><h2>Getting started</h2></div><div class="pad">
       <div class="ct-form">
-        <div class="ct-field">
-          <label for="ct_kit">Contracting kit / steps
-            <span>What you send someone so they can get contracted.</span></label>
-          <div class="ct-fin">
-            <input id="ct_kit" type="url" value="${esc(c.kit_url || "")}" placeholder="https://…"/>
-            <input id="ct_kitnote" type="text" value="${esc(c.kit_note || "")}" placeholder="A note about the kit — what's in it, who to chase"/>
-          </div>
-        </div>
+        ${kitField}
 
         <div class="ct-field">
           <label>Link to send agents
@@ -2533,7 +2558,7 @@ function renderCarrier(carrierId, openNode){
 
         <div class="wt-actions">
           <button class="btn btn-primary btn-sm" id="ctSaveCarrier" type="button">Save</button>
-          ${c.kit_url ? `<a class="btn btn-ghost btn-sm" href="${esc(c.kit_url)}" target="_blank" rel="noopener">Open kit</a>` : ""}
+          ${isHub && c.kit_url ? `<a class="btn btn-ghost btn-sm" href="${esc(c.kit_url)}" target="_blank" rel="noopener">Open kit</a>` : ""}
           ${c.invite_url ? `<button class="btn btn-ghost btn-sm" id="ctCopy" type="button">Copy agent link</button>` : ""}
           <span class="ct-msg" id="ctMsg"></span>
         </div>
@@ -2562,15 +2587,28 @@ function renderCarrier(carrierId, openNode){
     } catch (e) { ctSay(e.message, true); }
   };
 
+  const editKit = el("ctEditKit");
+  if (editKit) editKit.onclick = () => {
+    A.ctChart = null;
+    A.view = { name:"carrier", arg:parent.id };
+    render();
+  };
+
   el("ctSaveCarrier").onclick = async () => {
     try {
-      await ctWrite(supabase.from("contracting_carriers").update({
-        kit_url:     el("ct_kit").value.trim()      || null,
-        kit_note:    el("ct_kitnote").value.trim()  || null,
+      /* The kit fields only exist on a hub page, so only send them
+         from one — otherwise saving a carrier would blank its hub. */
+      const patch = {
         invite_url:  el("ct_invite").value.trim()   || null,
         invite_note: el("ct_invitenote").value.trim() || null,
         updated_at:  new Date().toISOString(),
-      }).eq("id", c.id), "the carrier");
+      };
+      if (el("ct_kit")) {
+        patch.kit_url  = el("ct_kit").value.trim()     || null;
+        patch.kit_note = el("ct_kitnote").value.trim() || null;
+      }
+      await ctWrite(supabase.from("contracting_carriers").update(patch)
+        .eq("id", c.id), "the carrier");
       ctSay("Saved.");
       await load();
     } catch (e) { ctSay(e.message, true); }
