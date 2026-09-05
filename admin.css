@@ -615,8 +615,14 @@ body.nav-open .cc-nav{transform:none}
   overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .pv-page{padding:22px 20px 30px;max-height:760px;overflow-y:auto}
 .pv-page .step-card{max-width:620px;margin:0 auto}
-.pv-page input,.pv-page .btn{pointer-events:none}
+/* The preview is a picture of the agent's screen, so its form controls
+   are inert -- but a LINK is the one thing an owner actually needs to
+   try. "Does the Kaplan button go where it should?" is the whole reason
+   for checking placement, and it was dead. Anything with an href works;
+   everything else stays a picture. */
+.pv-page input,.pv-page button.btn,.pv-page span.btn{pointer-events:none}
 .pv-page .drop{pointer-events:none}
+.pv-page a,.pv-page a.btn{pointer-events:auto;cursor:pointer}
 
 /* Moving between the seven steps. The chip row sticks to the top of the
    pane and Next repeats under the preview: one step is taller than the
@@ -1351,3 +1357,12 @@ body.nav-open .cc-nav{transform:none}
    screen off mid-card and left an inner scrollbar doing the explaining.
    It now takes most of the window, and says so at the foot. */
 .cc-main .pv-page{max-height:min(80vh,980px)}
+
+/* The study tips reuse the agent app's side-drawer markup, and that
+   drawer is dark navy -- so their colours are baked in as white and
+   pale blue. On the preview's white step card that was white on white.
+   Re-coloured here for the light card only; the drawer in the agent app
+   keeps the colours it was designed with. */
+.cc-main .lf-tip p{color:var(--ink-2)}
+.cc-main .lf-tip p b{color:var(--ink)}
+.cc-main .lf-tip i{background:var(--gold)}

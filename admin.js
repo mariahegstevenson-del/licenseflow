@@ -1652,7 +1652,6 @@ function renderPlaybookAgent(code){
           <h2 style="margin-top:.4rem">${esc(req.heading || req.label)}</h2>
           ${req.lead ? `<p class="step-desc">${esc(req.lead)}</p>` : ""}
           ${req.help ? `<div class="callout"><span class="lab">${esc(req.help.title)}</span>${esc(req.help.body)}</div>` : ""}
-          <div class="section-k center-k">Watch this step</div>
           ${pvWalkthrough(req.key, code, r, lic)}
           ${req.providerLabel ? `<div class="syscard"><span class="sys-k">${
               req.key === "exam" ? "Scheduled through" : "Your provider"}</span><strong>${esc(req.providerLabel)}</strong></div>` : ""}
@@ -1744,13 +1743,18 @@ function renderPlaybookAgent(code){
 const WT_WHY = { assigned:"chosen for this state", agency:"your own recording",
                  library:"from the shared library" };
 
+/* The same set the agent app uses. Fingerprinting and the affidavit are
+   deliberately not in it -- there is nothing to screen-record about
+   walking into a vendor's office -- so those steps get no video block at
+   all, not a "coming soon" that will never come. */
+const CAN_HAVE_WALKTHROUGH = new Set(WALKTHROUGH_REQS.map(r => r.key));
+
 function pvWalkthrough(key, code, playbook, lic){
-  const soon = (title, line) => `<div class="video is-soon"><div class="ph"><div class="pi"></div>
+  const soon = (title, line) => `<div class="section-k center-k">Watch this step</div>
+    <div class="video is-soon"><div class="ph"><div class="pi"></div>
       <b>${title}</b><span>${line}</span></div></div>`;
 
-  if (!VIDEO_STEPS.includes(key))
-    return soon("Walkthrough coming soon",
-                "A short screen recording of this step is being made.");
+  if (!CAN_HAVE_WALKTHROUGH.has(key)) return "";
 
   let w = null;
   try {
@@ -1777,7 +1781,8 @@ function pvWalkthrough(key, code, playbook, lic){
     : `<iframe src="${esc(src.src)}" allowfullscreen loading="lazy"
          allow="accelerometer; clipboard-write; encrypted-media; picture-in-picture"></iframe>`;
 
-  return `<div class="pv-wt">
+  return `<div class="section-k center-k">Watch this step</div>
+    <div class="pv-wt">
       <div class="pv-wt-h">
         <b>${esc(w.title || "Walkthrough")}</b>
         <span class="pv-wt-m">${w.duration_seconds ? esc(fmtDuration(w.duration_seconds)) + " &middot; " : ""}${
