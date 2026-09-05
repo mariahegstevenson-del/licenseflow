@@ -2284,15 +2284,25 @@ function ctChartSize(){
   return (w && h) ? { w, h } : null;
 }
 
+/* Put the chart in the middle of the canvas. When it is wider than the
+   canvas the top of the tree is what gets centred, because that is
+   where the eye starts; the branches are then a drag away either side. */
+function ctCentreChart(size){
+  const cv = el("ctCanvas"); if (!cv) return;
+  const s = A.ctChart, w = size.w * s.z, h = size.h * s.z;
+  s.x = cv.clientWidth / 2 - w / 2;
+  /* Top of the tree near the top of the canvas. A hierarchy read from
+     the middle of the box looks like it is falling out of it. */
+  s.y = h <= cv.clientHeight - 28 ? Math.max(18, (cv.clientHeight - h) / 3) : 18;
+  ctApplyZoom();
+}
+
 function ctFitChart(){
   const cv = el("ctCanvas"), size = ctChartSize();
   if (!cv || !size) return;
-  const z = Math.max(0.15, Math.min(1, (cv.clientWidth - 28) / size.w,
-                                       (cv.clientHeight - 28) / size.h));
-  A.ctChart.z = z;
-  A.ctChart.x = Math.max(14, (cv.clientWidth - size.w * z) / 2);
-  A.ctChart.y = 14;
-  ctApplyZoom();
+  A.ctChart.z = Math.max(0.15, Math.min(1, (cv.clientWidth - 28) / size.w,
+                                           (cv.clientHeight - 28) / size.h));
+  ctCentreChart(size);
 }
 
 /* Nudge the view so a box is inside the canvas, without moving it if
@@ -2315,9 +2325,14 @@ function ctWireChart(c, nodes, openNode){
 
   ctDrawChart(c, nodes, openNode);
   requestAnimationFrame(() => {
-    const size = ctChartSize();
-    if (size && (size.w > cv.clientWidth - 28 || size.h > cv.clientHeight - 28)) ctFitChart();
-    else { st.x = Math.max(14, (cv.clientWidth - (size ? size.w : 0)) / 2); st.y = 14; ctApplyZoom(); }
+    const size = ctChartSize(); if (!size) return;
+    /* Shrink to fit the height, but only shrink so far for width: below
+       about two thirds the names stop being readable, and a wide-but-
+       short chart is better panned than squinted at. The Fit button
+       still fits the whole thing whatever that costs in size. */
+    const wz = (cv.clientWidth - 28) / size.w, hz = (cv.clientHeight - 28) / size.h;
+    st.z = Math.max(0.15, Math.min(1, hz, Math.max(0.66, wz)));
+    ctCentreChart(size);
   });
 
   const find = el("ctFind");
