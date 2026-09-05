@@ -2251,7 +2251,12 @@ function ctDrawChart(c, nodes, openNode){
         <span class="ct-bn">${esc(n.name)}</span>
         <span class="ct-bl">${pending ? "pending approval"
           : n.contract_level ? esc(n.contract_level) : "level not set"}</span>
-        <span class="ct-bd">${have}/${CT_DOCS.length}</span>
+        <span class="ct-brow">
+          <span class="ct-bd">${have}/${CT_DOCS.length}</span>
+          ${!pending && n.pushed_at ? `<span class="ct-bs done" title="Pushed">pushed</span>`
+            : !pending && n.steps_done_at ? `<span class="ct-bs ready" title="Kit complete, waiting to be pushed">ready</span>`
+            : ""}
+        </span>
       </button>
       ${kids.length ? `<button class="ct-tog${isShut ? " shut" : ""}" data-tog="${esc(n.id)}"
         type="button" title="${isShut ? "Open this branch" : "Close this branch"}"
@@ -2619,6 +2624,17 @@ function renderCarrier(carrierId, openNode){
           </div>
         </div>
 
+        ${isHub ? `
+        <div class="ct-field">
+          <label for="ct_push">Who pushes the contracts
+            <span>When someone finishes the kit, this is who gets chased.
+              LicenseFlow writes the email; you read it and send it.</span></label>
+          <div class="ct-fin">
+            <input id="ct_pushname" type="text" value="${esc(c.push_name || "")}" placeholder="Their name"/>
+            <input id="ct_push" type="email" value="${esc(c.push_email || "")}" placeholder="name@carrier.com"/>
+          </div>
+        </div>` : ""}
+
         <div class="wt-actions">
           <button class="btn btn-primary btn-sm" id="ctSaveCarrier" type="button">Save</button>
           ${isHub && c.kit_url ? `<a class="btn btn-ghost btn-sm" href="${esc(c.kit_url)}" target="_blank" rel="noopener">Open kit</a>` : ""}
@@ -2714,6 +2730,10 @@ function renderCarrier(carrierId, openNode){
         patch.kit_url  = el("ct_kit").value.trim()     || null;
         patch.kit_note = el("ct_kitnote").value.trim() || null;
       }
+      if (el("ct_push")) {
+        patch.push_email = el("ct_push").value.trim()     || null;
+        patch.push_name  = el("ct_pushname").value.trim() || null;
+      }
       await ctWrite(supabase.from("contracting_carriers").update(patch)
         .eq("id", c.id), "the carrier");
       ctSay("Saved.");
@@ -2755,6 +2775,132 @@ function renderCarrier(carrierId, openNode){
   };
 
   if (openNode) wireNodeEditor(c, nodes.find(n => n.id === openNode));
+}
+
+/* ---------------- after the kit: complete, then pushed ----------------
+   Three beats, and the screen only ever offers the next one:
+
+     working    they are going through the steps
+     complete   the steps are done, somebody has to be told
+     pushed     you have sent that email
+
+   LicenseFlow writes the email and hands it to you. It does not send
+   it: a message going out over the agency's name is the agency's to
+   send, and a wrong one cannot be unsent.
+   ------------------------------------------------------------------ */
+function ctPushTo(n){
+  const c = (A.ctCarriers || []).find(x => x.id === n.carrier_id);
+  if (!c) return null;
+  const hub = c.parent_id ? (A.ctCarriers || []).find(x => x.id === c.parent_id) : c;
+  return { carrier: c, hub, email: (hub && hub.push_email) || null,
+           name: (hub && hub.push_name) || null };
+}
+
+function ctProgressBlock(n){
+  const to = ctPushTo(n);
+  const done   = !!n.steps_done_at;
+  const pushed = !!n.pushed_at;
+
+  const state = pushed
+    ? `<span class="ct-pg-s done">Pushed${n.pushed_at ? ` &middot; ${esc(elapsed(ts(n.pushed_at)).txt)} ago` : ""}</span>`
+    : done
+      ? `<span class="ct-pg-s ready">Kit complete &mdash; waiting to be pushed</span>`
+      : `<span class="ct-pg-s">Working through the kit</span>`;
+
+  const acts = pushed
+    ? `<button class="btn btn-ghost btn-sm" id="ctEmail" type="button">See the email again</button>
+       <button class="btn btn-ghost btn-sm" id="ctUnpush" type="button">Not sent after all</button>`
+    : done
+      ? `${to && to.email
+            ? `<button class="btn btn-primary btn-sm" id="ctEmail" type="button">Write the email</button>
+               <button class="btn btn-ghost btn-sm" id="ctPushed" type="button">Mark as pushed</button>`
+            : `<span class="ct-pg-warn">No one set to push ${esc(to && to.hub ? to.hub.name : "this hub")}&rsquo;s contracts &mdash; add them under Getting started.</span>`}
+         <button class="btn btn-ghost btn-sm" id="ctUndone" type="button">Not finished after all</button>`
+      : `<button class="btn btn-primary btn-sm" id="ctDone" type="button">Mark the kit complete</button>`;
+
+  return `<div class="ct-pg${pushed ? " is-done" : done ? " is-ready" : ""}">
+    <div class="ct-pg-h">${state}${to && to.email && !pushed
+      ? `<span class="ct-pg-to">to ${esc(to.name || to.email)}</span>` : ""}</div>
+    <div class="wt-actions">${acts}<span class="ct-msg" id="ctPgMsg"></span></div>
+  </div>`;
+}
+
+/* The letter itself. Everything in it is already on the record, so
+   there is nothing here for an admin to retype and get wrong. */
+function ctEmailDraft(n){
+  const to    = ctPushTo(n);
+  const have  = ctDocsFor(n.id);
+  const named = (k) => have.some(d => d.kind === k);
+  const line  = (l, v) => v ? `${l}: ${v}\n` : "";
+  const who   = to && to.name ? to.name.split(/\s+/)[0] : "there";
+  const agency = pbAgencyName(n.agency_id);
+  const where = to && to.carrier
+    ? (to.carrier.parent_id ? `${to.hub.name} — ${to.carrier.name}` : to.carrier.name)
+    : "";
+
+  const subject = `Contracting ready to push — ${n.name}${
+    n.submitted_npn ? ` (NPN ${n.submitted_npn})` : ""}`;
+
+  const body =
+`Hi ${who},
+
+${n.name} has finished onboarding for ${where} and is ready to be pushed.
+
+` +
+line("Name", n.name) +
+line("NPN", n.submitted_npn) +
+line("Contract level", n.contract_level) +
+line("Upline", (A.ctNodes || []).find(x => x.id === n.parent_id)?.name) +
+line("Email", n.submitted_email) +
+line("Phone", n.submitted_phone) +
+`
+On file with us: ${
+  [["aml","AML"],["eo","E&O"],["best_interest","Best Interest"]]
+    .filter(([k]) => named(k)).map(([, l]) => l).join(", ") || "nothing yet"}${
+  CT_DOCS.some(d => !named(d.k))
+    ? `\nStill outstanding: ${CT_DOCS.filter(d => !named(d.k)).map(d => d.label).join(", ")}` : ""}
+
+Anything else you need from us, just say.
+
+Thanks,
+${agency}`;
+
+  return { to: (to && to.email) || "", subject, body };
+}
+
+function ctEmailModal(n){
+  const d = ctEmailDraft(n);
+  const mailto = `mailto:${encodeURIComponent(d.to)}?subject=${
+    encodeURIComponent(d.subject)}&body=${encodeURIComponent(d.body)}`;
+  return `<div class="ct-modal" id="ctMailModal">
+    <div class="ct-modal-bd" data-mlclose></div>
+    <div class="ct-modal-card" role="dialog" aria-modal="true" aria-label="Email draft">
+    <div class="cc-panel"><div class="cc-panel-h">
+      <h2>Email to send</h2><span class="sub">Read it, then send it yourself</span>
+      <button class="ct-x" type="button" data-mlclose aria-label="Close">&times;</button>
+    </div><div class="pad">
+      <p class="ct-kitnote">LicenseFlow has written this but will not send it.
+        Copy it into your mail, or open it in your mail app, and send when
+        you&rsquo;re happy with it.</p>
+
+      <label for="ml_to">To</label>
+      <input id="ml_to" type="text" value="${esc(d.to)}" readonly/>
+
+      <label for="ml_sub">Subject</label>
+      <input id="ml_sub" type="text" value="${esc(d.subject)}" readonly/>
+
+      <label for="ml_body" style="margin-top:16px">Message</label>
+      <textarea id="ml_body" rows="16">${esc(d.body)}</textarea>
+      <span class="hint">Edit it here first if you like &mdash; Copy takes whatever
+        is in the box.</span>
+
+      <div class="wt-actions" style="margin-top:14px">
+        <button class="btn btn-primary btn-sm" id="mlCopy" type="button">Copy the message</button>
+        <a class="btn btn-ghost btn-sm" href="${esc(mailto)}" id="mlOpen">Open in mail app</a>
+        <button class="btn btn-ghost btn-sm" id="mlClose" type="button">Close</button>
+        <span class="ct-msg" id="mlMsg"></span>
+      </div>
+    </div></div></div></div>`;
 }
 
 /* ---------------- one step of the kit ---------------- */
@@ -2881,6 +3027,7 @@ function ctNodeEditor(n, nodes){
       <button class="ct-x" type="button" data-ctclose aria-label="Close">&times;</button>
     </div><div class="pad">
     ${pend}
+    ${n.status === "pending" ? "" : ctProgressBlock(n)}
     <label for="ct_name">Name</label>
     <input id="ct_name" type="text" value="${esc(n.name)}"/>
 
@@ -2938,6 +3085,49 @@ function wireNodeEditor(c, n){
       ctSay("Saved.");
       await load();
     } catch (e) { ctSay(e.message, true); }
+  };
+
+  /* ---- kit complete → email → pushed ---- */
+  const pgSay = (m, bad) => {
+    const x = el("ctPgMsg"); if (!x) return;
+    x.textContent = m || "";
+    x.className = "ct-msg" + (m ? " on" : "") + (bad ? " bad" : "");
+  };
+  const mark = async (patch, what) => {
+    try {
+      await ctWrite(supabase.from("contracting_nodes")
+        .update({ ...patch, updated_at:new Date().toISOString(), updated_by:A.me?.id || null })
+        .eq("id", n.id), what);
+      await load();
+    } catch (e) { pgSay(e.message, true); }
+  };
+  const bDone   = el("ctDone");   if (bDone)   bDone.onclick   = () => mark({ steps_done_at:new Date().toISOString() }, "the update");
+  const bUndone = el("ctUndone"); if (bUndone) bUndone.onclick = () => mark({ steps_done_at:null, pushed_at:null }, "the update");
+  const bPushed = el("ctPushed"); if (bPushed) bPushed.onclick = () => mark({ pushed_at:new Date().toISOString() }, "the update");
+  const bUnpush = el("ctUnpush"); if (bUnpush) bUnpush.onclick = () => mark({ pushed_at:null }, "the update");
+
+  const bMail = el("ctEmail");
+  if (bMail) bMail.onclick = () => {
+    const host = el("ctMailHost") || (() => {
+      const d = document.createElement("div"); d.id = "ctMailHost";
+      document.body.appendChild(d); return d;
+    })();
+    host.innerHTML = ctEmailModal(n);
+    const close = () => { host.innerHTML = ""; document.removeEventListener("keydown", mk); };
+    const mk = (e) => { if (e.key === "Escape") close(); };
+    document.addEventListener("keydown", mk);
+    host.querySelectorAll("[data-mlclose]").forEach(b => b.onclick = close);
+    el("mlClose").onclick = close;
+    el("mlCopy").onclick = async () => {
+      const m = el("mlMsg");
+      try {
+        await navigator.clipboard.writeText(el("ml_body").value);
+        m.textContent = "Copied."; m.className = "ct-msg on";
+      } catch (_) {
+        m.textContent = "Couldn't copy — select the text and copy it by hand.";
+        m.className = "ct-msg on bad";
+      }
+    };
   };
 
   const shut = () => { A.view = { name:"carrier", arg:c.id }; render(); };

@@ -708,8 +708,13 @@ body.cc-locked .cc-nav,body.cc-locked .cc-rail{display:none}
 .ct-bn{font-weight:650;font-size:.93rem;line-height:1.25;color:#fff;
   overflow-wrap:anywhere}
 .ct-bl{font-size:.86rem;color:rgba(255,255,255,.88);font-variant-numeric:tabular-nums}
+.ct-brow{display:flex;align-items:center;gap:5px;margin-top:2px}
 .ct-bd{font-size:.68rem;font-weight:700;letter-spacing:.02em;
-  border-radius:99px;padding:1px 7px;margin-top:2px;font-variant-numeric:tabular-nums}
+  border-radius:99px;padding:1px 7px;font-variant-numeric:tabular-nums}
+.ct-bs{font-size:.62rem;font-weight:700;letter-spacing:.05em;
+  text-transform:uppercase;border-radius:99px;padding:1px 7px}
+.ct-bs.ready{background:#FDF0D6;color:#7A4E00}
+.ct-bs.done{background:#DFF3E6;color:#0B5A33}
 .ct-bub.none .ct-bd{background:#FBEDED;color:#A32019}
 .ct-bub.part .ct-bd{background:#FDF0D6;color:#7A4E00}
 .ct-bub.full .ct-bd{background:#DFF3E6;color:#0B5A33}
@@ -850,6 +855,20 @@ body.cc-locked .cc-nav,body.cc-locked .cc-rail{display:none}
 .ct-link code{flex:1 1 260px;min-width:0;font-size:.82rem;color:var(--ink-2);
   overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
   font-family:"IBM Plex Mono",ui-monospace,monospace}
+
+/* where someone is after the kit */
+.ct-pg{background:var(--soft);border:1px solid var(--line);border-radius:11px;
+  padding:13px 15px;margin-bottom:20px}
+.ct-pg.is-ready{background:var(--warn-050);border-color:#EBD9AE}
+.ct-pg.is-done{background:var(--ok-050);border-color:#C2E4CE}
+.ct-pg-h{display:flex;align-items:baseline;justify-content:space-between;
+  gap:12px;flex-wrap:wrap;margin-bottom:10px}
+.ct-pg-s{font-weight:700;font-size:.9rem;color:var(--muted)}
+.ct-pg-s.ready{color:var(--warn)}
+.ct-pg-s.done{color:var(--ok)}
+.ct-pg-to{font-size:.8rem;color:var(--muted)}
+.ct-pg-warn{font-size:.84rem;color:var(--warn)}
+.ct-pg .wt-actions{margin:0}
 
 /* one person's paperwork */
 .ct-docs{display:grid;gap:8px;margin-top:18px;padding-top:16px;border-top:1px solid var(--line-2)}
