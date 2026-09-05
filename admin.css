@@ -759,6 +759,35 @@ body.cc-locked .cc-nav,body.cc-locked .cc-rail{display:none}
   .ct-find{flex:1 1 100%}
 }
 
+/* ---- a person's record, as a dialog over the chart --------------
+   It appears because you clicked a bubble and goes away when you are
+   done: backdrop, the cross, Escape, or Close.
+------------------------------------------------------------------ */
+.ct-modal{position:fixed;inset:0;z-index:60;display:flex;
+  align-items:flex-start;justify-content:center;padding:40px 20px}
+.ct-modal-bd{position:absolute;inset:0;background:rgba(6,18,35,.42);
+  backdrop-filter:blur(2px);animation:ctFade .12s ease-out}
+.ct-modal-card{position:relative;width:100%;max-width:660px;
+  max-height:calc(100vh - 80px);overflow:auto;border-radius:14px;
+  box-shadow:0 24px 60px rgba(6,18,35,.28);animation:ctRise .14s ease-out}
+.ct-modal-card > .cc-panel{margin:0;border-radius:14px}
+.ct-modal-card .cc-panel-h{position:sticky;top:0;z-index:1;background:#fff;
+  border-radius:14px 14px 0 0;justify-content:flex-start;gap:12px}
+@keyframes ctFade{from{opacity:0}to{opacity:1}}
+@keyframes ctRise{from{opacity:0;transform:translateY(-8px)}
+                    to{opacity:1;transform:none}}
+@media (max-width:640px){
+  .ct-modal{padding:16px 10px}
+  .ct-modal-card{max-height:calc(100vh - 32px)}
+}
+
+.ct-x{margin-left:auto;font:inherit;font-size:1.5rem;line-height:1;
+  width:32px;height:32px;display:inline-flex;align-items:center;
+  justify-content:center;color:var(--muted);background:none;border:0;
+  border-radius:8px;cursor:pointer}
+.ct-x:hover{background:var(--soft);color:var(--ink)}
+.ct-x:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
 /* what the intake form was told, sitting above the record so it is
    read before anything is confirmed */
 .ct-node.is-pending{border-color:#EBD9AE;box-shadow:0 0 0 3px rgba(138,90,0,.07)}

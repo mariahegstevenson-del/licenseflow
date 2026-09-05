@@ -2693,10 +2693,18 @@ function ctNodeEditor(n, nodes){
       </div>
     </div>`;
 
-  return `<div class="cc-panel pb-sec ct-node${n.status === "pending" ? " is-pending" : ""}">
+  /* A record is something you open, look at, and shut again. As a panel
+     welded to the bottom of the page it was there whether you had asked
+     for it or not, so it lifts out into a dialog over the chart. */
+  return `<div class="ct-modal" id="ctModal">
+    <div class="ct-modal-bd" data-ctclose></div>
+    <div class="ct-modal-card" role="dialog" aria-modal="true" aria-label="${esc(n.name)}">
+    <div class="cc-panel ct-node${n.status === "pending" ? " is-pending" : ""}">
     <div class="cc-panel-h">
-      <h2>${esc(n.name)}</h2><span class="sub">${
-        n.status === "pending" ? "Pending — sent through the link" : "Contracting record"}</span></div><div class="pad">
+      <h2>${esc(n.name)}</h2>
+      <span class="sub">${n.status === "pending" ? "Pending — sent through the link" : "Contracting record"}</span>
+      <button class="ct-x" type="button" data-ctclose aria-label="Close">&times;</button>
+    </div><div class="pad">
     ${pend}
     <label for="ct_name">Name</label>
     <input id="ct_name" type="text" value="${esc(n.name)}"/>
@@ -2733,7 +2741,7 @@ function ctNodeEditor(n, nodes){
       <button class="btn btn-ghost btn-sm ct-del" id="ctDelNode" type="button">Remove from hierarchy</button>
       <span class="ct-msg" id="ctMsg"></span>
     </div>
-  </div></div>`;
+  </div></div></div></div>`;
 }
 
 function wireNodeEditor(c, n){
@@ -2757,7 +2765,19 @@ function wireNodeEditor(c, n){
     } catch (e) { ctSay(e.message, true); }
   };
 
-  el("ctCloseNode").onclick = () => { A.view = { name:"carrier", arg:c.id }; render(); };
+  const shut = () => { A.view = { name:"carrier", arg:c.id }; render(); };
+  el("ctCloseNode").onclick = shut;
+  panel.querySelectorAll("[data-ctclose]").forEach(b => b.onclick = shut);
+
+  /* Escape closes it, the way every other dialog on the machine does.
+     One listener, removed as soon as it fires, so re-opening a record
+     does not stack them up. */
+  const onKey = (e) => {
+    if (e.key !== "Escape") return;
+    document.removeEventListener("keydown", onKey);
+    shut();
+  };
+  document.addEventListener("keydown", onKey);
 
   /* Approve keeps whatever is in the fields, so an admin can correct a
      misspelt name or place someone properly and confirm in one go. */
