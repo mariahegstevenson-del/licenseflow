@@ -1175,3 +1175,61 @@ body.nav-open .cc-nav{transform:none}
 
 /* the main column gets a little air from the frame */
 .cc-main{padding:20px 22px 60px}
+
+/* ============================================================
+   THE LICENSING SCREEN
+
+   Squares, the same idea as the carrier hubs: a number you can read
+   from across the room, the name of the screen it opens, and one line
+   saying who is in it. Nothing here is new information — every square
+   is a screen that was already in the menu.
+   ============================================================ */
+/* auto-fill, not auto-fit: one card on its own stays card-sized instead
+   of stretching the width of the panel. */
+.lc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(196px,1fr));
+  gap:14px}
+/* the six pipeline stages read as two rows of three, not four then two */
+.lc-grid.three{grid-template-columns:repeat(3,minmax(0,1fr))}
+@media (max-width:1180px){ .lc-grid.three{grid-template-columns:repeat(2,minmax(0,1fr))} }
+@media (max-width:720px){ .lc-grid,.lc-grid.three{grid-template-columns:1fr} }
+.lc-card{text-align:left;background:var(--panel);border:1px solid var(--line);
+  border-radius:13px;padding:16px 18px 15px;cursor:pointer;
+  display:flex;flex-direction:column;gap:2px;box-shadow:var(--shadow);
+  transition:border-color .12s,box-shadow .12s,transform .08s}
+.lc-card:hover{border-color:var(--accent);transform:translateY(-2px);
+  box-shadow:0 6px 20px rgba(12,61,130,.15)}
+.lc-card:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.lc-n{font-family:"Libre Franklin",Inter,sans-serif;font-weight:800;
+  font-size:2rem;line-height:1;letter-spacing:-.03em;color:var(--ink);
+  font-variant-numeric:var(--num)}
+.lc-l{margin-top:8px;font-weight:700;font-size:.98rem;color:var(--ink);
+  letter-spacing:-.012em}
+.lc-s{font-size:.81rem;color:var(--muted);line-height:1.4}
+/* the two that mean somebody has to do something */
+.lc-card.crit{border-color:#E9BDB8;background:var(--crit-bg)}
+.lc-card.crit .lc-n{color:var(--crit)}
+.lc-card.warn{border-color:var(--gold-200);background:var(--gold-050)}
+.lc-card.warn .lc-n{color:var(--gold-ink)}
+
+/* ============================================================
+   CARRIER HUBS, BIGGER
+
+   Four squares is the whole screen, so they should own it rather than
+   huddle in the top-left corner. The grid is centred and the squares
+   are deep enough to read the carrier list off the face of one.
+   ============================================================ */
+.ct-grid{max-width:1080px;margin-inline:auto;gap:22px}
+.ct-tile{min-height:236px;padding:26px 28px 22px;border-radius:16px;gap:7px}
+.ct-tname{font-size:1.5rem}
+.ct-tsub{font-size:.9rem}
+.ct-tlist{margin-top:11px;gap:6px}
+.ct-tlist > span{font-size:.81rem;padding:3px 11px}
+.ct-tfoot{padding-top:16px;font-size:.82rem}
+/* the sub-carrier squares inside a hub keep their old size */
+.ct-grid.sm{max-width:none;margin-inline:0;gap:12px}
+.ct-tile.sm{min-height:0;padding:14px 16px;border-radius:11px;gap:4px}
+.ct-tile.sm .ct-tname{font-size:1rem}
+.ct-tile.sm .ct-tfoot{padding-top:8px;font-size:.74rem}
+/* the add-a-hub row lines up under the centred grid */
+.ct-add{max-width:1080px;margin-inline:auto}
+@media (max-width:1040px){ .ct-tile{min-height:200px;padding:22px 24px 20px} }

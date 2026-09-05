@@ -367,10 +367,16 @@ function agentCountFor(id){
    the one you wanted; now licensing work and contracting work are two
    different places and neither is in the other's way.
    ------------------------------------------------------------------ */
+/* `home` is the screen a tab opens on. Without it a tab opened on
+   whichever entry happened to be listed first, which for Licensing was
+   the Sent-back queue -- empty on a healthy agency, so clicking the tab
+   looked like the tab had nothing in it. Each tab now opens on a screen
+   that always has something to show. */
 const SECTIONS = [
-  {k:"home",        label:"Overview",    sub:"What needs you"},
-  {k:"licensing",   label:"Licensing",   sub:"Getting agents licensed"},
-  {k:"contracting", label:"Contracting", sub:"Carriers and hierarchies", agencyOnly:true},
+  {k:"home",        label:"Overview",    sub:"What needs you",           home:"overview"},
+  {k:"licensing",   label:"Licensing",   sub:"Getting agents licensed",  home:"licensing"},
+  {k:"contracting", label:"Contracting", sub:"Carriers and hierarchies",
+   home:"contracting", agencyOnly:true},
 ];
 
 /* 24×24 stroke icons, so the nav still says something when it is
@@ -391,6 +397,7 @@ const ICONS = {
   play:   "M21.6 7.2a2.8 2.8 0 0 0-2-2C17.9 4.8 12 4.8 12 4.8s-5.9 0-7.6.4a2.8 2.8 0 0 0-2 2A29 29 0 0 0 2 12a29 29 0 0 0 .4 4.8 2.8 2.8 0 0 0 2 2c1.7.4 7.6.4 7.6.4s5.9 0 7.6-.4a2.8 2.8 0 0 0 2-2A29 29 0 0 0 22 12a29 29 0 0 0-.4-4.8zM10 15.2V8.8l5.2 3.2z",
   film:   "M2 3h20v18H2zM7 3v18M17 3v18M2 9h5M2 15h5M17 9h5M17 15h5",
   map:    "M1 6v16l7-4 8 4 7-4V2l-7 4-8-4-7 4zM8 2v16M16 6v16",
+  flow:   "M3 3h7v7H3zM14 3h7v7h-7zM3 14h7v7H3zM14 14h7v7h-7z",
 };
 const icon = (k) => ICONS[k]
   ? `<svg class="cc-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -403,6 +410,8 @@ const NAV = [
   {sec:"home", v:"overview", label:"Waiting on you",  c:"pending",  tone:"hot",  i:"inbox"},
   {sec:"home", v:"notices",  label:"Notifications",   c:"unread",   tone:"hot",  i:"bell"},
 
+  {sec:"licensing", grp:"Licensing"},
+  {sec:"licensing", v:"licensing",  label:"Everything licensing", c:"agents", i:"flow"},
   {sec:"licensing", grp:"Queue"},
   {sec:"licensing", v:"sentback",   label:"Sent back",       c:"sentBack", tone:"crit", i:"back"},
   {sec:"licensing", v:"exceptions", label:"Exceptions",      c:"exceptions",            i:"alert"},
@@ -427,6 +436,7 @@ const NAV = [
 /* Which section a screen belongs to, including the ones reached by
    clicking through rather than from the nav. */
 const VIEW_SEC = { review:"home", agent:"licensing", walkedit:"licensing",
+                   licensing:"licensing", playbook:"licensing",
                    carrier:"contracting" };
 NAV.forEach(n => { if (n.v) VIEW_SEC[n.v] = n.sec; });
 const secOf = (view) => VIEW_SEC[view] || "licensing";
@@ -490,8 +500,9 @@ function renderSections(){
   </div></div>`;
 
   secbarEl.querySelectorAll("[data-sec]").forEach(b => b.onclick = () => {
-    const first = navFor(b.dataset.sec).find(n => n.v);
-    if (first) { A.view = { name:first.v }; render(); }
+    const s = secs.find(x => x.k === b.dataset.sec);
+    const to = (s && s.home) || (navFor(b.dataset.sec).find(n => n.v) || {}).v;
+    if (to) { A.view = { name:to }; render(); }
   });
 }
 
@@ -713,6 +724,7 @@ function renderView(){
   if (v.name==="walkedit")   return renderWalkEdit(v.arg);
   if (v.name==="playbooks")  return renderPlaybookGrid();
   if (v.name==="playbook")   return renderPlaybook(v.arg);
+  if (v.name==="licensing")  return renderLicensing();
   if (v.name==="agents")     return shell("All agents","Everyone enrolled, whatever stage they're at.", renderAgents(A.profiles));
   if (v.name==="pre")        return shell("Pre-licensing","Working through study material, or registered for the exam but hasn't passed it yet.",
                                    renderAgents(A.profiles.filter(p=>STAGE_BUCKET[currentStage(p.user_id)]==="pre")));
@@ -730,6 +742,86 @@ function renderView(){
   if (v.name==="exceptions") return shell("Exceptions","Pathway couldn't be determined automatically.", renderExceptions());
   return shell("Waiting on you","Automate by default. Escalate by exception.", renderTiles()+renderStages()+renderQueue(["pending_review"]));
 }
+/* ============================================================
+   THE LICENSING SCREEN
+
+   What the Licensing tab opens on. Before this the tab opened on the
+   Sent-back queue, which on an agency with nothing sent back is an
+   empty page -- so the tab read as though it held nothing at all.
+
+   This screen holds the whole of licensing on one page: what needs
+   dealing with, the pipeline stage by stage, the stage chart, the
+   material agents are shown, and the roster underneath. Every square
+   is the screen it names, so nothing has been moved out of the menu --
+   this is a front door to it.
+   ============================================================ */
+function renderLicensing(){
+  const c = counts();
+
+  const card = (v, n, label, sub, cls) => `
+    <button class="lc-card${cls ? " " + cls : ""}" data-go="${esc(v)}" type="button">
+      <span class="lc-n">${n}</span>
+      <span class="lc-l">${esc(label)}</span>
+      <span class="lc-s">${esc(sub)}</span>
+    </button>`;
+
+  const attention = [
+    c.sentBack   ? card("sentback",   c.sentBack,   "Sent back",
+                        "waiting on the agent to fix something", "crit") : "",
+    c.exceptions ? card("exceptions", c.exceptions, "Exceptions",
+                        "pathway couldn't be worked out", "warn") : "",
+    c.stuck      ? card("stuck",      c.stuck,      `Stuck ${STUCK_DAYS}+ days`,
+                        "no movement for two weeks", "warn") : "",
+  ].filter(Boolean).join("");
+
+  const content = [
+    card("playbooks", c.playbooks, "State guide",  "what each state asks for"),
+    A.platform ? card("walk",   c.walk,   "Walkthroughs", "recorded screen guides") : "",
+    A.platform ? card("videos", c.videos, "Step videos",  "one link per step") : "",
+  ].filter(Boolean).join("");
+
+  root.innerHTML = `
+    <div class="cc-h"><div><h1>Licensing</h1>
+      <p>Getting an agent from unlicensed to fully compliant &mdash; what needs
+      you, where everybody is, and the material they follow. Open any square.</p></div></div>
+
+    <div class="cc-panel">
+      <div class="cc-panel-h"><h2>Needs attention</h2>
+        <span class="sub">${attention ? "Open one to deal with it" : "Nothing waiting"}</span></div>
+      <div class="pad">${attention
+        ? `<div class="lc-grid">${attention}</div>`
+        : `<p class="muted" style="margin:0">Nothing sent back, no exceptions, nobody
+           stuck. The pipeline below is where the work is.</p>`}</div>
+    </div>
+
+    <div class="cc-panel">
+      <div class="cc-panel-h"><h2>The pipeline</h2>
+        <span class="sub">${c.agents} ${c.agents === 1 ? "agent" : "agents"} enrolled</span></div>
+      <div class="pad"><div class="lc-grid three">
+        ${card("agents",     c.agents,     "All agents",      "everyone, whatever stage")}
+        ${card("pre",        c.pre,        "Pre-licensing",   "studying or sitting the exam")}
+        ${card("passedExam", c.passedExam, "Passed exam",     "not yet applied to the state")}
+        ${card("applied",    c.applied,    "Applied",         "waiting on the licence")}
+        ${card("issued",     c.issued,     "Licence issued",  "NPN, CE or E&O outstanding")}
+        ${card("compliant",  c.compliant,  "Fully compliant", "every requirement complete")}
+      </div></div>
+    </div>
+
+    ${renderStages()}
+
+    <div class="cc-panel">
+      <div class="cc-panel-h"><h2>Content and state walkthroughs</h2>
+        <span class="sub">What the agent is shown</span></div>
+      <div class="pad"><div class="lc-grid">${content}</div></div>
+    </div>
+
+    ${renderAgents(A.profiles)}`;
+
+  bindCommon();
+  root.querySelectorAll("[data-go]").forEach(b =>
+    b.onclick = () => { A.view = { name:b.dataset.go }; render(); });
+}
+
 function shell(title, sub, inner){
   root.innerHTML = `<div class="cc-h"><div><h1>${esc(title)}</h1><p>${esc(sub)}</p></div></div>${inner}`;
   bindCommon();
