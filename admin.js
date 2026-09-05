@@ -2638,7 +2638,7 @@ function ctNodeEditor(n, nodes){
     <div class="ct-pend">
       <div class="ct-pend-h">
         <strong>Waiting on you</strong>
-        <span>${n.submitted_at ? `sent ${esc(elapsed(n.submitted_at).txt)} ago`
+        <span>${n.submitted_at ? `sent ${esc(elapsed(ts(n.submitted_at)).txt)} ago`
                                : "sent through the link"}</span>
       </div>
       <dl class="ct-pend-l">
