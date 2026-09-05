@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Libre+Franklin:wght@600;700;800&display=swap"/>
 <link rel="stylesheet" href="styles.css?v=35"/>
-<link rel="stylesheet" href="admin.css?v=25"/>
+<link rel="stylesheet" href="admin.css?v=26"/>
 <script src="config.js"></script>
 </head>
 <body>
@@ -28,12 +28,17 @@
      signing in as somebody else. -->
 <div class="cc-tabs" id="tabs" hidden></div>
 
+<!-- The three halves of the job. Filled by renderSections(): clicking
+     one swaps what the left nav is listing, so nobody has to read past
+     twelve unrelated entries to find the one they want. -->
+<div class="cc-secbar" id="secbar" hidden></div>
+
 <div class="cc-body">
-  <nav class="cc-nav" id="nav"></nav>
+  <nav class="cc-nav" id="nav"><div class="cc-drag" id="navDrag" title="Drag to resize"></div></nav>
   <main class="cc-main" id="root"><p class="muted">Loading…</p></main>
   <aside class="cc-rail" id="rail"></aside>
 </div>
 
-<script type="module" src="admin.js?v=59"></script>
+<script type="module" src="admin.js?v=60"></script>
 </body>
 </html>

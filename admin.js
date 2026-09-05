@@ -8,6 +8,7 @@ import { loadTenant, renderUnknownAgency, applyTenantChrome, urlForAgency } from
 
 const el = (id) => document.getElementById(id);
 const root = el("root"), navEl = el("nav"), railEl = el("rail"), tabsEl = el("tabs");
+const secbarEl = el("secbar");
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;" }[c]));
 const stateName = (c) => STATES[c]?.name || c || "—";
 const fmtDT = (t) => t ? new Date(t).toLocaleString(undefined,{month:"short",day:"numeric",hour:"numeric",minute:"2-digit"}) : "—";
@@ -56,7 +57,7 @@ const within = (t, from, to) => t != null && t >= from && t < to;
        theirs. Send them to their own app rather than leaving them here.
        The database refuses them too: every table behind this console is
        admin-gated by RLS, so there is nothing to read even if they stay. */
-    navEl.innerHTML = ""; railEl.innerHTML = "";
+    navEl.innerHTML = ""; railEl.innerHTML = ""; secbarEl.hidden = true;
     document.body.classList.add("cc-locked");
     root.innerHTML = `<div class="card pad" style="max-width:520px;margin:48px auto">
       <h2 style="margin-top:0">This area is for administrators</h2>
@@ -360,28 +361,84 @@ function agentCountFor(id){
   return (A.allProfiles || A.profiles || []).filter(p => p.agency_id === id).length;
 }
 
-/* ---------------- left nav ---------------- */
-const NAV = [
-  {grp:"Queue"},
-  {v:"notices",  label:"Notifications",   c:"unread",   tone:"hot"},
-  {v:"overview", label:"Waiting on you",  c:"pending",  tone:"hot"},
-  {v:"sentback", label:"Sent back",       c:"sentBack", tone:"crit"},
-  {v:"exceptions", label:"Exceptions",    c:"exceptions"},
-  {v:"stuck",    label:"Stuck 14+ days",  c:"stuck", tone:"hot"},
-  {grp:"Pipeline"},
-  {v:"agents",      label:"All agents",      c:"agents"},
-  {v:"pre",         label:"Pre-licensing",   c:"pre"},
-  {v:"passedExam",  label:"Passed exam",     c:"passedExam"},
-  {v:"applied",     label:"Applied",         c:"applied"},
-  {v:"issued",      label:"License issued",  c:"issued"},
-  {v:"compliant",   label:"Fully compliant", c:"compliant"},
-  {grp:"Contracting", agencyOnly:true},
-  {v:"contracting", label:"Carrier hubs", c:"contracting", agencyOnly:true},
-  {grp:"Content"},
-  {v:"videos",   label:"Step videos",     c:"videos", platform:true},
-  {v:"walk",     label:"Walkthroughs",    c:"walk",   platform:true},
-  {v:"playbooks",label:"State guide",     c:"playbooks"},
+/* ---------------- left nav ----------------
+   Three sections across the top, and the nav lists only the section you
+   are in. Sixteen entries in one column meant reading the lot to find
+   the one you wanted; now licensing work and contracting work are two
+   different places and neither is in the other's way.
+   ------------------------------------------------------------------ */
+const SECTIONS = [
+  {k:"home",        label:"Overview",    sub:"What needs you"},
+  {k:"licensing",   label:"Licensing",   sub:"Getting agents licensed"},
+  {k:"contracting", label:"Contracting", sub:"Carriers and hierarchies", agencyOnly:true},
 ];
+
+/* 24×24 stroke icons, so the nav still says something when it is
+   collapsed to a rail. */
+const ICONS = {
+  inbox:  "M3 13h4l2 3h6l2-3h4M4 5h16l1 8v5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-5z",
+  bell:   "M18 8a6 6 0 1 0-12 0c0 6-3 7-3 7h18s-3-1-3-7M13.7 20a2 2 0 0 1-3.4 0",
+  back:   "M9 14 4 9l5-5M4 9h11a5 5 0 0 1 0 10h-3",
+  alert:  "M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0zM12 9v4M12 17h.01",
+  clock:  "M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20zM12 6v6l4 2",
+  users:  "M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM23 21v-2a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8",
+  book:   "M4 19.5A2.5 2.5 0 0 1 6.5 17H20M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z",
+  check:  "M22 11.1V12a10 10 0 1 1-5.9-9.1M22 4 12 14.01l-3-3",
+  send:   "M22 2 11 13M22 2l-7 20-4-9-9-4 20-7z",
+  badge:  "M12 15a6 6 0 1 0 0-12 6 6 0 0 0 0 12zM8.2 13.9 7 22l5-3 5 3-1.2-8.1",
+  shield: "M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10zM9 12l2 2 4-4",
+  hubs:   "M12 2v6M5 22v-4M19 22v-4M5 18h14M12 8 5 18M12 8l7 10M12 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6z",
+  play:   "M21.6 7.2a2.8 2.8 0 0 0-2-2C17.9 4.8 12 4.8 12 4.8s-5.9 0-7.6.4a2.8 2.8 0 0 0-2 2A29 29 0 0 0 2 12a29 29 0 0 0 .4 4.8 2.8 2.8 0 0 0 2 2c1.7.4 7.6.4 7.6.4s5.9 0 7.6-.4a2.8 2.8 0 0 0 2-2A29 29 0 0 0 22 12a29 29 0 0 0-.4-4.8zM10 15.2V8.8l5.2 3.2z",
+  film:   "M2 3h20v18H2zM7 3v18M17 3v18M2 9h5M2 15h5M17 9h5M17 15h5",
+  map:    "M1 6v16l7-4 8 4 7-4V2l-7 4-8-4-7 4zM8 2v16M16 6v16",
+};
+const icon = (k) => ICONS[k]
+  ? `<svg class="cc-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+       stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"
+       aria-hidden="true"><path d="${ICONS[k]}"/></svg>`
+  : "";
+
+const NAV = [
+  {sec:"home", grp:"Today"},
+  {sec:"home", v:"overview", label:"Waiting on you",  c:"pending",  tone:"hot",  i:"inbox"},
+  {sec:"home", v:"notices",  label:"Notifications",   c:"unread",   tone:"hot",  i:"bell"},
+
+  {sec:"licensing", grp:"Queue"},
+  {sec:"licensing", v:"sentback",   label:"Sent back",       c:"sentBack", tone:"crit", i:"back"},
+  {sec:"licensing", v:"exceptions", label:"Exceptions",      c:"exceptions",            i:"alert"},
+  {sec:"licensing", v:"stuck",      label:"Stuck 14+ days",  c:"stuck",    tone:"hot",  i:"clock"},
+  {sec:"licensing", grp:"Pipeline"},
+  {sec:"licensing", v:"agents",     label:"All agents",      c:"agents",     i:"users"},
+  {sec:"licensing", v:"pre",        label:"Pre-licensing",   c:"pre",        i:"book"},
+  {sec:"licensing", v:"passedExam", label:"Passed exam",     c:"passedExam", i:"check"},
+  {sec:"licensing", v:"applied",    label:"Applied",         c:"applied",    i:"send"},
+  {sec:"licensing", v:"issued",     label:"License issued",  c:"issued",     i:"badge"},
+  {sec:"licensing", v:"compliant",  label:"Fully compliant", c:"compliant",  i:"shield"},
+  {sec:"licensing", grp:"Content"},
+  {sec:"licensing", v:"videos",     label:"Step videos",  c:"videos", i:"play", platform:true},
+  {sec:"licensing", v:"walk",       label:"Walkthroughs", c:"walk",   i:"film", platform:true},
+  {sec:"licensing", v:"playbooks",  label:"State guide",  c:"playbooks", i:"map"},
+
+  {sec:"contracting", grp:"Contracting", agencyOnly:true},
+  {sec:"contracting", v:"contracting", label:"Carrier hubs", c:"contracting",
+   i:"hubs", agencyOnly:true},
+];
+
+/* Which section a screen belongs to, including the ones reached by
+   clicking through rather than from the nav. */
+const VIEW_SEC = { review:"home", agent:"licensing", walkedit:"licensing",
+                   carrier:"contracting" };
+NAV.forEach(n => { if (n.v) VIEW_SEC[n.v] = n.sec; });
+const secOf = (view) => VIEW_SEC[view] || "licensing";
+
+function visibleSections(){
+  return SECTIONS.filter(s => !s.agencyOnly || showContracting());
+}
+function navFor(sec){
+  return NAV.filter(n => n.sec === sec
+                      && (!n.platform  || A.platform)
+                      && (!n.agencyOnly || showContracting()));
+}
 
 /* Screens only LicenseFlow staff may open.
 
@@ -402,19 +459,115 @@ function showContracting(){
   return A.platform || (A.ctCarriers || []).length > 0;
 }
 const CONTRACTING_VIEWS = new Set(["contracting", "carrier"]);
+/* The nav can be narrowed, widened, or shut down to a rail of icons.
+   Both choices are remembered, because a person who prefers it out of
+   the way prefers that every morning, not once. */
+const NAV_MIN = 168, NAV_MAX = 340, NAV_DEF = 198;
+/* Storage can throw outright in a locked-down browser, so every read and
+   write of the preference is allowed to fail into the default. */
+const pref = {
+  get(k){ try { return localStorage.getItem(k); } catch (_) { return null; } },
+  set(k, v){ try { localStorage.setItem(k, v); } catch (_) {} },
+};
+function navWidth(){
+  const v = parseInt(pref.get("lf_nav_w") || "", 10);
+  return Number.isFinite(v) ? Math.min(NAV_MAX, Math.max(NAV_MIN, v)) : NAV_DEF;
+}
+const navMini = () => pref.get("lf_nav_mini") === "1";
+function applyNavWidth(){
+  document.body.classList.toggle("nav-mini", navMini());
+  document.body.style.setProperty("--nav-w", navMini() ? "58px" : navWidth() + "px");
+}
+
+function renderSections(){
+  applyNavWidth();
+  const secs = visibleSections();
+  const cur  = secOf(A.view.name);
+  const c    = counts();
+  /* One number per section: what is actually waiting in there. */
+  const badge = (k) => navFor(k).filter(n => n.v && n.tone)
+    .reduce((t, n) => t + (c[n.c] ?? 0), 0);
+
+  secbarEl.hidden = false;
+  secbarEl.innerHTML = `<div class="cc-secbar-in">
+    <button class="cc-navtog" id="navTog" type="button"
+      title="${navMini() ? "Show the list" : "Collapse the list"}"
+      aria-label="${navMini() ? "Show the list" : "Collapse the list"}">
+      <span>${navMini() ? "&raquo;" : "&laquo;"}</span></button>
+    <div class="cc-secs">
+      ${secs.map(s => {
+        const n = badge(s.k);
+        return `<button class="cc-sec${cur === s.k ? " on" : ""}" data-sec="${s.k}" type="button">
+          <span class="s-name">${esc(s.label)}${n ? `<em class="s-n">${n}</em>` : ""}</span>
+          <span class="s-sub">${esc(s.sub)}</span>
+        </button>`;
+      }).join("")}
+    </div>
+  </div>`;
+
+  secbarEl.querySelectorAll("[data-sec]").forEach(b => b.onclick = () => {
+    const first = navFor(b.dataset.sec).find(n => n.v);
+    if (first) { A.view = { name:first.v }; render(); }
+  });
+  el("navTog").onclick = () => {
+    pref.set("lf_nav_mini", navMini() ? "0" : "1");
+    applyNavWidth(); renderSections(); renderNav();
+  };
+}
+
 function renderNav(){
   const c = counts(), cur = A.view.name;
-  const active = {review:"overview", agent:"agents"}[cur] || cur;
-  navEl.innerHTML = NAV.filter(n => (!n.platform || A.platform)
-                                 && (!n.agencyOnly || showContracting())).map(n=>{
-    if(n.grp) return `<div class="grp">${esc(n.grp)}</div>`;
-    const val = c[n.c] ?? 0;
-    const tone = val && n.tone ? " "+n.tone : "";
-    return `<button data-view="${n.v}" class="${active===n.v?"on":""}">
-      <span>${esc(n.label)}</span><span class="n${tone}">${val}</span></button>`;
+  const active = {review:"overview", agent:"agents", carrier:"contracting",
+                  walkedit:"walk"}[cur] || cur;
+  const mini = navMini();
+
+  navEl.innerHTML = `<div class="cc-drag" id="navDrag" title="Drag to resize"></div>`
+    + navFor(secOf(cur)).map(n => {
+    if (n.grp) return mini ? `<div class="grp-line"></div>` : `<div class="grp">${esc(n.grp)}</div>`;
+    const val  = c[n.c] ?? 0;
+    const tone = val && n.tone ? " " + n.tone : "";
+    return `<button data-view="${n.v}" class="${active === n.v ? "on" : ""}"
+      title="${esc(n.label)}${val ? ` — ${val}` : ""}">
+      ${icon(n.i)}<span class="l">${esc(n.label)}</span>
+      <span class="n${tone}">${val}</span>
+      ${val && n.tone ? `<i class="dot${tone}"></i>` : ""}</button>`;
   }).join("");
-  navEl.querySelectorAll("[data-view]").forEach(b=>
-    b.onclick=()=>{ A.view={name:b.dataset.view}; render(); });
+
+  navEl.querySelectorAll("[data-view]").forEach(b =>
+    b.onclick = () => { A.view = { name:b.dataset.view }; render(); });
+  wireNavDrag();
+}
+
+/* Drag the right edge to set the width. Pointer events so it works with
+   a trackpad, a mouse and a stylus without three code paths. */
+function wireNavDrag(){
+  const h = el("navDrag"); if (!h) return;
+  let from = null;
+  h.onpointerdown = (e) => {
+    if (navMini()) return;
+    from = { x:e.clientX, w:navWidth() };
+    h.setPointerCapture(e.pointerId);
+    document.body.classList.add("nav-sizing");
+    e.preventDefault();
+  };
+  h.onpointermove = (e) => {
+    if (!from) return;
+    const w = Math.min(NAV_MAX, Math.max(NAV_MIN, from.w + (e.clientX - from.x)));
+    document.body.style.setProperty("--nav-w", w + "px");
+    pref.set("lf_nav_w", String(w));
+  };
+  const stop = (e) => {
+    if (!from) return;
+    from = null;
+    document.body.classList.remove("nav-sizing");
+    try { h.releasePointerCapture(e.pointerId); } catch (_) {}
+  };
+  h.onpointerup = stop; h.onpointercancel = stop;
+  /* Double-click the handle to snap back to the default width. */
+  h.ondblclick = () => {
+    pref.set("lf_nav_w", String(NAV_DEF));
+    applyNavWidth();
+  };
 }
 
 /* ---------------- agency rail ---------------- */
@@ -554,7 +707,7 @@ function renderView(){
      screen this account cannot save from. */
   if (!A.platform && PLATFORM_VIEWS.has(A.view.name)) A.view = { name:"overview" };
   if (!showContracting() && CONTRACTING_VIEWS.has(A.view.name)) A.view = { name:"overview" };
-  renderTabs(); renderNav(); renderRail();
+  renderTabs(); renderSections(); renderNav(); renderRail();
   /* Re-bound on every render, because the panel is rebuilt each time. */
   setTimeout(wireNotices, 0);
   const v = A.view;

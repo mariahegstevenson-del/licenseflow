@@ -80,19 +80,54 @@ table.tbl td{border-bottom-color:var(--line-2)}
 .cc-chip{font-size:.7rem;padding:.16rem .5rem;border:1px solid var(--line);border-radius:6px;
   color:var(--muted);font-weight:560;white-space:nowrap}
 
-.cc-body{display:grid;grid-template-columns:198px minmax(0,1fr) 300px;
+/* ---- the three sections, across the top ------------------------- */
+.cc-secbar{background:#fff;border-bottom:1px solid var(--line)}
+.cc-secbar[hidden]{display:none}
+.cc-secbar-in{display:flex;align-items:stretch;gap:4px;padding:0 14px;
+  max-width:1600px;margin:0 auto;overflow-x:auto}
+.cc-secs{display:flex;gap:4px;min-width:0}
+.cc-sec{appearance:none;background:none;border:0;border-bottom:2px solid transparent;
+  padding:9px 16px 8px;cursor:pointer;text-align:left;display:grid;gap:1px;
+  border-radius:9px 9px 0 0;white-space:nowrap;
+  transition:background .12s,border-color .12s,color .12s}
+.cc-sec:hover{background:var(--panel-2)}
+.cc-sec .s-name{display:flex;align-items:center;gap:7px;font-size:.95rem;
+  font-weight:650;color:var(--ink-2);letter-spacing:-.012em}
+.cc-sec .s-sub{font-size:.72rem;color:var(--faint)}
+.cc-sec .s-n{font-style:normal;font-size:.68rem;font-weight:700;line-height:1;
+  min-width:17px;padding:3px 5px;border-radius:99px;text-align:center;
+  color:#fff;background:var(--warn);font-variant-numeric:tabular-nums}
+.cc-sec.on{border-bottom-color:var(--brand);background:var(--accent-050)}
+.cc-sec.on .s-name{color:var(--brand);font-weight:750}
+.cc-sec:focus-visible{outline:2px solid var(--brand);outline-offset:-2px}
+
+.cc-navtog{flex:0 0 auto;align-self:center;width:30px;height:30px;margin-right:6px;
+  display:flex;align-items:center;justify-content:center;font:inherit;font-size:.9rem;
+  color:var(--muted);background:#fff;border:1px solid var(--line);border-radius:8px;
+  cursor:pointer;transition:border-color .12s,color .12s}
+.cc-navtog:hover{border-color:var(--accent);color:var(--accent)}
+.cc-navtog:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
+
+/* ---- the shell -------------------------------------------------- */
+.cc-body{display:grid;grid-template-columns:var(--nav-w,198px) minmax(0,1fr) 300px;
   min-height:calc(100vh - 53px);background:var(--bg)}
 /* When access is refused there is no roster and no rail — one column. */
 body.cc-locked .cc-body{grid-template-columns:minmax(0,1fr)}
 body.cc-locked .cc-nav,body.cc-locked .cc-rail{display:none}
+/* While dragging, stop the pointer selecting text across the page. */
+body.nav-sizing{user-select:none;cursor:col-resize}
 
-.cc-nav{border-right:1px solid var(--line);padding:14px 10px;background:#fff}
+.cc-nav{position:relative;border-right:1px solid var(--line);padding:14px 10px;
+  background:#fff}
 .cc-nav .grp{font-size:.67rem;text-transform:uppercase;letter-spacing:.09em;color:var(--muted);
   padding:13px 10px 6px;font-weight:700}
-.cc-nav button{display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;
+.cc-nav .grp-line{height:1px;background:var(--line-2);margin:9px 8px}
+.cc-nav button{display:flex;align-items:center;gap:9px;width:100%;
   padding:.46rem .62rem;border:0;border-radius:8px;background:transparent;color:var(--ink-2);
   font:inherit;font-size:.88rem;font-weight:540;cursor:pointer;text-align:left;
   transition:background .13s ease,color .13s ease}
+.cc-nav button .l{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;
+  white-space:nowrap}
 .cc-nav button:hover{background:var(--panel-2);color:var(--ink)}
 .cc-nav button.on{background:var(--accent-050);color:var(--brand);font-weight:650;
   box-shadow:inset 2px 0 0 var(--brand)}
@@ -100,6 +135,34 @@ body.cc-locked .cc-nav,body.cc-locked .cc-rail{display:none}
 .cc-nav button.on .n{color:var(--brand)}
 .cc-nav button .n.hot{color:var(--warn);font-weight:700}
 .cc-nav button .n.crit{color:var(--crit);font-weight:700}
+.cc-ic{flex:0 0 auto;width:17px;height:17px;opacity:.72}
+.cc-nav button.on .cc-ic{opacity:1}
+.cc-nav button i.dot{display:none}
+
+/* the drag handle on the right edge */
+.cc-drag{position:absolute;top:0;right:-3px;width:7px;height:100%;
+  cursor:col-resize;z-index:2;touch-action:none}
+.cc-drag::after{content:"";position:absolute;top:0;left:3px;width:1px;height:100%;
+  background:transparent;transition:background .12s}
+.cc-drag:hover::after,body.nav-sizing .cc-drag::after{background:var(--accent)}
+body.nav-mini .cc-drag{display:none}
+
+/* ---- collapsed to a rail ---------------------------------------- */
+body.nav-mini .cc-nav{padding:14px 7px}
+body.nav-mini .cc-nav button{justify-content:center;padding:.52rem 0;position:relative}
+body.nav-mini .cc-nav button .l,
+body.nav-mini .cc-nav button .n{display:none}
+body.nav-mini .cc-ic{width:19px;height:19px}
+/* a dot instead of a number, so "something is waiting" still reads */
+body.nav-mini .cc-nav button i.dot{display:block;position:absolute;top:5px;right:9px;
+  width:7px;height:7px;border-radius:50%;background:var(--warn);
+  box-shadow:0 0 0 2px #fff}
+body.nav-mini .cc-nav button i.dot.crit{background:var(--crit)}
+
+@media (max-width:1180px){
+  .cc-sec .s-sub{display:none}
+  .cc-sec{padding:11px 13px}
+}
 
 .cc-main{padding:22px 24px 64px;min-width:0}
 .cc-main .adm{max-width:none;margin:0;padding:0}
