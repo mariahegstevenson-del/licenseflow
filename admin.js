@@ -514,22 +514,33 @@ function renderNav(){
   const active = {review:"overview", agent:"agents", carrier:"contracting",
                   walkedit:"walk"}[cur] || cur;
 
-  /* Every item, every section, in the original order. */
+  /* Every item, every section — but filed under the tab it belongs to,
+     so it is obvious that the pipeline and the walkthroughs are part of
+     Licensing rather than three unrelated lists. */
   const items = NAV.filter(n => (!n.platform || A.platform)
                              && (!n.agencyOnly || showContracting()));
+  const row = (n) => {
+    const val  = c[n.c] ?? 0;
+    const tone = val && n.tone ? " " + n.tone : "";
+    return `<button data-view="${n.v}" class="${active === n.v ? "on" : ""}">
+      ${icon(n.i)}<span class="l">${esc(n.label)}</span>
+      <span class="n${tone}">${val}</span></button>`;
+  };
 
   navEl.innerHTML = `
     <div class="cc-nav-h">
       <span>All screens</span>
       <button class="cc-nav-x" id="navClose" type="button" aria-label="Close the menu">&times;</button>
     </div>
-    <div class="cc-nav-l">${items.map(n => {
-      if (n.grp) return `<div class="grp">${esc(n.grp)}</div>`;
-      const val  = c[n.c] ?? 0;
-      const tone = val && n.tone ? " " + n.tone : "";
-      return `<button data-view="${n.v}" class="${active === n.v ? "on" : ""}">
-        ${icon(n.i)}<span class="l">${esc(n.label)}</span>
-        <span class="n${tone}">${val}</span></button>`;
+    <div class="cc-nav-l">${visibleSections().map(s => {
+      const mine = items.filter(n => n.sec === s.k);
+      if (!mine.length) return "";
+      return `<div class="cc-nav-sec${secOf(cur) === s.k ? " here" : ""}">
+        <div class="sec-h">${esc(s.label)}</div>
+        ${mine.map(n => n.grp
+            ? `<div class="grp">${esc(n.grp)}</div>`
+            : row(n)).join("")}
+      </div>`;
     }).join("")}</div>`;
 
   navEl.querySelectorAll("[data-view]").forEach(b =>
