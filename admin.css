@@ -26,26 +26,32 @@
      Everything below is a token the rest of this sheet and
      styles.css already read, so the theme lives in one place.
      ------------------------------------------------------------ */
-  --chrome:#071C36;  --chrome-2:#0A2748;   /* the frame and tab strip */
-  --gold:#D4A537; --gold-600:#B88C22; --gold-ink:#8A6A10;
-  --gold-050:rgba(212,165,55,.16);
-  --on-blue:#F3F7FD; --on-blue-2:#B9CCE6;  /* text that sits on the navy */
+  /* Pacific Ridgeway's four colours, straight off the brand guide:
+       NAVY  #082B63    GOLD  #D4A12B
+       WHITE #FFFFFF    GRAY  #F5F7FA
+     Everything else here is a shade of one of those four, mixed only
+     where a border or a hover state needs it. Nothing is a near-miss
+     of the brand colours themselves. */
+  --chrome:#061F49;  --chrome-2:#082B63;   /* the frame and tab strip */
+  --gold:#D4A12B; --gold-600:#B0831C; --gold-ink:#8A6413;
+  --gold-050:rgba(212,161,43,.14); --gold-200:rgba(212,161,43,.34);
+  --on-blue:#F5F7FA; --on-blue-2:#B3C4DD;  /* text that sits on the navy */
 
   /* The page is navy. Everything you read — cards, tiles, tables — is
      still white on top of it, because that is what a working screen
      needs to be. */
-  --bg:#0B2A55; --soft:#F7F9FC; --raised:#FFFFFF;
-  --ink:#061223; --ink-2:#132741; --muted:#51637A; --faint:#5E7089;
+  --bg:#082B63; --soft:#F5F7FA; --raised:#FFFFFF;
+  --ink:#0A1A33; --ink-2:#16294A; --muted:#54667F; --faint:#61738C;
   --line:#DCE3EC; --line-2:#EDF1F6;
-  --accent:#0C3D82; --accent-600:#082C5F; --accent-050:#EAF0F8;
-  --brand:#0C3D82; --brand-600:#082C5F;
+  --accent:#0E3E86; --accent-600:#082B63; --accent-050:#EAF0F8;
+  --brand:#0E3E86; --brand-600:#082B63;
   --ok:#0F6F40; --ok-050:#ECF7F0;
   --warn:#8A5A00; --warn-050:#FDF6EA;
   --shadow:0 1px 2px rgba(6,18,35,.05);
   --shadow-2:0 2px 6px rgba(6,18,35,.05), 0 14px 34px rgba(6,18,35,.07);
 
   /* console-only tokens */
-  --panel:#FFFFFF; --panel-2:#F4F7FA; --line-3:#C9D4E2;
+  --panel:#FFFFFF; --panel-2:#F5F7FA; --line-3:#C9D4E2;
   --crit:#A32019; --crit-bg:#FDEEEC;
   --up:#0F6F40; --up-bg:#ECF7F0;
   --down:#A32019; --down-bg:#FDEEEC;
@@ -867,7 +873,7 @@ body.nav-open .cc-nav{transform:none}
   transition:transform .12s,box-shadow .12s,border-color .12s}
 .ct-bub:hover{transform:translateY(-1px);box-shadow:0 4px 14px rgba(12,61,130,.28)}
 .ct-bub:focus-visible{outline:2px solid var(--ink);outline-offset:3px}
-.ct-bub.on{border-color:var(--accent);box-shadow:0 0 0 3px rgba(242,183,5,.28)}
+.ct-bub.on{border-color:var(--accent);box-shadow:0 0 0 3px rgba(212,161,43,.28)}
 .ct-bn{font-weight:650;font-size:.93rem;line-height:1.25;color:#fff;
   overflow-wrap:anywhere}
 .ct-bl{font-size:.86rem;color:rgba(255,255,255,.88);font-variant-numeric:tabular-nums}
@@ -901,7 +907,7 @@ body.nav-open .cc-nav{transform:none}
 
 /* search: matches ring, everyone else recedes so the eye lands on
    the match rather than hunting through a hundred identical boxes */
-.ct-bub.hit{border-color:var(--accent);box-shadow:0 0 0 3px rgba(242,183,5,.35)}
+.ct-bub.hit{border-color:var(--accent);box-shadow:0 0 0 3px rgba(212,161,43,.35)}
 .ct-bub.dim{opacity:.42}
 .ct-bub.dim:hover{opacity:1}
 
@@ -1108,3 +1114,64 @@ body.nav-open .cc-nav{transform:none}
 .cc-top .btn-quiet{color:var(--muted)}
 .cc-top .btn-quiet:hover{color:var(--gold-ink)}
 .cc-agency{background:var(--panel-2);color:var(--ink-2);border-color:var(--line)}
+
+/* ============================================================
+   Polish, borrowed from Pacific Ridgeway's own material.
+
+   Their flyers do three things over and over: a thin gold rule
+   under a heading, an uppercase letter-spaced eyebrow above it,
+   and navy panels with gold picking out the one thing that matters.
+   The console does the same, so the two look like one company.
+   ============================================================ */
+
+/* the screen title, with the gold rule under it */
+.cc-main .cc-h{align-items:flex-start;padding-bottom:14px;margin-bottom:20px;
+  border-bottom:1px solid rgba(255,255,255,.12);position:relative}
+.cc-main .cc-h::after{content:"";position:absolute;left:0;bottom:-1px;
+  width:56px;height:2px;background:var(--gold);border-radius:2px}
+.cc-main .cc-h h1{font-size:1.5rem;letter-spacing:-.028em;line-height:1.15}
+.cc-main .cc-h p{margin-top:5px;font-size:.88rem}
+
+/* panel headings: the same gold tick, small */
+.cc-panel{border-radius:14px;border-color:rgba(6,18,35,.1);
+  box-shadow:0 1px 2px rgba(0,0,0,.14),0 10px 28px rgba(0,8,24,.16)}
+.cc-panel-h{position:relative;padding-left:18px}
+.cc-panel-h::before{content:"";position:absolute;left:0;top:50%;
+  transform:translateY(-50%);width:3px;height:15px;border-radius:0 2px 2px 0;
+  background:var(--gold)}
+.cc-panel-h h2{letter-spacing:-.014em}
+
+/* cards lift off the navy properly */
+.cc-summary .cc-sum,.cc-tiles,.ct-tile,.cc-rail{
+  box-shadow:0 1px 2px rgba(0,0,0,.14),0 10px 28px rgba(0,8,24,.16)}
+.cc-tiles{border-radius:14px;border-color:rgba(6,18,35,.1)}
+.cc-sum{border-radius:14px}
+
+/* the tab strip, tightened */
+.cc-secbar{background:linear-gradient(180deg,var(--chrome),var(--chrome-2))}
+.cc-sec{background:rgba(255,255,255,.14);border-color:rgba(255,255,255,.24);
+  border-radius:13px 13px 0 0}
+.cc-sec:hover{background:rgba(255,255,255,.24);border-color:var(--gold-200)}
+.cc-sec .s-name{font-size:1.12rem;letter-spacing:-.02em}
+.cc-sec .s-sub{letter-spacing:.005em}
+.cc-sec.on{background:var(--bg);border-color:var(--bg);
+  box-shadow:0 -3px 14px rgba(0,0,0,.34)}
+/* a gold cap along the top of the live tab, the way their rules read */
+.cc-sec.on::before{content:"";position:absolute;left:14px;right:14px;top:0;
+  height:3px;border-radius:0 0 2px 2px;background:var(--gold)}
+.cc-sec{position:relative}
+
+/* the eyebrow above the agency name in the top bar */
+.cc-top .tag-agency{letter-spacing:.09em;background:var(--gold-050);
+  color:var(--gold-ink);border:1px solid var(--gold-200)}
+
+/* the right-hand rail reads as a card, not a wall */
+.cc-rail{border-left:0;margin:14px 14px 14px 0;border-radius:14px;
+  border:1px solid rgba(6,18,35,.1)}
+.cc-rail h2{position:relative;padding-left:14px}
+.cc-rail h2::before{content:"";position:absolute;left:0;top:50%;
+  transform:translateY(-50%);width:3px;height:14px;border-radius:0 2px 2px 0;
+  background:var(--gold)}
+
+/* the main column gets a little air from the frame */
+.cc-main{padding:20px 22px 60px}
