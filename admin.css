@@ -1326,3 +1326,28 @@ body.nav-open .cc-nav{transform:none}
 .cc-main .pv-move.next{position:static;margin-bottom:0;padding:9px 15px;
   border-radius:9px}
 .cc-main .pv-move.next::before,.cc-main .pv-move.next::after{content:none}
+
+/* ============================================================
+   THE WALKTHROUGH INSIDE THE PREVIEW
+
+   The preview used to claim every recording was "coming soon". Now
+   that it shows the real one, it also says which recording resolved
+   and why -- an owner checking placement wants to know whether their
+   agents are getting their own recording or the shared one.
+   ============================================================ */
+.cc-main .pv-wt{max-width:720px;margin:0 auto 22px}
+.cc-main .pv-wt-h{display:flex;align-items:baseline;justify-content:space-between;
+  gap:12px;flex-wrap:wrap;margin:0 0 3px}
+.cc-main .pv-wt-h b{font-size:1rem;letter-spacing:-.014em;color:var(--ink)}
+.cc-main .pv-wt-m{font-size:.76rem;font-weight:600;letter-spacing:.02em;
+  color:var(--gold-ink);background:var(--gold-050);border:1px solid var(--gold-200);
+  border-radius:99px;padding:2px 9px;white-space:nowrap}
+.cc-main .pv-wt-d{margin:0 0 10px;font-size:.88rem;color:var(--muted)}
+.cc-main .pv-wt .video{margin-bottom:0}
+.cc-main .pv-wt .video video{width:100%;height:100%;display:block;
+  background:#0B1622;border-radius:inherit}
+
+/* The fake browser window was capped at 760px, which cut the welcome
+   screen off mid-card and left an inner scrollbar doing the explaining.
+   It now takes most of the window, and says so at the foot. */
+.cc-main .pv-page{max-height:min(80vh,980px)}

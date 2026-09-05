@@ -1653,8 +1653,7 @@ function renderPlaybookAgent(code){
           ${req.lead ? `<p class="step-desc">${esc(req.lead)}</p>` : ""}
           ${req.help ? `<div class="callout"><span class="lab">${esc(req.help.title)}</span>${esc(req.help.body)}</div>` : ""}
           <div class="section-k center-k">Watch this step</div>
-          <div class="video is-soon"><div class="ph"><div class="pi"></div>
-            <b>Walkthrough coming soon</b><span>A short screen recording of this step is being made.</span></div></div>
+          ${pvWalkthrough(req.key, code, r, lic)}
           ${req.providerLabel ? `<div class="syscard"><span class="sys-k">${
               req.key === "exam" ? "Scheduled through" : "Your provider"}</span><strong>${esc(req.providerLabel)}</strong></div>` : ""}
           ${req.key === "exam" && req.examName
@@ -1715,6 +1714,8 @@ function renderPlaybookAgent(code){
     ${screen}
     ${nav("bottom")}`;
 
+  pvSignVideos(host);
+
   host.querySelectorAll("[data-lic]").forEach(b =>
     b.onclick = () => { A.pbLicense = b.dataset.lic; renderPlaybookAgent(code); });
 
@@ -1727,6 +1728,89 @@ function renderPlaybookAgent(code){
       const top = el("pbPane");
       if (top) top.scrollIntoView({ block: "start", behavior: "smooth" });
     });
+}
+
+/* ============================================================
+   THE WALKTHROUGH, IN THE PREVIEW
+
+   This used to be hard-coded to "Walkthrough coming soon" on every
+   step, which meant an owner checking what their agents see was told
+   nothing had been recorded even where a recording is live. It now
+   resolves the same walkthrough the agent app would -- same library,
+   same assignments, same vendor and state fallback -- so the preview
+   tells the truth. "Coming soon" is now only shown when nothing
+   actually resolves.
+   ============================================================ */
+const WT_WHY = { assigned:"chosen for this state", agency:"your own recording",
+                 library:"from the shared library" };
+
+function pvWalkthrough(key, code, playbook, lic){
+  const soon = (title, line) => `<div class="video is-soon"><div class="ph"><div class="pi"></div>
+      <b>${title}</b><span>${line}</span></div></div>`;
+
+  if (!VIDEO_STEPS.includes(key))
+    return soon("Walkthrough coming soon",
+                "A short screen recording of this step is being made.");
+
+  let w = null;
+  try {
+    w = resolveWalkthrough({
+      requirementKey: key, stateCode: code, licenseType: lic,
+      agencyId: pbOwner(), playbook,
+      library: A.wtLib || [], assignments: A.wtAssign || [],
+    });
+  } catch (_) { w = null; }
+
+  if (!w) return soon("Walkthrough coming soon",
+                      "A short screen recording of this step is being made.");
+
+  const src = videoSource(w);
+  if (!src || !src.src) return soon("Walkthrough coming soon",
+                                    "This one is written up but has no recording on it yet.");
+
+  /* Our recordings sit in a private bucket, so a file gets its link
+     minted after render by pvSignVideos(); an embed plays as it is. */
+  const player = src.kind === "file"
+    ? `<video preload="metadata" playsinline controls
+         ${w.thumbnail_url ? `poster="${esc(w.thumbnail_url)}"` : ""}
+         ${src.path ? `data-obj="${esc(src.path)}"` : `src="${esc(src.src)}"`}></video>`
+    : `<iframe src="${esc(src.src)}" allowfullscreen loading="lazy"
+         allow="accelerometer; clipboard-write; encrypted-media; picture-in-picture"></iframe>`;
+
+  return `<div class="pv-wt">
+      <div class="pv-wt-h">
+        <b>${esc(w.title || "Walkthrough")}</b>
+        <span class="pv-wt-m">${w.duration_seconds ? esc(fmtDuration(w.duration_seconds)) + " &middot; " : ""}${
+          esc(WT_WHY[w.why] || "")}</span>
+      </div>
+      ${w.description ? `<p class="pv-wt-d">${esc(w.description)}</p>` : ""}
+      <div class="video${src.kind === "file" ? " is-file" : ""}">${player}</div>
+    </div>`;
+}
+
+/* Mint a short-lived link for every private-bucket recording on screen.
+   Same rule as the agent app: only a signed-in account can mint one and
+   it expires within the hour, so a URL copied out of the page is worth
+   nothing outside it. */
+function pvSignVideos(host){
+  (host || document).querySelectorAll("video[data-obj]").forEach(async (v) => {
+    const obj = v.dataset.obj;
+    if (!obj || v.dataset.signed) return;
+    v.dataset.signed = "1";
+    try {
+      const { data, error } = await supabase.storage
+        .from("walkthroughs").createSignedUrl(obj, 3600);
+      if (error || !data?.signedUrl) throw error || new Error("no link");
+      v.src = data.signedUrl;
+    } catch (_) {
+      const shell = v.closest(".video");
+      if (!shell) return;
+      shell.className = "video is-soon";
+      shell.innerHTML = `<div class="ph"><div class="pi"></div>
+        <b>This recording didn&rsquo;t load</b>
+        <span>Reload the screen. If it keeps happening, check the file is still in the library.</span></div>`;
+    }
+  });
 }
 
 /* The address the preview is standing in for. On the master there is no
