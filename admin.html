@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Libre+Franklin:wght@600;700;800&display=swap"/>
 <link rel="stylesheet" href="styles.css?v=35"/>
-<link rel="stylesheet" href="admin.css?v=29"/>
+<link rel="stylesheet" href="admin.css?v=30"/>
 <script src="config.js"></script>
 </head>
 <body>
@@ -34,11 +34,21 @@
 <div class="cc-secbar" id="secbar" hidden></div>
 
 <div class="cc-body">
-  <nav class="cc-nav" id="nav"><div class="cc-drag" id="navDrag" title="Drag to resize"></div></nav>
+  <!-- A narrow gutter, not a list. Everything that used to be down the
+       side is behind the button, so the page starts where the work is. -->
+  <div class="cc-gutter">
+    <button class="cc-burger" id="navOpen" type="button" aria-label="Open the menu">
+      <span class="b"></span><span class="b"></span><span class="b"></span>
+    </button>
+    <em class="cc-burger-n" id="navCount" hidden></em>
+  </div>
   <main class="cc-main" id="root"><p class="muted">Loading…</p></main>
   <aside class="cc-rail" id="rail"></aside>
 </div>
 
-<script type="module" src="admin.js?v=61"></script>
+<div class="cc-scrim" id="navScrim" hidden></div>
+<nav class="cc-nav" id="nav" aria-label="All screens"></nav>
+
+<script type="module" src="admin.js?v=62"></script>
 </body>
 </html>

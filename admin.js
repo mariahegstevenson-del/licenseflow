@@ -462,25 +462,15 @@ const CONTRACTING_VIEWS = new Set(["contracting", "carrier"]);
 /* The nav can be narrowed, widened, or shut down to a rail of icons.
    Both choices are remembered, because a person who prefers it out of
    the way prefers that every morning, not once. */
-const NAV_MIN = 168, NAV_MAX = 340, NAV_DEF = 198;
 /* Storage can throw outright in a locked-down browser, so every read and
    write of the preference is allowed to fail into the default. */
 const pref = {
   get(k){ try { return localStorage.getItem(k); } catch (_) { return null; } },
   set(k, v){ try { localStorage.setItem(k, v); } catch (_) {} },
 };
-function navWidth(){
-  const v = parseInt(pref.get("lf_nav_w") || "", 10);
-  return Number.isFinite(v) ? Math.min(NAV_MAX, Math.max(NAV_MIN, v)) : NAV_DEF;
-}
-const navMini = () => pref.get("lf_nav_mini") === "1";
-function applyNavWidth(){
-  document.body.classList.toggle("nav-mini", navMini());
-  document.body.style.setProperty("--nav-w", navMini() ? "58px" : navWidth() + "px");
-}
 
+/* The three sections along the top. */
 function renderSections(){
-  applyNavWidth();
   const secs = visibleSections();
   const cur  = secOf(A.view.name);
   const c    = counts();
@@ -489,85 +479,77 @@ function renderSections(){
     .reduce((t, n) => t + (c[n.c] ?? 0), 0);
 
   secbarEl.hidden = false;
-  secbarEl.innerHTML = `<div class="cc-secbar-in">
-    <button class="cc-navtog" id="navTog" type="button"
-      title="${navMini() ? "Show the list" : "Collapse the list"}"
-      aria-label="${navMini() ? "Show the list" : "Collapse the list"}">
-      <span>${navMini() ? "&raquo;" : "&laquo;"}</span></button>
-    <div class="cc-secs">
-      ${secs.map(s => {
-        const n = badge(s.k);
-        return `<button class="cc-sec${cur === s.k ? " on" : ""}" data-sec="${s.k}" type="button">
-          <span class="s-name">${esc(s.label)}${n ? `<em class="s-n">${n}</em>` : ""}</span>
-          <span class="s-sub">${esc(s.sub)}</span>
-        </button>`;
-      }).join("")}
-    </div>
-  </div>`;
+  secbarEl.innerHTML = `<div class="cc-secbar-in"><div class="cc-secs">
+    ${secs.map(s => {
+      const n = badge(s.k);
+      return `<button class="cc-sec${cur === s.k ? " on" : ""}" data-sec="${s.k}" type="button">
+        <span class="s-name">${esc(s.label)}${n ? `<em class="s-n">${n}</em>` : ""}</span>
+        <span class="s-sub">${esc(s.sub)}</span>
+      </button>`;
+    }).join("")}
+  </div></div>`;
 
   secbarEl.querySelectorAll("[data-sec]").forEach(b => b.onclick = () => {
     const first = navFor(b.dataset.sec).find(n => n.v);
     if (first) { A.view = { name:first.v }; render(); }
   });
-  el("navTog").onclick = () => {
-    pref.set("lf_nav_mini", navMini() ? "0" : "1");
-    applyNavWidth(); renderSections(); renderNav();
-  };
+}
+
+/* ---------------- the menu ----------------
+   Nothing was taken away: every screen is in here, under the heading it
+   always had. It is behind a button rather than down the side, so the
+   page can start at the left edge and the list is only present when
+   somebody has asked for it.
+   ------------------------------------------------------------------ */
+const navOpen = () => document.body.classList.contains("nav-open");
+function setNav(open){
+  document.body.classList.toggle("nav-open", !!open);
+  const scrim = el("navScrim"); if (scrim) scrim.hidden = !open;
+  const b = el("navOpen"); if (b) b.setAttribute("aria-expanded", String(!!open));
+  if (open) { const f = navEl.querySelector("[data-view]"); if (f) f.focus(); }
 }
 
 function renderNav(){
   const c = counts(), cur = A.view.name;
   const active = {review:"overview", agent:"agents", carrier:"contracting",
                   walkedit:"walk"}[cur] || cur;
-  const mini = navMini();
 
-  navEl.innerHTML = `<div class="cc-drag" id="navDrag" title="Drag to resize"></div>`
-    + navFor(secOf(cur)).map(n => {
-    if (n.grp) return mini ? `<div class="grp-line"></div>` : `<div class="grp">${esc(n.grp)}</div>`;
-    const val  = c[n.c] ?? 0;
-    const tone = val && n.tone ? " " + n.tone : "";
-    return `<button data-view="${n.v}" class="${active === n.v ? "on" : ""}"
-      title="${esc(n.label)}${val ? ` — ${val}` : ""}">
-      ${icon(n.i)}<span class="l">${esc(n.label)}</span>
-      <span class="n${tone}">${val}</span>
-      ${val && n.tone ? `<i class="dot${tone}"></i>` : ""}</button>`;
-  }).join("");
+  /* Every item, every section, in the original order. */
+  const items = NAV.filter(n => (!n.platform || A.platform)
+                             && (!n.agencyOnly || showContracting()));
+
+  navEl.innerHTML = `
+    <div class="cc-nav-h">
+      <span>All screens</span>
+      <button class="cc-nav-x" id="navClose" type="button" aria-label="Close the menu">&times;</button>
+    </div>
+    <div class="cc-nav-l">${items.map(n => {
+      if (n.grp) return `<div class="grp">${esc(n.grp)}</div>`;
+      const val  = c[n.c] ?? 0;
+      const tone = val && n.tone ? " " + n.tone : "";
+      return `<button data-view="${n.v}" class="${active === n.v ? "on" : ""}">
+        ${icon(n.i)}<span class="l">${esc(n.label)}</span>
+        <span class="n${tone}">${val}</span></button>`;
+    }).join("")}</div>`;
 
   navEl.querySelectorAll("[data-view]").forEach(b =>
-    b.onclick = () => { A.view = { name:b.dataset.view }; render(); });
-  wireNavDrag();
-}
+    b.onclick = () => { setNav(false); A.view = { name:b.dataset.view }; render(); });
+  el("navClose").onclick = () => setNav(false);
 
-/* Drag the right edge to set the width. Pointer events so it works with
-   a trackpad, a mouse and a stylus without three code paths. */
-function wireNavDrag(){
-  const h = el("navDrag"); if (!h) return;
-  let from = null;
-  h.onpointerdown = (e) => {
-    if (navMini()) return;
-    from = { x:e.clientX, w:navWidth() };
-    h.setPointerCapture(e.pointerId);
-    document.body.classList.add("nav-sizing");
-    e.preventDefault();
-  };
-  h.onpointermove = (e) => {
-    if (!from) return;
-    const w = Math.min(NAV_MAX, Math.max(NAV_MIN, from.w + (e.clientX - from.x)));
-    document.body.style.setProperty("--nav-w", w + "px");
-    pref.set("lf_nav_w", String(w));
-  };
-  const stop = (e) => {
-    if (!from) return;
-    from = null;
-    document.body.classList.remove("nav-sizing");
-    try { h.releasePointerCapture(e.pointerId); } catch (_) {}
-  };
-  h.onpointerup = stop; h.onpointercancel = stop;
-  /* Double-click the handle to snap back to the default width. */
-  h.ondblclick = () => {
-    pref.set("lf_nav_w", String(NAV_DEF));
-    applyNavWidth();
-  };
+  /* the button that opens it, and the count riding on it */
+  const total = items.filter(n => n.v && n.tone).reduce((t, n) => t + (c[n.c] ?? 0), 0);
+  const badge = el("navCount");
+  if (badge) { badge.textContent = total; badge.hidden = !total; }
+
+  const opener = el("navOpen");
+  if (opener && !opener.dataset.wired) {
+    opener.dataset.wired = "1";
+    opener.onclick = () => setNav(!navOpen());
+    el("navScrim").onclick = () => setNav(false);
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && navOpen()) setNav(false);
+    });
+  }
 }
 
 /* ---------------- agency rail ---------------- */

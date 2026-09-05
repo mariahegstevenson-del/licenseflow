@@ -143,57 +143,72 @@ table.tbl td{border-bottom-color:var(--line-2)}
    above it, so the page is a column and the body takes what is left
    rather than guessing at a pixel height. */
 body{min-height:100vh;display:flex;flex-direction:column}
-.cc-body{display:grid;grid-template-columns:var(--nav-w,198px) minmax(0,1fr) 300px;
+.cc-body{display:grid;grid-template-columns:64px minmax(0,1fr) 300px;
   flex:1 1 auto;min-height:0;background:var(--bg);
   border:5px solid var(--accent);border-top:0;border-radius:0 0 16px 16px;
   overflow:hidden}
 /* When access is refused there is no roster and no rail — one column. */
 body.cc-locked .cc-body{grid-template-columns:minmax(0,1fr)}
-body.cc-locked .cc-nav,body.cc-locked .cc-rail{display:none}
-/* While dragging, stop the pointer selecting text across the page. */
-body.nav-sizing{user-select:none;cursor:col-resize}
+body.cc-locked .cc-gutter,body.cc-locked .cc-rail{display:none}
 
-.cc-nav{position:relative;border-right:1px solid var(--line);padding:14px 10px;
-  background:#fff}
+/* ---- the gutter and its button ---------------------------------- */
+.cc-gutter{position:relative;padding:18px 0 0;display:flex;justify-content:center}
+.cc-burger{width:38px;height:34px;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:5px;cursor:pointer;
+  background:none;border:0;border-radius:9px;transition:background .12s}
+.cc-burger .b{display:block;width:22px;height:2.5px;border-radius:2px;
+  background:var(--ink-2);transition:background .12s}
+.cc-burger:hover{background:var(--accent-050)}
+.cc-burger:hover .b{background:var(--accent)}
+.cc-burger:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.cc-burger-n{position:absolute;top:8px;left:calc(50% + 11px);
+  min-width:22px;height:22px;padding:0 5px;border-radius:99px;
+  display:flex;align-items:center;justify-content:center;
+  font-style:normal;font-size:.72rem;font-weight:800;color:#fff;
+  background:var(--crit);border:2px solid var(--bg);
+  font-variant-numeric:tabular-nums;pointer-events:none}
+.cc-burger-n[hidden]{display:none}
+
+/* ---- the menu, as a drawer -------------------------------------- */
+.cc-scrim{position:fixed;inset:0;z-index:70;background:rgba(6,18,35,.36);
+  animation:ccFade .12s ease-out}
+.cc-scrim[hidden]{display:none}
+@keyframes ccFade{from{opacity:0}to{opacity:1}}
+
+.cc-nav{position:fixed;top:0;left:0;z-index:80;width:286px;max-width:88vw;
+  height:100vh;display:flex;flex-direction:column;background:#fff;
+  border-right:1px solid var(--line);box-shadow:8px 0 30px rgba(6,18,35,.18);
+  transform:translateX(-101%);transition:transform .18s ease-out}
+body.nav-open .cc-nav{transform:none}
+
+.cc-nav-h{flex:0 0 auto;display:flex;align-items:center;justify-content:space-between;
+  gap:10px;padding:15px 12px 13px 18px;background:var(--accent);color:#fff}
+.cc-nav-h span{font-family:"Libre Franklin",Inter,sans-serif;font-weight:750;
+  font-size:1rem;letter-spacing:-.014em}
+.cc-nav-x{width:30px;height:30px;display:flex;align-items:center;justify-content:center;
+  font:inherit;font-size:1.4rem;line-height:1;color:#fff;cursor:pointer;
+  background:rgba(255,255,255,.14);border:0;border-radius:8px}
+.cc-nav-x:hover{background:rgba(255,255,255,.28)}
+.cc-nav-x:focus-visible{outline:2px solid #fff;outline-offset:2px}
+
+.cc-nav-l{flex:1 1 auto;overflow-y:auto;padding:10px 10px 24px}
 .cc-nav .grp{font-size:.67rem;text-transform:uppercase;letter-spacing:.09em;color:var(--muted);
   padding:13px 10px 6px;font-weight:700}
-.cc-nav .grp-line{height:1px;background:var(--line-2);margin:9px 8px}
-.cc-nav button{display:flex;align-items:center;gap:9px;width:100%;
-  padding:.46rem .62rem;border:0;border-radius:8px;background:transparent;color:var(--ink-2);
-  font:inherit;font-size:.88rem;font-weight:540;cursor:pointer;text-align:left;
+.cc-nav button[data-view]{display:flex;align-items:center;gap:10px;width:100%;
+  padding:.5rem .62rem;border:0;border-radius:8px;background:transparent;color:var(--ink-2);
+  font:inherit;font-size:.9rem;font-weight:540;cursor:pointer;text-align:left;
   transition:background .13s ease,color .13s ease}
-.cc-nav button .l{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;
-  white-space:nowrap}
-.cc-nav button:hover{background:var(--panel-2);color:var(--ink)}
-.cc-nav button.on{background:var(--accent-050);color:var(--brand);font-weight:650;
+.cc-nav button[data-view] .l{flex:1 1 auto;min-width:0;overflow:hidden;
+  text-overflow:ellipsis;white-space:nowrap}
+.cc-nav button[data-view]:hover{background:var(--panel-2);color:var(--ink)}
+.cc-nav button[data-view].on{background:var(--accent-050);color:var(--brand);font-weight:680;
   box-shadow:inset 2px 0 0 var(--brand)}
-.cc-nav button .n{font-size:.78rem;color:var(--muted);font-variant-numeric:var(--num)}
-.cc-nav button.on .n{color:var(--brand)}
-.cc-nav button .n.hot{color:var(--warn);font-weight:700}
-.cc-nav button .n.crit{color:var(--crit);font-weight:700}
+.cc-nav button[data-view] .n{font-size:.79rem;color:var(--muted);font-variant-numeric:var(--num)}
+.cc-nav button[data-view].on .n{color:var(--brand)}
+.cc-nav button[data-view] .n.hot{color:var(--warn);font-weight:700}
+.cc-nav button[data-view] .n.crit{color:var(--crit);font-weight:700}
 .cc-ic{flex:0 0 auto;width:17px;height:17px;opacity:.72}
-.cc-nav button.on .cc-ic{opacity:1}
-.cc-nav button i.dot{display:none}
-
-/* the drag handle on the right edge */
-.cc-drag{position:absolute;top:0;right:-3px;width:7px;height:100%;
-  cursor:col-resize;z-index:2;touch-action:none}
-.cc-drag::after{content:"";position:absolute;top:0;left:3px;width:1px;height:100%;
-  background:transparent;transition:background .12s}
-.cc-drag:hover::after,body.nav-sizing .cc-drag::after{background:var(--accent)}
-body.nav-mini .cc-drag{display:none}
-
-/* ---- collapsed to a rail ---------------------------------------- */
-body.nav-mini .cc-nav{padding:14px 7px}
-body.nav-mini .cc-nav button{justify-content:center;padding:.52rem 0;position:relative}
-body.nav-mini .cc-nav button .l,
-body.nav-mini .cc-nav button .n{display:none}
-body.nav-mini .cc-ic{width:19px;height:19px}
-/* a dot instead of a number, so "something is waiting" still reads */
-body.nav-mini .cc-nav button i.dot{display:block;position:absolute;top:5px;right:9px;
-  width:7px;height:7px;border-radius:50%;background:var(--warn);
-  box-shadow:0 0 0 2px #fff}
-body.nav-mini .cc-nav button i.dot.crit{background:var(--crit)}
+.cc-nav button[data-view].on .cc-ic{opacity:1}
 
 @media (max-width:1180px){
   .cc-sec .s-sub{display:none}
@@ -325,9 +340,9 @@ body.nav-mini .cc-nav button i.dot.crit{background:var(--crit)}
   border-top:1px solid var(--line);line-height:1.5}
 
 @media(max-width:1180px){
-  .cc-body{grid-template-columns:1fr}
-  .cc-nav{display:none}
-  .cc-rail{border-left:0;border-top:1px solid var(--line)}
+  /* the rail drops below; the gutter stays, it is the way into the menu */
+  .cc-body{grid-template-columns:56px minmax(0,1fr)}
+  .cc-rail{grid-column:1 / -1;border-left:0;border-top:1px solid var(--line)}
   .cc-tiles{grid-template-columns:repeat(2,1fr)}
 }
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
