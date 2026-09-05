@@ -566,6 +566,9 @@ body.cc-locked .cc-nav,body.cc-locked .cc-rail{display:none}
   margin-top:auto;padding-top:12px;font-size:.78rem;color:var(--faint)}
 .ct-tile.sm .ct-tfoot{padding-top:8px;font-size:.74rem}
 .ct-tp{color:var(--muted);font-weight:600;font-variant-numeric:tabular-nums}
+.ct-twait{display:inline-block;margin-left:7px;font-style:normal;font-weight:700;
+  font-size:.72rem;color:var(--warn);background:var(--warn-050);
+  border-radius:99px;padding:1px 7px}
 .ct-tdoc{font-size:.72rem;font-weight:700;border-radius:99px;padding:2px 8px;
   font-variant-numeric:tabular-nums}
 .ct-tdoc.none{background:#FBEDED;color:#A32019}
@@ -711,6 +714,23 @@ body.cc-locked .cc-nav,body.cc-locked .cc-rail{display:none}
 .ct-bub.part .ct-bd{background:#FDF0D6;color:#7A4E00}
 .ct-bub.full .ct-bd{background:#DFF3E6;color:#0B5A33}
 
+/* Someone who came in through the intake link and has not been
+   approved. Grey, dashed, and unmistakably not yet part of the
+   hierarchy — but visible, so you can see who is asking. */
+.ct-bub.pending{background:#EDF1F6;border-style:dashed;border-color:#A9B8CB;
+  box-shadow:none}
+.ct-bub.pending .ct-bn{color:var(--ink-2)}
+.ct-bub.pending .ct-bl{color:var(--muted);font-style:italic}
+.ct-bub.pending:hover{border-color:var(--accent);background:#E6EDF6}
+.ct-bub.pending.on{border-style:solid}
+
+/* the "3 waiting on you" link in the panel header */
+.ct-wait{font:inherit;font-size:.82rem;font-weight:700;cursor:pointer;
+  color:var(--warn);background:var(--warn-050);border:1px solid #EBD9AE;
+  border-radius:99px;padding:3px 12px}
+.ct-wait:hover{background:#FBEFD5}
+.ct-wait:focus-visible{outline:2px solid var(--warn);outline-offset:2px}
+
 /* search: matches ring, everyone else recedes so the eye lands on
    the match rather than hunting through a hundred identical boxes */
 .ct-bub.hit{border-color:#F2B705;box-shadow:0 0 0 3px rgba(242,183,5,.35)}
@@ -738,6 +758,31 @@ body.cc-locked .cc-nav,body.cc-locked .cc-rail{display:none}
   .ct-canvas{height:360px}
   .ct-find{flex:1 1 100%}
 }
+
+/* what the intake form was told, sitting above the record so it is
+   read before anything is confirmed */
+.ct-node.is-pending{border-color:#EBD9AE;box-shadow:0 0 0 3px rgba(138,90,0,.07)}
+.ct-pend{background:var(--warn-050);border:1px solid #EBD9AE;border-radius:11px;
+  padding:14px 16px;margin-bottom:20px}
+.ct-pend-h{display:flex;align-items:baseline;justify-content:space-between;
+  gap:12px;flex-wrap:wrap}
+.ct-pend-h strong{color:var(--warn);font-size:.95rem}
+.ct-pend-h span{font-size:.8rem;color:var(--muted);font-variant-numeric:tabular-nums}
+.ct-pend-l{display:grid;grid-template-columns:auto minmax(0,1fr);
+  gap:4px 14px;margin:11px 0 0}
+.ct-pend-l dt{font-size:.79rem;color:var(--muted);white-space:nowrap}
+.ct-pend-l dd{margin:0;font-size:.88rem;color:var(--ink);overflow-wrap:anywhere}
+.ct-pend-l dd em{color:var(--muted);font-size:.82rem}
+.ct-pend-n{margin:11px 0 0;font-size:.82rem;color:var(--muted)}
+.ct-pend .wt-actions{margin-top:12px}
+
+/* the intake address, shown as an address rather than an editable box */
+.ct-link{display:flex;align-items:center;gap:8px;flex-wrap:wrap;
+  background:var(--soft);border:1px solid var(--line);border-radius:9px;
+  padding:7px 8px 7px 12px}
+.ct-link code{flex:1 1 260px;min-width:0;font-size:.82rem;color:var(--ink-2);
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  font-family:"IBM Plex Mono",ui-monospace,monospace}
 
 /* one person's paperwork */
 .ct-docs{display:grid;gap:8px;margin-top:18px;padding-top:16px;border-top:1px solid var(--line-2)}

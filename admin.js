@@ -2048,9 +2048,13 @@ const ctDocsFor  = (nodeId)    => (A.ctDocs  || []).filter(d => d.node_id === no
 /* People and paperwork for a hub, counting its carriers in. */
 function ctRollup(c){
   const ids = [c.id, ...ctKidsOf(c.id).map(k => k.id)];
-  const nodes = (A.ctNodes || []).filter(n => ids.includes(n.carrier_id));
-  const have  = nodes.reduce((t, n) => t + ctDocsFor(n.id).length, 0);
-  return { people: nodes.length, have, need: nodes.length * CT_DOCS.length };
+  const all = (A.ctNodes || []).filter(n => ids.includes(n.carrier_id));
+  /* Pending people are counted apart: they are not in the hierarchy
+     yet, and rolling them into the headcount would overstate it. */
+  const live    = all.filter(n => n.status !== "pending");
+  const waiting = all.length - live.length;
+  const have    = live.reduce((t, n) => t + ctDocsFor(n.id).length, 0);
+  return { people: live.length, waiting, have, need: live.length * CT_DOCS.length };
 }
 
 /* Every write goes through here so a refusal is never silent. */
@@ -2081,7 +2085,7 @@ function renderContracting(){
 
   const tile = (c) => {
     const kids = ctKidsOf(c.id);
-    const { people, have, need } = ctRollup(c);
+    const { people, waiting, have, need } = ctRollup(c);
     const docCls = !need ? "" : have === need ? "full" : have ? "part" : "none";
     return `<button class="ct-tile" data-carrier="${esc(c.id)}" type="button">
       <span class="ct-tname">${esc(c.name)}</span>
@@ -2093,7 +2097,8 @@ function renderContracting(){
           kids.length > 4 ? `<span class="more">+${kids.length - 4} more</span>` : ""}</span>`
         : `<span class="ct-tlist empty">Open it to add the carriers it gives you</span>`}
       <span class="ct-tfoot">
-        <span class="ct-tp">${people} ${people === 1 ? "person" : "people"}</span>
+        <span class="ct-tp">${people} ${people === 1 ? "person" : "people"}${
+          waiting ? `<em class="ct-twait">+${waiting} waiting</em>` : ""}</span>
         ${need ? `<span class="ct-tdoc ${docCls}">${have}/${need} documents</span>`
                : `<span class="ct-tdoc">no documents yet</span>`}
       </span>
@@ -2221,12 +2226,15 @@ function ctDrawChart(c, nodes, openNode){
     const cls  = have === CT_DOCS.length ? "full" : have ? "part" : "none";
     const kids = kidsOf.get(n.id) || [];
     const isShut = kids.length && shut(n.id);
+    const pending = n.status === "pending";
     return `<div class="ct-cell">
-      <button class="ct-bub ${cls}${openNode === n.id ? " on" : ""}${
+      <button class="ct-bub ${cls}${pending ? " pending" : ""}${openNode === n.id ? " on" : ""}${
         hits.has(n.id) ? " hit" : ""}${q && !hits.has(n.id) ? " dim" : ""}"
-        data-node="${esc(n.id)}" type="button">
+        data-node="${esc(n.id)}" type="button"
+        title="${pending ? "Sent through the link — waiting on you" : ""}">
         <span class="ct-bn">${esc(n.name)}</span>
-        <span class="ct-bl">${n.contract_level ? esc(n.contract_level) : "level not set"}</span>
+        <span class="ct-bl">${pending ? "pending approval"
+          : n.contract_level ? esc(n.contract_level) : "level not set"}</span>
         <span class="ct-bd">${have}/${CT_DOCS.length}</span>
       </button>
       ${kids.length ? `<button class="ct-tog${isShut ? " shut" : ""}" data-tog="${esc(n.id)}"
@@ -2411,6 +2419,10 @@ function renderCarrier(carrierId, openNode){
   const kids   = ctKidsOf(c.id);
   const isHub  = !c.parent_id;
   const parent = c.parent_id ? (A.ctCarriers || []).find(x => x.id === c.parent_id) : null;
+  const waiting = nodes.filter(n => n.status === "pending");
+  const joinUrl = c.invite_token
+    ? new URL(`join.html?t=${c.invite_token}`, location.href).href
+    : "";
   ctChartState(c.id, nodes);
 
   const kidTile = (k) => {
@@ -2441,14 +2453,19 @@ function renderCarrier(carrierId, openNode){
       </div>
     </div></div>`;
 
-  const hierHead = isHub && kids.length
-    ? `<span class="sub">Anyone who sits at the ${esc(c.name)} level itself</span>`
-    : `<span class="sub">Click anyone to open their record</span>`;
+  const hierHead = waiting.length
+    ? `<span class="sub"><button class="ct-wait" id="ctWaiting" type="button">${
+        waiting.length} waiting on you</button></span>`
+    : isHub && kids.length
+      ? `<span class="sub">Anyone who sits at the ${esc(c.name)} level itself</span>`
+      : `<span class="sub">Click anyone to open their record</span>`;
 
   root.innerHTML = `
     <div class="cc-h"><div><h1>${esc(c.name)}</h1>
       <p>${esc(pbAgencyName(c.agency_id))}${parent ? ` &middot; under ${esc(parent.name)}` : ""}
-        &middot; ${nodes.length} ${nodes.length === 1 ? "person" : "people"} in the hierarchy</p></div></div>
+        &middot; ${nodes.length - waiting.length}
+        ${(nodes.length - waiting.length) === 1 ? "person" : "people"} in the hierarchy${
+        waiting.length ? ` &middot; ${waiting.length} waiting on you` : ""}</p></div></div>
     <button class="btn btn-ghost btn-sm" id="ctBack" style="margin-bottom:14px">&larr; ${
       parent ? esc(parent.name) : "All hubs"}</button>
 
@@ -2491,12 +2508,26 @@ function renderCarrier(carrierId, openNode){
         </div>
 
         <div class="ct-field">
-          <label for="ct_invite">Link to send agents
-            <span>The form that builds the hierarchy above. Whoever fills it
-              in appears there as a new person.</span></label>
+          <label>Link to send agents
+            <span>LicenseFlow&rsquo;s own intake form. Whoever fills it in appears
+              in the hierarchy above, greyed out, until you approve them.</span></label>
+          <div class="ct-fin">
+            <div class="ct-link">
+              <code id="ctJoinUrl">${esc(joinUrl)}</code>
+              <button class="btn btn-ghost btn-sm" id="ctCopyJoin" type="button">Copy</button>
+              <a class="btn btn-ghost btn-sm" href="${esc(joinUrl)}" target="_blank" rel="noopener">Preview</a>
+            </div>
+            <input id="ct_invitenote" type="text" value="${esc(c.invite_note || "")}" placeholder="What they'll read at the top of the form"/>
+          </div>
+        </div>
+
+        <div class="ct-field">
+          <label for="ct_invite">Your own form instead
+            <span>Optional. If you&rsquo;d rather send a Google Form or the
+              carrier&rsquo;s own page, put it here &mdash; nothing arrives in the
+              hierarchy by itself.</span></label>
           <div class="ct-fin">
             <input id="ct_invite" type="url" value="${esc(c.invite_url || "")}" placeholder="https://…"/>
-            <input id="ct_invitenote" type="text" value="${esc(c.invite_note || "")}" placeholder="A note — what they're being asked to do"/>
           </div>
         </div>
 
@@ -2551,6 +2582,21 @@ function renderCarrier(carrierId, openNode){
     catch (_) { ctSay("Couldn't copy — select the field and copy it by hand.", true); }
   };
 
+  const copyJoin = el("ctCopyJoin");
+  if (copyJoin) copyJoin.onclick = async () => {
+    try { await navigator.clipboard.writeText(joinUrl); ctSay("Intake link copied."); }
+    catch (_) { ctSay("Couldn't copy — select the link and copy it by hand.", true); }
+  };
+
+  /* Jump to the oldest thing waiting, which is the one most likely to
+     be holding somebody up. */
+  const wbtn = el("ctWaiting");
+  if (wbtn) wbtn.onclick = () => {
+    const first = waiting.slice().sort((a, b) =>
+      String(a.submitted_at || "").localeCompare(String(b.submitted_at || "")))[0];
+    if (first) { A.view = { name:"carrier", arg:c.id, node:first.id }; render(); }
+  };
+
   el("ctAddNode").onclick = async () => {
     const name = (el("ctNewName").value || "").trim();
     if (!name) return ctSay("Give them a name.", true);
@@ -2585,8 +2631,35 @@ function ctNodeEditor(n, nodes){
     </div>`;
   };
 
-  return `<div class="cc-panel pb-sec ct-node"><div class="cc-panel-h">
-      <h2>${esc(n.name)}</h2><span class="sub">Contracting record</span></div><div class="pad">
+  /* What a stranger typed into the public form, shown as-is and
+     labelled as theirs, so it is never mistaken for something the
+     agency confirmed. */
+  const pend = n.status !== "pending" ? "" : `
+    <div class="ct-pend">
+      <div class="ct-pend-h">
+        <strong>Waiting on you</strong>
+        <span>${n.submitted_at ? `sent ${esc(elapsed(n.submitted_at).txt)} ago`
+                               : "sent through the link"}</span>
+      </div>
+      <dl class="ct-pend-l">
+        ${n.submitted_upline ? `<dt>Said their upline is</dt><dd>${esc(n.submitted_upline)}${
+          n.parent_id ? "" : ` <em>&mdash; no exact match, so they are sitting at the top</em>`}</dd>` : ""}
+        ${n.submitted_email ? `<dt>Email</dt><dd>${esc(n.submitted_email)}</dd>` : ""}
+        ${n.submitted_phone ? `<dt>Phone</dt><dd>${esc(n.submitted_phone)}</dd>` : ""}
+      </dl>
+      <p class="ct-pend-n">They show greyed out in the chart until you approve.
+        Fix anything below first &mdash; approving keeps whatever you have saved.</p>
+      <div class="wt-actions">
+        <button class="btn btn-primary btn-sm" id="ctApprove" type="button">Approve</button>
+        <button class="btn btn-ghost btn-sm ct-del" id="ctReject" type="button">Reject and remove</button>
+      </div>
+    </div>`;
+
+  return `<div class="cc-panel pb-sec ct-node${n.status === "pending" ? " is-pending" : ""}">
+    <div class="cc-panel-h">
+      <h2>${esc(n.name)}</h2><span class="sub">${
+        n.status === "pending" ? "Pending — sent through the link" : "Contracting record"}</span></div><div class="pad">
+    ${pend}
     <label for="ct_name">Name</label>
     <input id="ct_name" type="text" value="${esc(n.name)}"/>
 
@@ -2647,6 +2720,41 @@ function wireNodeEditor(c, n){
   };
 
   el("ctCloseNode").onclick = () => { A.view = { name:"carrier", arg:c.id }; render(); };
+
+  /* Approve keeps whatever is in the fields, so an admin can correct a
+     misspelt name or place someone properly and confirm in one go. */
+  const appr = el("ctApprove");
+  if (appr) appr.onclick = async () => {
+    try {
+      await ctWrite(supabase.from("contracting_nodes").update({
+        status:         "active",
+        name:           el("ct_name").value.trim() || n.name,
+        parent_id:      el("ct_parent").value || null,
+        contract_level: el("ct_level").value.trim() || null,
+        initiated_on:   el("ct_init").value || null,
+        user_id:        el("ct_user").value || null,
+        notes:          el("ct_notes").value.trim() || null,
+        updated_at:     new Date().toISOString(),
+        updated_by:     A.me?.id || null,
+      }).eq("id", n.id), "the approval");
+      A.ctChart = null;
+      A.view = { name:"carrier", arg:c.id };
+      await load();
+    } catch (e) { ctSay(e.message, true); }
+  };
+
+  const rej = el("ctReject");
+  if (rej) rej.onclick = async () => {
+    if (!confirm(`Reject ${n.name}? Their record and anything they uploaded is removed.`)) return;
+    try {
+      const paths = ctDocsFor(n.id).map(d => d.file_path).filter(Boolean);
+      if (paths.length) await supabase.storage.from("contracting").remove(paths);
+      await ctWrite(supabase.from("contracting_nodes").delete().eq("id", n.id), "the rejection");
+      A.ctChart = null;
+      A.view = { name:"carrier", arg:c.id };
+      await load();
+    } catch (e) { ctSay(e.message, true); }
+  };
 
   el("ctDelNode").onclick = async () => {
     /* Anyone under them would be orphaned, so say so rather than

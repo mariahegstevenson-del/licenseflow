@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta name="robots" content="noindex,nofollow"/>
+<title>Join the hierarchy — LicenseFlow</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Libre+Franklin:wght@600;700;800&display=swap"/>
+<link rel="stylesheet" href="auth.css?v=5"/>
+<link rel="stylesheet" href="join.css?v=1"/>
+<script src="config.js"></script>
+</head>
+<body>
+<div class="screen">
+  <div class="screen-inner">
+
+    <div class="brand" style="justify-content:center;margin-bottom:20px">
+      <span class="mark">L</span> LicenseFlow
+    </div>
+
+    <!-- while the link is being checked -->
+    <div class="card pad" id="loading" style="text-align:center">
+      <h2 style="font-size:1.2rem;margin:0">Checking your link…</h2>
+    </div>
+
+    <!-- the link is wrong, expired, or closed -->
+    <div class="card pad" id="dead" hidden style="text-align:center">
+      <h2 style="font-size:1.25rem;margin-bottom:6px">This link isn&rsquo;t working</h2>
+      <p class="muted" style="margin-top:0">It may have been closed, or the address
+        may have been cut short when it was sent to you. Ask whoever sent it for a
+        fresh one.</p>
+    </div>
+
+    <!-- the form -->
+    <div class="card" id="form" hidden>
+      <div class="pad">
+        <p class="jn-eyebrow" id="agency"></p>
+        <h2 class="jn-title" id="carrier"></h2>
+        <p class="muted jn-lede" id="note">Fill this in and your agency will see you
+          in their hierarchy. They&rsquo;ll confirm your details before anything is final.</p>
+
+        <p id="kitline" hidden class="jn-kit">
+          <a id="kitlink" href="#" target="_blank" rel="noopener">Open the contracting kit &rarr;</a>
+        </p>
+
+        <div id="alert" class="alert"></div>
+
+        <label for="f_name">Your full name <span class="req">required</span></label>
+        <input id="f_name" type="text" autocomplete="name" maxlength="120"
+               placeholder="As it appears on your licence"/>
+
+        <label for="f_upline">Who recruited you</label>
+        <input id="f_upline" type="text" autocomplete="off" maxlength="120"
+               placeholder="Their full name"/>
+        <p class="hint">Spell it the way they do. If we can&rsquo;t match it we&rsquo;ll
+          put you at the top of the list for your agency to place.</p>
+
+        <label for="f_level">Contract level</label>
+        <input id="f_level" type="text" maxlength="40" placeholder="e.g. 85%"/>
+        <p class="hint">Leave it blank if you haven&rsquo;t been told one.</p>
+
+        <div class="jn-two">
+          <div>
+            <label for="f_email">Email</label>
+            <input id="f_email" type="email" autocomplete="email" maxlength="200"
+                   placeholder="you@example.com"/>
+          </div>
+          <div>
+            <label for="f_phone">Phone</label>
+            <input id="f_phone" type="tel" autocomplete="tel" maxlength="40"
+                   placeholder="Optional"/>
+          </div>
+        </div>
+
+        <div class="jn-docs">
+          <h3>Send your documents</h3>
+          <p class="muted">Optional now &mdash; you can send them later. PDF or an
+            image, up to 25&nbsp;MB each. They go straight to your agency&rsquo;s
+            coordinator and nobody else can see them.</p>
+
+          <div class="jn-doc">
+            <label for="f_aml">AML certificate</label>
+            <input id="f_aml" type="file" accept=".pdf,image/*"/>
+          </div>
+          <div class="jn-doc">
+            <label for="f_eo">E&amp;O certificate</label>
+            <input id="f_eo" type="file" accept=".pdf,image/*"/>
+          </div>
+          <div class="jn-doc">
+            <label for="f_bi">Best Interest / annuity training</label>
+            <input id="f_bi" type="file" accept=".pdf,image/*"/>
+          </div>
+        </div>
+
+        <button class="btn btn-primary btn-block" id="send" type="button"
+                style="margin-top:22px">Send to my agency</button>
+        <p class="hint" style="text-align:center">
+          Only your agency sees this. It is not published anywhere.</p>
+      </div>
+    </div>
+
+    <!-- sent -->
+    <div class="card pad" id="done" hidden style="text-align:center">
+      <div class="jn-tick">&check;</div>
+      <h2 style="font-size:1.3rem;margin-bottom:6px">Sent</h2>
+      <p class="muted" id="donesub" style="margin-top:0"></p>
+      <p class="hint" id="donedocs" hidden></p>
+    </div>
+
+  </div>
+</div>
+<script type="module" src="join.js?v=1"></script>
+</body>
+</html>
