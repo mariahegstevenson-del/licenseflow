@@ -530,16 +530,47 @@ body.cc-locked .cc-nav,body.cc-locked .cc-rail{display:none}
    prints, and depth is countable at a glance -- which a scattered
    bubble map never is.
    ============================================================ */
-.ct-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(228px,1fr));gap:12px}
-.ct-card{text-align:left;background:#fff;border:1px solid var(--line);border-radius:11px;
-  padding:15px 17px;cursor:pointer;display:grid;gap:5px;
+/* ---- the hubs, as big squares ----------------------------------
+   Two across, so four hubs read as a 2x2 block rather than a thin
+   strip of cards. Below 900px they stack one per row.
+----------------------------------------------------------------- */
+.ct-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;
+  max-width:860px}
+.ct-grid.sm{grid-template-columns:repeat(auto-fill,minmax(210px,1fr));
+  gap:12px;max-width:none}
+@media (max-width:900px){ .ct-grid{grid-template-columns:1fr} }
+
+.ct-tile{text-align:left;background:#fff;border:1px solid var(--line);border-radius:14px;
+  padding:20px 22px;cursor:pointer;display:flex;flex-direction:column;gap:6px;
+  min-height:176px;box-shadow:var(--shadow);
   transition:border-color .12s,box-shadow .12s,transform .08s}
-.ct-card:hover{border-color:var(--accent);box-shadow:0 3px 12px rgba(12,61,130,.13);transform:translateY(-1px)}
-.ct-card:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
-.ct-name{font-family:var(--ff-display,inherit);font-weight:700;font-size:1.04rem;color:var(--ink)}
-.ct-sub{font-size:.86rem;color:var(--muted)}
-.ct-foot{display:flex;justify-content:space-between;gap:10px;margin-top:4px;
-  font-size:.76rem;color:var(--faint)}
+.ct-tile:hover{border-color:var(--accent);box-shadow:0 6px 20px rgba(12,61,130,.15);
+  transform:translateY(-2px)}
+.ct-tile:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.ct-tile.sm{min-height:0;padding:14px 16px;border-radius:11px;gap:4px}
+
+.ct-tname{font-family:var(--ff-display,inherit);font-weight:700;font-size:1.24rem;
+  line-height:1.2;color:var(--ink)}
+.ct-tile.sm .ct-tname{font-size:1rem}
+.ct-tsub{font-size:.85rem;color:var(--muted)}
+
+/* the carriers this hub gives you, listed on the face of the square */
+.ct-tlist{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px}
+.ct-tlist > span{font-size:.76rem;color:var(--ink-2);background:var(--soft);
+  border:1px solid var(--line-2);border-radius:99px;padding:2px 9px;
+  max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ct-tlist > span.more{background:none;border-color:transparent;color:var(--faint)}
+.ct-tlist.empty{color:var(--faint);font-size:.8rem;display:block;margin-top:6px}
+
+.ct-tfoot{display:flex;justify-content:space-between;align-items:center;gap:10px;
+  margin-top:auto;padding-top:12px;font-size:.78rem;color:var(--faint)}
+.ct-tile.sm .ct-tfoot{padding-top:8px;font-size:.74rem}
+.ct-tp{color:var(--muted);font-weight:600;font-variant-numeric:tabular-nums}
+.ct-tdoc{font-size:.72rem;font-weight:700;border-radius:99px;padding:2px 8px;
+  font-variant-numeric:tabular-nums}
+.ct-tdoc.none{background:#FBEDED;color:#A32019}
+.ct-tdoc.part{background:#FDF0D6;color:#7A4E00}
+.ct-tdoc.full{background:#DFF3E6;color:#0B5A33}
 
 .ct-add{display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin-top:16px}
 .ct-add input[type=text]{flex:1 1 200px;max-width:320px;margin:0}
@@ -563,9 +594,33 @@ body.cc-locked .cc-nav,body.cc-locked .cc-rail{display:none}
    chart be wider than the panel and still stay centred when it
    isn't.
 --------------------------------------------------------------- */
-.ct-org{--ct-stem:20px;--ct-drop:20px;--ct-gap:16px;--ct-line:#B9C6D8;
-  overflow-x:auto;padding:6px 2px 10px;text-align:center}
-.ct-org > .ct-lv{display:inline-flex;min-width:100%}
+/* toolbar: find, expand/collapse, zoom */
+.ct-tools{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+.ct-find{flex:0 1 220px;margin:0}
+.ct-hits{font-size:.8rem;color:var(--muted);font-variant-numeric:tabular-nums;
+  min-width:70px}
+.ct-toolgap{flex:1 1 auto}
+.ct-zb{font:inherit;font-size:.82rem;font-weight:600;color:var(--ink-2);
+  background:#fff;border:1px solid var(--line);border-radius:8px;
+  padding:5px 11px;cursor:pointer;transition:border-color .12s,background .12s}
+.ct-zb:hover{border-color:var(--accent);color:var(--accent)}
+.ct-zb:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.ct-zgrp{display:inline-flex;align-items:center;gap:4px}
+.ct-zpc{font-size:.78rem;color:var(--muted);min-width:42px;text-align:center;
+  font-variant-numeric:tabular-nums}
+
+/* the canvas the chart is dragged around inside */
+.ct-canvas{position:relative;overflow:hidden;height:460px;min-height:220px;
+  resize:vertical;background:var(--panel-2);border:1px solid var(--line);
+  border-radius:12px;cursor:grab;touch-action:none;
+  background-image:radial-gradient(var(--line-3) 1px, transparent 1px);
+  background-size:22px 22px}
+.ct-canvas.grabbing{cursor:grabbing}
+.ct-pan{position:absolute;top:0;left:0;transform-origin:0 0;will-change:transform}
+.ct-hint{margin:8px 0 0;font-size:.78rem;color:var(--faint)}
+
+.ct-org{--ct-stem:20px;--ct-drop:20px;--ct-gap:16px;--ct-line:#8FA3BC;
+  display:inline-block;padding:2px}
 
 .ct-lv{list-style:none;margin:0;padding:0;display:flex;justify-content:center;
   align-items:flex-start;position:relative}
@@ -617,10 +672,32 @@ body.cc-locked .cc-nav,body.cc-locked .cc-rail{display:none}
 .ct-bub.part .ct-bd{background:#FDF0D6;color:#7A4E00}
 .ct-bub.full .ct-bd{background:#DFF3E6;color:#0B5A33}
 
+/* search: matches ring, everyone else recedes so the eye lands on
+   the match rather than hunting through a hundred identical boxes */
+.ct-bub.hit{border-color:#F2B705;box-shadow:0 0 0 3px rgba(242,183,5,.35)}
+.ct-bub.dim{opacity:.42}
+.ct-bub.dim:hover{opacity:1}
+
+/* the open/close pill on a box with people underneath */
+.ct-tog{position:absolute;bottom:-11px;left:50%;transform:translateX(-50%);
+  z-index:2;min-width:24px;height:22px;padding:0 7px;
+  display:inline-flex;align-items:center;justify-content:center;
+  font:inherit;font-size:.72rem;font-weight:700;line-height:1;
+  font-variant-numeric:tabular-nums;
+  color:var(--accent);background:#fff;border:1.5px solid var(--line-3);
+  border-radius:99px;cursor:pointer;box-shadow:0 1px 3px rgba(6,18,35,.18);
+  transition:border-color .12s,color .12s,background .12s}
+.ct-tog:hover{border-color:var(--accent);background:var(--accent-050)}
+.ct-tog:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.ct-tog.shut{color:#fff;background:var(--accent);border-color:var(--accent-600)}
+.ct-tog.shut:hover{background:var(--accent-600)}
+
 @media (max-width:640px){
   .ct-org{--ct-gap:10px}
   .ct-bub{width:142px;padding:9px 9px}
   .ct-bn{font-size:.87rem}
+  .ct-canvas{height:360px}
+  .ct-find{flex:1 1 100%}
 }
 
 /* one person's paperwork */

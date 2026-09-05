@@ -2029,11 +2029,29 @@ const CT_DOCS = [
 
 /* Whose hub. The agency tab decides, exactly as it does for playbooks. */
 const ctOwner = () => pbOwner();
-const ctCarriersFor = () => (A.ctCarriers || [])
-  .filter(c => c.agency_id === ctOwner())
-  .sort((a, b) => (a.sort - b.sort) || a.name.localeCompare(b.name));
+const ctSort  = (a, b) => (a.sort - b.sort) || a.name.localeCompare(b.name);
+
+/* Two levels. A top-level row is a hub — Brokers Alliance, Valoram —
+   and may hold carriers underneath it. A hub with nothing underneath
+   behaves as a carrier in its own right, which is what Midland and
+   National Life Group are. Nothing nests deeper; the database refuses
+   it as well as the screens. */
+const ctHubsFor = () => (A.ctCarriers || [])
+  .filter(c => c.agency_id === ctOwner() && !c.parent_id).sort(ctSort);
+const ctKidsOf = (id) => (A.ctCarriers || [])
+  .filter(c => c.parent_id === id).sort(ctSort);
+const ctCarriersFor = ctHubsFor;   /* kept: older callers mean the hubs */
+
 const ctNodesFor = (carrierId) => (A.ctNodes || []).filter(n => n.carrier_id === carrierId);
 const ctDocsFor  = (nodeId)    => (A.ctDocs  || []).filter(d => d.node_id === nodeId);
+
+/* People and paperwork for a hub, counting its carriers in. */
+function ctRollup(c){
+  const ids = [c.id, ...ctKidsOf(c.id).map(k => k.id)];
+  const nodes = (A.ctNodes || []).filter(n => ids.includes(n.carrier_id));
+  const have  = nodes.reduce((t, n) => t + ctDocsFor(n.id).length, 0);
+  return { people: nodes.length, have, need: nodes.length * CT_DOCS.length };
+}
 
 /* Every write goes through here so a refusal is never silent. */
 async function ctWrite(q, what){
@@ -2048,7 +2066,7 @@ function ctSay(msg, bad){
   if (msg && !bad) setTimeout(() => { if (el("ctMsg")) el("ctMsg").className = "ct-msg"; }, 2500);
 }
 
-/* ---------------- the four boxes ---------------- */
+/* ---------------- the hubs, as a grid of squares ---------------- */
 function renderContracting(){
   if (!ctOwner()) {
     root.innerHTML = `
@@ -2059,29 +2077,38 @@ function renderContracting(){
       </div></div>`;
     return;
   }
-  const list = ctCarriersFor();
-  const card = (c) => {
-    const nodes = ctNodesFor(c.id);
-    const docs  = nodes.reduce((n, x) => n + ctDocsFor(x.id).length, 0);
-    const need  = nodes.length * CT_DOCS.length;
-    return `<button class="ct-card" data-carrier="${esc(c.id)}" type="button">
-      <span class="ct-name">${esc(c.name)}</span>
-      <span class="ct-sub">${nodes.length} ${nodes.length === 1 ? "person" : "people"}</span>
-      <span class="ct-foot">
-        <span>${c.kit_url ? "Kit linked" : "No kit yet"}</span>
-        <span>${need ? `${docs} of ${need} documents` : "No documents yet"}</span>
+  const list = ctHubsFor();
+
+  const tile = (c) => {
+    const kids = ctKidsOf(c.id);
+    const { people, have, need } = ctRollup(c);
+    const docCls = !need ? "" : have === need ? "full" : have ? "part" : "none";
+    return `<button class="ct-tile" data-carrier="${esc(c.id)}" type="button">
+      <span class="ct-tname">${esc(c.name)}</span>
+      <span class="ct-tsub">${kids.length
+        ? `${kids.length} ${kids.length === 1 ? "carrier" : "carriers"}`
+        : "No carriers listed yet"}</span>
+      ${kids.length ? `<span class="ct-tlist">${kids.slice(0, 4).map(k =>
+          `<span>${esc(k.name)}</span>`).join("")}${
+          kids.length > 4 ? `<span class="more">+${kids.length - 4} more</span>` : ""}</span>`
+        : `<span class="ct-tlist empty">Open it to add the carriers it gives you</span>`}
+      <span class="ct-tfoot">
+        <span class="ct-tp">${people} ${people === 1 ? "person" : "people"}</span>
+        ${need ? `<span class="ct-tdoc ${docCls}">${have}/${need} documents</span>`
+               : `<span class="ct-tdoc">no documents yet</span>`}
       </span>
     </button>`;
   };
 
   root.innerHTML = `
     <div class="cc-h"><div><h1>Carrier hubs</h1>
-      <p>One hierarchy per carrier, with the contracting kit and the paperwork each
-      person owes. ${esc(pbAgencyName(ctOwner()))}&rsquo;s own &mdash; no other agency sees it.</p></div></div>
-    <div class="ct-grid">${list.map(card).join("")}</div>
-    ${list.length ? "" : `<p class="wl-empty">No carriers yet.</p>`}
+      <p>One square per place you contract through. Open a square for its
+      carriers, its kit, and who sits where in the hierarchy.
+      ${esc(pbAgencyName(ctOwner()))}&rsquo;s own &mdash; no other agency sees it.</p></div></div>
+    <div class="ct-grid">${list.map(tile).join("")}</div>
+    ${list.length ? "" : `<p class="wl-empty">No hubs yet.</p>`}
     <div class="ct-add">
-      <input id="ctNewCarrier" type="text" placeholder="Add another carrier"/>
+      <input id="ctNewCarrier" type="text" placeholder="Add another hub"/>
       <button class="btn btn-ghost btn-sm" id="ctAddCarrier" type="button">Add</button>
       <span class="ct-msg" id="ctMsg"></span>
     </div>`;
@@ -2091,51 +2118,323 @@ function renderContracting(){
 
   el("ctAddCarrier").onclick = async () => {
     const name = (el("ctNewCarrier").value || "").trim();
-    if (!name) return ctSay("Give the carrier a name.", true);
+    if (!name) return ctSay("Give it a name.", true);
     try {
       await ctWrite(supabase.from("contracting_carriers").insert({
-        agency_id: ctOwner(), name, sort: (ctCarriersFor().length + 1) }), "the carrier");
+        agency_id: ctOwner(), name, sort: (ctHubsFor().length + 1) }), "the hub");
       await load();
     } catch (e) { ctSay(e.message, true); }
   };
 }
 
-/* ---------------- one carrier: kit, link, tree ---------------- */
+/* ============================================================
+   The hierarchy chart.
+
+   A downline of five draws itself. A downline of a hundred and fifty
+   does not, so the chart has three ways of coping and they are meant
+   to be used together:
+
+     collapse   everything below the second row starts shut, with a
+                pill on each shut box saying how many are under it
+     search     type a name and every branch on the way to it opens
+     pan/zoom   drag the chart around, zoom out to see the shape
+
+   State lives on A.ctChart for the carrier being looked at and is
+   thrown away when you leave, so a carrier always opens in the tidy
+   default view rather than wherever it was last dragged to.
+   ============================================================ */
+const CT_MOD = /Mac|iPhone|iPad/.test(navigator.platform || "") ? "⌘" : "Ctrl";
+
+function ctChartState(carrierId, nodes){
+  if (A.ctChart && A.ctChart.id === carrierId) return A.ctChart;
+  const kidsOf = new Map();
+  nodes.forEach(n => {
+    const k = n.parent_id || "";
+    if (!kidsOf.has(k)) kidsOf.set(k, []);
+    kidsOf.get(k).push(n);
+  });
+  const collapsed = new Set();
+  const walk = (pid, depth) => (kidsOf.get(pid) || []).forEach(n => {
+    if (depth >= 1 && (kidsOf.get(n.id) || []).length) collapsed.add(n.id);
+    walk(n.id, depth + 1);
+  });
+  walk("", 0);
+  A.ctChart = { id: carrierId, collapsed, q: "", z: 1, x: 0, y: 0 };
+  return A.ctChart;
+}
+
+function ctChartShell(){
+  return `
+    <div class="ct-tools">
+      <input id="ctFind" class="ct-find" type="search" placeholder="Find someone…"
+             value="${esc(A.ctChart.q)}" autocomplete="off"/>
+      <span class="ct-hits" id="ctHits"></span>
+      <span class="ct-toolgap"></span>
+      <button class="ct-zb" id="ctOpenAll" type="button">Expand all</button>
+      <button class="ct-zb" id="ctShutAll" type="button">Collapse</button>
+      <span class="ct-zgrp">
+        <button class="ct-zb" id="ctZOut" type="button" aria-label="Zoom out">&minus;</button>
+        <span class="ct-zpc" id="ctZPc">100%</span>
+        <button class="ct-zb" id="ctZIn" type="button" aria-label="Zoom in">+</button>
+      </span>
+      <button class="ct-zb" id="ctFit" type="button">Fit</button>
+    </div>
+    <div class="ct-canvas" id="ctCanvas"><div class="ct-pan" id="ctPan"></div></div>
+    <p class="ct-hint">Drag to move &middot; ${CT_MOD}+scroll to zoom &middot;
+      click a box to open that person &middot; drag the bottom edge to make this taller</p>`;
+}
+
+/* Redraws only the chart, never the page, so the search box keeps
+   focus and the caret while you type. */
+function ctDrawChart(c, nodes, openNode){
+  const pan = el("ctPan"); if (!pan) return;
+  const st  = A.ctChart;
+
+  const kidsOf = new Map(), byId = new Map();
+  nodes.forEach(n => {
+    byId.set(n.id, n);
+    const k = n.parent_id || "";
+    if (!kidsOf.has(k)) kidsOf.set(k, []);
+    kidsOf.get(k).push(n);
+  });
+  kidsOf.forEach(list => list.sort(ctSort));
+
+  const under = (id) => (kidsOf.get(id) || [])
+    .reduce((t, k) => t + 1 + under(k.id), 0);
+
+  /* Search matches name or contract level; every branch above a match
+     is forced open so you can see where the person sits, not just that
+     they exist. */
+  const q = st.q.trim().toLowerCase();
+  const hits = new Set();
+  if (q) nodes.forEach(n => {
+    if (n.name.toLowerCase().includes(q) ||
+        (n.contract_level || "").toLowerCase().includes(q)) hits.add(n.id);
+  });
+  const forced = new Set();
+  hits.forEach(id => { let p = byId.get(id)?.parent_id;
+    while (p) { forced.add(p); p = byId.get(p)?.parent_id; } });
+  const shut = (id) => st.collapsed.has(id) && !forced.has(id);
+
+  const box = (n) => {
+    const have = ctDocsFor(n.id).length;
+    const cls  = have === CT_DOCS.length ? "full" : have ? "part" : "none";
+    const kids = kidsOf.get(n.id) || [];
+    const isShut = kids.length && shut(n.id);
+    return `<div class="ct-cell">
+      <button class="ct-bub ${cls}${openNode === n.id ? " on" : ""}${
+        hits.has(n.id) ? " hit" : ""}${q && !hits.has(n.id) ? " dim" : ""}"
+        data-node="${esc(n.id)}" type="button">
+        <span class="ct-bn">${esc(n.name)}</span>
+        <span class="ct-bl">${n.contract_level ? esc(n.contract_level) : "level not set"}</span>
+        <span class="ct-bd">${have}/${CT_DOCS.length}</span>
+      </button>
+      ${kids.length ? `<button class="ct-tog${isShut ? " shut" : ""}" data-tog="${esc(n.id)}"
+        type="button" title="${isShut ? "Open this branch" : "Close this branch"}"
+        >${isShut ? `+${under(n.id)}` : "−"}</button>` : ""}
+    </div>`;
+  };
+
+  const branch = (pid, depth) => {
+    const list = kidsOf.get(pid) || [];
+    if (!list.length) return "";
+    return `<ul class="ct-lv ${depth ? "ct-sub" : "ct-top"}">${list.map(n =>
+      `<li>${box(n)}${shut(n.id) ? "" : branch(n.id, depth + 1)}</li>`).join("")}</ul>`;
+  };
+
+  pan.innerHTML = `<div class="ct-org">${branch("", 0)}</div>`;
+
+  const hitBox = el("ctHits");
+  if (hitBox) hitBox.textContent = !q ? ""
+    : hits.size ? `${hits.size} match${hits.size === 1 ? "" : "es"}`
+                : "no match";
+
+  pan.querySelectorAll("[data-node]").forEach(b =>
+    b.onclick = () => { A.view = { name:"carrier", arg:c.id, node:b.dataset.node }; render(); });
+
+  pan.querySelectorAll("[data-tog]").forEach(b =>
+    b.onclick = (ev) => {
+      ev.stopPropagation();
+      const id = b.dataset.tog;
+      st.collapsed.has(id) ? st.collapsed.delete(id) : st.collapsed.add(id);
+      ctDrawChart(c, nodes, openNode);
+    });
+
+  ctApplyZoom();
+  if (hits.size) {
+    const first = pan.querySelector(".ct-bub.hit");
+    if (first) ctBringIntoView(first);
+  }
+}
+
+function ctApplyZoom(){
+  const pan = el("ctPan"); if (!pan) return;
+  const s = A.ctChart;
+  pan.style.transform = `translate(${s.x}px, ${s.y}px) scale(${s.z})`;
+  const pc = el("ctZPc"); if (pc) pc.textContent = Math.round(s.z * 100) + "%";
+}
+
+function ctChartSize(){
+  const pan = el("ctPan"); const inner = pan && pan.firstElementChild;
+  if (!inner) return null;
+  const before = pan.style.transform;
+  pan.style.transform = "none";
+  const w = inner.offsetWidth, h = inner.offsetHeight;
+  pan.style.transform = before;
+  return (w && h) ? { w, h } : null;
+}
+
+function ctFitChart(){
+  const cv = el("ctCanvas"), size = ctChartSize();
+  if (!cv || !size) return;
+  const z = Math.max(0.15, Math.min(1, (cv.clientWidth - 28) / size.w,
+                                       (cv.clientHeight - 28) / size.h));
+  A.ctChart.z = z;
+  A.ctChart.x = Math.max(14, (cv.clientWidth - size.w * z) / 2);
+  A.ctChart.y = 14;
+  ctApplyZoom();
+}
+
+/* Nudge the view so a box is inside the canvas, without moving it if
+   it is already there — used after a search so the first match is
+   visible however far the chart has been dragged. */
+function ctBringIntoView(node){
+  const cv = el("ctCanvas"); if (!cv) return;
+  const a = cv.getBoundingClientRect(), b = node.getBoundingClientRect();
+  const s = A.ctChart, pad = 20;
+  if (b.left   < a.left  + pad) s.x += (a.left + pad) - b.left;
+  if (b.right  > a.right - pad) s.x -= b.right - (a.right - pad);
+  if (b.top    < a.top   + pad) s.y += (a.top + pad) - b.top;
+  if (b.bottom > a.bottom- pad) s.y -= b.bottom - (a.bottom - pad);
+  ctApplyZoom();
+}
+
+function ctWireChart(c, nodes, openNode){
+  const cv = el("ctCanvas"); if (!cv) return;
+  const st = A.ctChart;
+
+  ctDrawChart(c, nodes, openNode);
+  requestAnimationFrame(() => {
+    const size = ctChartSize();
+    if (size && (size.w > cv.clientWidth - 28 || size.h > cv.clientHeight - 28)) ctFitChart();
+    else { st.x = Math.max(14, (cv.clientWidth - (size ? size.w : 0)) / 2); st.y = 14; ctApplyZoom(); }
+  });
+
+  const find = el("ctFind");
+  if (find) find.oninput = () => { st.q = find.value; ctDrawChart(c, nodes, openNode); };
+
+  el("ctOpenAll").onclick = () => { st.collapsed.clear(); ctDrawChart(c, nodes, openNode); };
+  el("ctShutAll").onclick = () => {
+    st.collapsed.clear();
+    const kidsOf = new Map();
+    nodes.forEach(n => { const k = n.parent_id || "";
+      if (!kidsOf.has(k)) kidsOf.set(k, []); kidsOf.get(k).push(n); });
+    const walk = (pid, depth) => (kidsOf.get(pid) || []).forEach(n => {
+      if (depth >= 1 && (kidsOf.get(n.id) || []).length) st.collapsed.add(n.id);
+      walk(n.id, depth + 1);
+    });
+    walk("", 0);
+    ctDrawChart(c, nodes, openNode);
+  };
+
+  const zoomTo = (z, cx, cy) => {
+    const next = Math.max(0.15, Math.min(2, z));
+    if (cx != null) {   /* keep the point under the cursor still */
+      const r = cv.getBoundingClientRect();
+      const px = cx - r.left, py = cy - r.top;
+      st.x = px - (px - st.x) * (next / st.z);
+      st.y = py - (py - st.y) * (next / st.z);
+    }
+    st.z = next; ctApplyZoom();
+  };
+  el("ctZIn").onclick  = () => zoomTo(st.z * 1.25);
+  el("ctZOut").onclick = () => zoomTo(st.z / 1.25);
+  el("ctFit").onclick  = () => ctFitChart();
+
+  cv.onwheel = (e) => {
+    if (e.ctrlKey || e.metaKey) {
+      e.preventDefault();
+      zoomTo(st.z * (e.deltaY < 0 ? 1.1 : 1 / 1.1), e.clientX, e.clientY);
+    } else {
+      /* Plain scroll moves the chart inside its box rather than
+         stealing the page scroll — the page still scrolls once the
+         chart has nowhere left to go. */
+      const size = ctChartSize(); if (!size) return;
+      const room = size.h * st.z - cv.clientHeight + 28;
+      if (room <= 0) return;
+      const next = Math.min(14, Math.max(-room, st.y - e.deltaY));
+      if (next !== st.y) { e.preventDefault(); st.y = next; ctApplyZoom(); }
+    }
+  };
+
+  let drag = null;
+  cv.onpointerdown = (e) => {
+    if (e.target.closest("button, input")) return;
+    drag = { px:e.clientX, py:e.clientY, x:st.x, y:st.y };
+    cv.setPointerCapture(e.pointerId); cv.classList.add("grabbing");
+  };
+  cv.onpointermove = (e) => {
+    if (!drag) return;
+    st.x = drag.x + (e.clientX - drag.px);
+    st.y = drag.y + (e.clientY - drag.py);
+    ctApplyZoom();
+  };
+  const stop = (e) => {
+    if (!drag) return;
+    drag = null; cv.classList.remove("grabbing");
+    try { cv.releasePointerCapture(e.pointerId); } catch (_) {}
+  };
+  cv.onpointerup = stop; cv.onpointercancel = stop;
+}
+
+/* ---------------- one hub or carrier ---------------- */
 function renderCarrier(carrierId, openNode){
   const c = (A.ctCarriers || []).find(x => x.id === carrierId);
   if (!c) { A.view = { name:"contracting" }; return render(); }
-  const nodes = ctNodesFor(c.id);
+  const nodes  = ctNodesFor(c.id);
+  const kids   = ctKidsOf(c.id);
+  const isHub  = !c.parent_id;
+  const parent = c.parent_id ? (A.ctCarriers || []).find(x => x.id === c.parent_id) : null;
+  ctChartState(c.id, nodes);
 
-  /* Children of a node, in the order they were given. */
-  const kids = (pid) => nodes.filter(n => (n.parent_id || null) === (pid || null))
-                             .sort((a, b) => (a.sort - b.sort) || a.name.localeCompare(b.name));
-
-  /* Name over contract level, the way a hierarchy chart is normally
-     read. The document count rides along underneath because "who is
-     short a form" is the question this screen exists to answer. */
-  const bubble = (n) => {
-    const have = ctDocsFor(n.id).length;
-    const cls = have === CT_DOCS.length ? "full" : have ? "part" : "none";
-    return `<button class="ct-bub ${cls}${openNode === n.id ? " on" : ""}"
-      data-node="${esc(n.id)}" type="button">
-      <span class="ct-bn">${esc(n.name)}</span>
-      <span class="ct-bl">${n.contract_level ? esc(n.contract_level) : "level not set"}</span>
-      <span class="ct-bd">${have}/${CT_DOCS.length}</span>
+  const kidTile = (k) => {
+    const kn = ctNodesFor(k.id);
+    const have = kn.reduce((t, n) => t + ctDocsFor(n.id).length, 0);
+    const need = kn.length * CT_DOCS.length;
+    const cls  = !need ? "" : have === need ? "full" : have ? "part" : "none";
+    return `<button class="ct-tile sm" data-carrier="${esc(k.id)}" type="button">
+      <span class="ct-tname">${esc(k.name)}</span>
+      <span class="ct-tsub">${kn.length} ${kn.length === 1 ? "person" : "people"}</span>
+      <span class="ct-tfoot">
+        <span class="ct-tp">${k.kit_url ? "Kit linked" : "No kit yet"}</span>
+        ${need ? `<span class="ct-tdoc ${cls}">${have}/${need}</span>` : ""}
+      </span>
     </button>`;
   };
-  const branch = (pid, depth) => {
-    const list = kids(pid);
-    if (!list.length) return "";
-    return `<ul class="ct-lv ${depth ? "ct-sub" : "ct-top"}">${list.map(n =>
-      `<li><div class="ct-cell">${bubble(n)}</div>${branch(n.id, depth + 1)}</li>`
-    ).join("")}</ul>`;
-  };
+
+  const carriersPanel = !isHub ? "" : `
+    <div class="cc-panel pb-sec"><div class="cc-panel-h"><h2>Carriers</h2>
+      <span class="sub">${kids.length ? "Each one keeps its own hierarchy" : ""}</span></div>
+      <div class="pad">
+      ${kids.length ? `<div class="ct-grid sm">${kids.map(kidTile).join("")}</div>`
+        : `<p class="muted">No carriers listed under ${esc(c.name)} yet. If ${esc(c.name)}
+           is a carrier in its own right, leave this empty and use the hierarchy below.</p>`}
+      <div class="ct-add" style="margin-top:${kids.length ? "16px" : "12px"}">
+        <input id="ctNewKid" type="text" placeholder="Add a carrier under ${esc(c.name)}"/>
+        <button class="btn btn-ghost btn-sm" id="ctAddKid" type="button">Add</button>
+      </div>
+    </div></div>`;
+
+  const hierHead = isHub && kids.length
+    ? `<span class="sub">Anyone who sits at the ${esc(c.name)} level itself</span>`
+    : `<span class="sub">Click anyone to open their record</span>`;
 
   root.innerHTML = `
     <div class="cc-h"><div><h1>${esc(c.name)}</h1>
-      <p>${esc(pbAgencyName(c.agency_id))} &middot; ${nodes.length}
-        ${nodes.length === 1 ? "person" : "people"} in the hierarchy</p></div></div>
-    <button class="btn btn-ghost btn-sm" id="ctBack" style="margin-bottom:14px">&larr; All carriers</button>
+      <p>${esc(pbAgencyName(c.agency_id))}${parent ? ` &middot; under ${esc(parent.name)}` : ""}
+        &middot; ${nodes.length} ${nodes.length === 1 ? "person" : "people"} in the hierarchy</p></div></div>
+    <button class="btn btn-ghost btn-sm" id="ctBack" style="margin-bottom:14px">&larr; ${
+      parent ? esc(parent.name) : "All hubs"}</button>
 
     <div class="cc-panel pb-sec"><div class="cc-panel-h"><h2>Getting started</h2></div><div class="pad">
       <label for="ct_kit">Contracting kit / steps</label>
@@ -2154,15 +2453,18 @@ function renderCarrier(carrierId, openNode){
       </div>
     </div></div>
 
+    ${carriersPanel}
+
     <div class="cc-panel pb-sec"><div class="cc-panel-h"><h2>Hierarchy</h2>
-      <span class="sub">Click anyone to open their record</span></div><div class="pad">
-      ${nodes.length ? `<div class="ct-org">${branch(null, 0)}</div>`
+      ${hierHead}</div><div class="pad">
+      ${nodes.length ? ctChartShell()
         : `<p class="muted">Nobody in this hierarchy yet. Add the top of the tree below.</p>`}
       <div class="ct-add" style="margin-top:16px">
         <input id="ctNewName" type="text" placeholder="Add a person"/>
         <select id="ctNewParent">
           <option value="">Top of the tree</option>
-          ${nodes.map(n => `<option value="${esc(n.id)}">under ${esc(n.name)}</option>`).join("")}
+          ${nodes.slice().sort(ctSort).map(n =>
+            `<option value="${esc(n.id)}">under ${esc(n.name)}</option>`).join("")}
         </select>
         <button class="btn btn-ghost btn-sm" id="ctAddNode" type="button">Add</button>
       </div>
@@ -2170,10 +2472,27 @@ function renderCarrier(carrierId, openNode){
 
     <div id="ctNodePanel">${openNode ? ctNodeEditor(nodes.find(n => n.id === openNode), nodes) : ""}</div>`;
 
-  el("ctBack").onclick = () => { A.view = { name:"contracting" }; render(); };
+  el("ctBack").onclick = () => {
+    A.view = parent ? { name:"carrier", arg:parent.id } : { name:"contracting" };
+    render();
+  };
 
-  root.querySelectorAll("[data-node]").forEach(b =>
-    b.onclick = () => { A.view = { name:"carrier", arg:c.id, node:b.dataset.node }; render(); });
+  root.querySelectorAll("[data-carrier]").forEach(b =>
+    b.onclick = () => { A.ctChart = null; A.view = { name:"carrier", arg:b.dataset.carrier }; render(); });
+
+  if (nodes.length) ctWireChart(c, nodes, openNode);
+
+  const addKid = el("ctAddKid");
+  if (addKid) addKid.onclick = async () => {
+    const name = (el("ctNewKid").value || "").trim();
+    if (!name) return ctSay("Give the carrier a name.", true);
+    try {
+      await ctWrite(supabase.from("contracting_carriers").insert({
+        agency_id: c.agency_id, parent_id: c.id, name,
+        sort: kids.length + 1 }), "the carrier");
+      await load();
+    } catch (e) { ctSay(e.message, true); }
+  };
 
   el("ctSaveCarrier").onclick = async () => {
     try {
