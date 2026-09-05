@@ -80,33 +80,55 @@ table.tbl td{border-bottom-color:var(--line-2)}
 .cc-chip{font-size:.7rem;padding:.16rem .5rem;border:1px solid var(--line);border-radius:6px;
   color:var(--muted);font-weight:560;white-space:nowrap}
 
-/* ---- the three sections, across the top ------------------------- */
-.cc-secbar{background:#fff;border-bottom:1px solid var(--line)}
+/* ---- the three sections, across the top -------------------------
+   The agency's navy carries this row. The section you are in is a
+   solid brand-coloured card; the other two are pale cards with a
+   definite edge, so which one is live is readable across a room
+   rather than needing the eye to find a 2px underline.
+------------------------------------------------------------------- */
+.cc-secbar{background:linear-gradient(180deg,#F4F8FD,#E9F0F9);
+  border-bottom:1px solid #C6D6EA}
 .cc-secbar[hidden]{display:none}
-.cc-secbar-in{display:flex;align-items:stretch;gap:4px;padding:0 14px;
+.cc-secbar-in{display:flex;align-items:center;gap:10px;padding:12px 16px;
   max-width:1600px;margin:0 auto;overflow-x:auto}
-.cc-secs{display:flex;gap:4px;min-width:0}
-.cc-sec{appearance:none;background:none;border:0;border-bottom:2px solid transparent;
-  padding:9px 16px 8px;cursor:pointer;text-align:left;display:grid;gap:1px;
-  border-radius:9px 9px 0 0;white-space:nowrap;
-  transition:background .12s,border-color .12s,color .12s}
-.cc-sec:hover{background:var(--panel-2)}
-.cc-sec .s-name{display:flex;align-items:center;gap:7px;font-size:.95rem;
-  font-weight:650;color:var(--ink-2);letter-spacing:-.012em}
-.cc-sec .s-sub{font-size:.72rem;color:var(--faint)}
-.cc-sec .s-n{font-style:normal;font-size:.68rem;font-weight:700;line-height:1;
-  min-width:17px;padding:3px 5px;border-radius:99px;text-align:center;
-  color:#fff;background:var(--warn);font-variant-numeric:tabular-nums}
-.cc-sec.on{border-bottom-color:var(--brand);background:var(--accent-050)}
-.cc-sec.on .s-name{color:var(--brand);font-weight:750}
-.cc-sec:focus-visible{outline:2px solid var(--brand);outline-offset:-2px}
+.cc-secs{display:flex;gap:10px;min-width:0}
 
-.cc-navtog{flex:0 0 auto;align-self:center;width:30px;height:30px;margin-right:6px;
-  display:flex;align-items:center;justify-content:center;font:inherit;font-size:.9rem;
-  color:var(--muted);background:#fff;border:1px solid var(--line);border-radius:8px;
-  cursor:pointer;transition:border-color .12s,color .12s}
-.cc-navtog:hover{border-color:var(--accent);color:var(--accent)}
+.cc-sec{appearance:none;cursor:pointer;text-align:left;display:grid;gap:3px;
+  min-width:186px;padding:13px 20px;border-radius:13px;white-space:nowrap;
+  background:#fff;border:1.5px solid #C6D6EA;
+  box-shadow:0 1px 2px rgba(6,18,35,.05);
+  transition:background .14s,border-color .14s,box-shadow .14s,transform .1s}
+.cc-sec:hover{border-color:var(--accent);box-shadow:0 3px 10px rgba(12,61,130,.14);
+  transform:translateY(-1px)}
+.cc-sec .s-name{display:flex;align-items:center;gap:9px;
+  font-family:var(--ff-display,inherit);font-size:1.1rem;font-weight:750;
+  color:var(--ink-2);letter-spacing:-.016em;line-height:1.15}
+.cc-sec .s-sub{font-size:.8rem;color:var(--muted)}
+.cc-sec .s-n{font-style:normal;font-size:.72rem;font-weight:800;line-height:1;
+  min-width:20px;padding:4px 6px;border-radius:99px;text-align:center;
+  color:#fff;background:var(--warn);font-variant-numeric:tabular-nums}
+
+/* the one you are in */
+.cc-sec.on{background:var(--accent);border-color:var(--accent-600);
+  box-shadow:0 5px 16px rgba(12,61,130,.32);transform:none}
+.cc-sec.on:hover{background:var(--accent-600);border-color:var(--accent-600)}
+.cc-sec.on .s-name{color:#fff}
+.cc-sec.on .s-sub{color:rgba(255,255,255,.86)}
+.cc-sec.on .s-n{background:#fff;color:var(--accent)}
+.cc-sec:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
+
+.cc-navtog{flex:0 0 auto;align-self:stretch;width:38px;
+  display:flex;align-items:center;justify-content:center;font:inherit;
+  font-size:1.05rem;font-weight:700;color:var(--accent);background:#fff;
+  border:1.5px solid #C6D6EA;border-radius:11px;cursor:pointer;
+  transition:background .12s,border-color .12s,color .12s}
+.cc-navtog:hover{background:var(--accent);border-color:var(--accent-600);color:#fff}
 .cc-navtog:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
+
+@media (max-width:760px){
+  .cc-sec{min-width:0;padding:11px 15px}
+  .cc-sec .s-name{font-size:1rem}
+}
 
 /* ---- the shell -------------------------------------------------- */
 .cc-body{display:grid;grid-template-columns:var(--nav-w,198px) minmax(0,1fr) 300px;
@@ -161,7 +183,7 @@ body.nav-mini .cc-nav button i.dot.crit{background:var(--crit)}
 
 @media (max-width:1180px){
   .cc-sec .s-sub{display:none}
-  .cc-sec{padding:11px 13px}
+  .cc-sec{min-width:0;padding:12px 16px}
 }
 
 .cc-main{padding:22px 24px 64px;min-width:0}
