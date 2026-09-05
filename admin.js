@@ -2110,21 +2110,25 @@ function renderCarrier(carrierId, openNode){
   const kids = (pid) => nodes.filter(n => (n.parent_id || null) === (pid || null))
                              .sort((a, b) => (a.sort - b.sort) || a.name.localeCompare(b.name));
 
+  /* Name over contract level, the way a hierarchy chart is normally
+     read. The document count rides along underneath because "who is
+     short a form" is the question this screen exists to answer. */
   const bubble = (n) => {
     const have = ctDocsFor(n.id).length;
     const cls = have === CT_DOCS.length ? "full" : have ? "part" : "none";
     return `<button class="ct-bub ${cls}${openNode === n.id ? " on" : ""}"
       data-node="${esc(n.id)}" type="button">
       <span class="ct-bn">${esc(n.name)}</span>
-      ${n.contract_level ? `<span class="ct-bl">${esc(n.contract_level)}</span>` : ""}
+      <span class="ct-bl">${n.contract_level ? esc(n.contract_level) : "level not set"}</span>
       <span class="ct-bd">${have}/${CT_DOCS.length}</span>
     </button>`;
   };
   const branch = (pid, depth) => {
     const list = kids(pid);
     if (!list.length) return "";
-    return `<ul class="ct-tree${depth ? "" : " root"}">${list.map(n =>
-      `<li>${bubble(n)}${branch(n.id, depth + 1)}</li>`).join("")}</ul>`;
+    return `<ul class="ct-lv ${depth ? "ct-sub" : "ct-top"}">${list.map(n =>
+      `<li><div class="ct-cell">${bubble(n)}</div>${branch(n.id, depth + 1)}</li>`
+    ).join("")}</ul>`;
   };
 
   root.innerHTML = `
@@ -2152,7 +2156,7 @@ function renderCarrier(carrierId, openNode){
 
     <div class="cc-panel pb-sec"><div class="cc-panel-h"><h2>Hierarchy</h2>
       <span class="sub">Click anyone to open their record</span></div><div class="pad">
-      ${nodes.length ? branch(null, 0)
+      ${nodes.length ? `<div class="ct-org">${branch(null, 0)}</div>`
         : `<p class="muted">Nobody in this hierarchy yet. Add the top of the tree below.</p>`}
       <div class="ct-add" style="margin-top:16px">
         <input id="ctNewName" type="text" placeholder="Add a person"/>

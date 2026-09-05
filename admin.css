@@ -549,28 +549,79 @@ body.cc-locked .cc-nav,body.cc-locked .cc-rail{display:none}
 .ct-msg.on{opacity:1}
 .ct-msg.bad{color:#A32019;opacity:1}
 
-/* the tree */
-.ct-tree{list-style:none;margin:0;padding:0}
-.ct-tree.root{padding-left:0}
-.ct-tree:not(.root){margin-left:15px;padding-left:17px;border-left:1.5px solid var(--line)}
-.ct-tree li{position:relative;margin:6px 0}
-.ct-tree:not(.root) > li:before{content:"";position:absolute;left:-17px;top:17px;
-  width:13px;height:1.5px;background:var(--line)}
+/* ---- the hierarchy, drawn as an org chart ----------------------
+   Top-down, children centred under their upline, elbow connectors
+   between them. Geometry is driven by the three sizes below, so the
+   whole chart re-spaces if any one of them changes.
 
-.ct-bub{display:inline-flex;align-items:center;gap:9px;background:#fff;
-  border:1px solid var(--line);border-radius:99px;padding:6px 14px;cursor:pointer;
-  font:inherit;font-size:.9rem;transition:border-color .12s,box-shadow .12s}
-.ct-bub:hover{border-color:var(--accent);box-shadow:0 2px 8px rgba(12,61,130,.12)}
-.ct-bub:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
-.ct-bub.on{border-color:var(--accent);background:var(--accent-050);box-shadow:none}
-.ct-bn{font-weight:600;color:var(--ink)}
-.ct-bl{font-size:.74rem;color:var(--muted);background:var(--soft);
-  border-radius:99px;padding:2px 8px}
-.ct-bd{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:.7rem;font-weight:700;
-  border-radius:99px;padding:2px 7px}
+   --ct-stem  drop from a parent box to the horizontal bar
+   --ct-drop  bar down into each child box
+   --ct-gap   space between siblings
+
+   A wide tree scrolls sideways inside its panel rather than
+   squeezing the boxes; the inline-block wrapper is what lets the
+   chart be wider than the panel and still stay centred when it
+   isn't.
+--------------------------------------------------------------- */
+.ct-org{--ct-stem:20px;--ct-drop:20px;--ct-gap:16px;--ct-line:#B9C6D8;
+  overflow-x:auto;padding:6px 2px 10px;text-align:center}
+.ct-org > .ct-lv{display:inline-flex;min-width:100%}
+
+.ct-lv{list-style:none;margin:0;padding:0;display:flex;justify-content:center;
+  align-items:flex-start;position:relative}
+.ct-lv > li{list-style:none;position:relative;display:flex;flex-direction:column;
+  align-items:center;padding:0 calc(var(--ct-gap) / 2)}
+
+/* stem down out of the parent box */
+.ct-sub{padding-top:calc(var(--ct-stem) + var(--ct-drop))}
+.ct-sub::before{content:"";position:absolute;top:0;left:50%;margin-left:-1px;
+  width:2px;height:var(--ct-stem);background:var(--ct-line)}
+
+/* the horizontal bar joining siblings — two halves per child, so the
+   bar automatically stops at the first and last box instead of
+   overshooting into empty space */
+.ct-sub > li::before,
+.ct-sub > li::after{content:"";position:absolute;top:calc(var(--ct-drop) * -1);
+  width:50%;height:2px;background:var(--ct-line)}
+.ct-sub > li::before{right:50%}
+.ct-sub > li::after{left:50%}
+.ct-sub > li:first-child::before{display:none}
+.ct-sub > li:last-child::after{display:none}
+
+/* bar down into the child, with an arrowhead */
+.ct-cell{position:relative;display:flex;justify-content:center}
+.ct-sub > li > .ct-cell::before{content:"";position:absolute;
+  top:calc(var(--ct-drop) * -1);left:50%;margin-left:-1px;
+  width:2px;height:var(--ct-drop);background:var(--ct-line)}
+.ct-sub > li > .ct-cell::after{content:"";position:absolute;top:-7px;left:50%;
+  margin-left:-5px;width:0;height:0;
+  border-left:5px solid transparent;border-right:5px solid transparent;
+  border-top:7px solid var(--ct-line)}
+
+/* a person */
+.ct-bub{display:flex;flex-direction:column;align-items:center;gap:3px;
+  width:176px;min-height:62px;justify-content:center;
+  background:var(--accent);border:2px solid var(--accent-600);border-radius:10px;
+  padding:10px 12px;cursor:pointer;font:inherit;text-align:center;
+  box-shadow:0 1px 3px rgba(6,18,35,.16);
+  transition:transform .12s,box-shadow .12s,border-color .12s}
+.ct-bub:hover{transform:translateY(-1px);box-shadow:0 4px 14px rgba(12,61,130,.28)}
+.ct-bub:focus-visible{outline:2px solid var(--ink);outline-offset:3px}
+.ct-bub.on{border-color:#F2B705;box-shadow:0 0 0 3px rgba(242,183,5,.28)}
+.ct-bn{font-weight:650;font-size:.93rem;line-height:1.25;color:#fff;
+  overflow-wrap:anywhere}
+.ct-bl{font-size:.86rem;color:rgba(255,255,255,.88);font-variant-numeric:tabular-nums}
+.ct-bd{font-size:.68rem;font-weight:700;letter-spacing:.02em;
+  border-radius:99px;padding:1px 7px;margin-top:2px;font-variant-numeric:tabular-nums}
 .ct-bub.none .ct-bd{background:#FBEDED;color:#A32019}
-.ct-bub.part .ct-bd{background:var(--warn-050);color:var(--warn)}
-.ct-bub.full .ct-bd{background:var(--ok-050);color:var(--ok)}
+.ct-bub.part .ct-bd{background:#FDF0D6;color:#7A4E00}
+.ct-bub.full .ct-bd{background:#DFF3E6;color:#0B5A33}
+
+@media (max-width:640px){
+  .ct-org{--ct-gap:10px}
+  .ct-bub{width:142px;padding:9px 9px}
+  .ct-bn{font-size:.87rem}
+}
 
 /* one person's paperwork */
 .ct-docs{display:grid;gap:8px;margin-top:18px;padding-top:16px;border-top:1px solid var(--line-2)}
