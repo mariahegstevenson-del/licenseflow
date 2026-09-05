@@ -805,6 +805,36 @@ body.cc-locked .cc-nav,body.cc-locked .cc-rail{display:none}
 .ct-pend-n{margin:11px 0 0;font-size:.82rem;color:var(--muted)}
 .ct-pend .wt-actions{margin-top:12px}
 
+/* ---- the contracting kit, as ordered steps ---------------------- */
+.ct-kitnote{margin:0 0 16px;font-size:.84rem;color:var(--muted);
+  padding:9px 12px;background:var(--soft);border:1px solid var(--line-2);
+  border-radius:9px}
+.ct-steps{list-style:none;margin:0;padding:0;display:grid;gap:10px}
+.ct-step{display:grid;grid-template-columns:auto minmax(0,1fr) auto;
+  gap:13px;align-items:start;padding:14px 15px;background:#fff;
+  border:1px solid var(--line);border-radius:11px}
+.ct-sn{width:25px;height:25px;border-radius:50%;display:flex;
+  align-items:center;justify-content:center;font-size:.8rem;font-weight:700;
+  color:#fff;background:var(--accent);font-variant-numeric:tabular-nums}
+.ct-sb{min-width:0}
+.ct-sh{display:flex;align-items:baseline;gap:11px;flex-wrap:wrap}
+.ct-sh strong{font-size:.96rem;color:var(--ink)}
+.ct-sh a{font-size:.8rem;font-weight:600;white-space:nowrap}
+.ct-sp{margin:7px 0 0;padding-left:17px;display:grid;gap:3px}
+.ct-sp li{font-size:.85rem;color:var(--muted);line-height:1.5;
+  overflow-wrap:anywhere}
+.ct-sact{display:flex;gap:5px;align-items:center}
+.ct-sbtn{font:inherit;font-size:.76rem;font-weight:600;color:var(--ink-2);
+  background:#fff;border:1px solid var(--line);border-radius:7px;
+  padding:4px 8px;cursor:pointer;line-height:1.2}
+.ct-sbtn:hover:not(:disabled){border-color:var(--accent);color:var(--accent)}
+.ct-sbtn:disabled{opacity:.35;cursor:default}
+.ct-sbtn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+@media (max-width:640px){
+  .ct-step{grid-template-columns:auto minmax(0,1fr);gap:10px}
+  .ct-sact{grid-column:2;margin-top:4px}
+}
+
 /* a value that belongs to the hub, shown here read-only */
 .ct-inherit{display:flex;align-items:center;gap:9px;flex-wrap:wrap;
   background:var(--soft);border:1px solid var(--line);border-radius:9px;

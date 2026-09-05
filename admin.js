@@ -86,7 +86,7 @@ const within = (t, from, to) => t != null && t >= from && t < to;
 })();
 
 async function load() {
-  const [p, inst, ex, vids, docs, notes, pb, ags, wtl, wta, wtv, ctc, ctn, ctd] = await Promise.all([
+  const [p, inst, ex, vids, docs, notes, pb, ags, wtl, wta, wtv, ctc, ctn, ctd, cts] = await Promise.all([
     supabase.from("licensing_profiles").select("*"),
     supabase.from("requirement_instances").select("*"),
     supabase.from("exceptions").select("*").order("created_at",{ascending:false}),
@@ -101,6 +101,7 @@ async function load() {
     supabase.from("contracting_carriers").select("*").order("sort"),
     supabase.from("contracting_nodes").select("*").order("sort"),
     supabase.from("contracting_docs").select("*"),
+    supabase.from("contracting_steps").select("*").order("sort"),
   ]);
   A.profiles=p.data||[]; A.instances=inst.data||[]; A.exceptions=ex.data||[]; A.videos=vids.data||[];
   A.docs = docs.data || [];
@@ -119,6 +120,7 @@ async function load() {
   A.ctCarriers = ctc.data || [];
   A.ctNodes    = ctn.data || [];
   A.ctDocs     = ctd.data || [];
+  A.ctSteps    = cts.data || [];
 
   /* An agency administrator is already limited to their own agency by
      the database, so this narrowing does nothing for them. It is for
@@ -2045,6 +2047,20 @@ const ctCarriersFor = ctHubsFor;   /* kept: older callers mean the hubs */
 const ctNodesFor = (carrierId) => (A.ctNodes || []).filter(n => n.carrier_id === carrierId);
 const ctDocsFor  = (nodeId)    => (A.ctDocs  || []).filter(d => d.node_id === nodeId);
 
+/* Steps belong to the hub, like the kit. A carrier under it shows the
+   hub's, because you contract through the hub once. */
+const ctStepsFor = (carrier) => (A.ctSteps || [])
+  .filter(s => s.carrier_id === (carrier.parent_id || carrier.id))
+  .sort((a, b) => (a.sort - b.sort) || String(a.created_at).localeCompare(String(b.created_at)));
+
+/* One sub-point per line. Bare URLs become links so a step can point at
+   three E&O vendors without needing three fields. */
+function ctPoint(line){
+  return esc(line).replace(/https?:\/\/[^\s<]+/g, (u) =>
+    `<a href="${u}" target="_blank" rel="noopener">${u.replace(/^https?:\/\//, "").slice(0, 46)}${
+      u.replace(/^https?:\/\//, "").length > 46 ? "…" : ""}</a>`);
+}
+
 /* People and paperwork for a hub, counting its carriers in. */
 function ctRollup(c){
   const ids = [c.id, ...ctKidsOf(c.id).map(k => k.id)];
@@ -2485,6 +2501,51 @@ function renderCarrier(carrierId, openNode){
           </div>
         </div>`;
 
+  /* ---- the kit, as an ordered list of steps ---- */
+  const steps = ctStepsFor(c);
+  const stepRow = (s, i) => `
+    <li class="ct-step">
+      <span class="ct-sn">${i + 1}</span>
+      <div class="ct-sb">
+        <div class="ct-sh">
+          <strong>${esc(s.title)}</strong>
+          ${s.url ? `<a href="${esc(s.url)}" target="_blank" rel="noopener">Open &#8599;</a>` : ""}
+        </div>
+        ${s.body ? `<ul class="ct-sp">${String(s.body).split("\n")
+          .map(l => l.trim()).filter(Boolean)
+          .map(l => `<li>${ctPoint(l)}</li>`).join("")}</ul>` : ""}
+      </div>
+      ${isHub ? `<span class="ct-sact">
+        <button class="ct-sbtn" data-sup="${esc(s.id)}" type="button" title="Move up"${
+          i === 0 ? " disabled" : ""}>&uarr;</button>
+        <button class="ct-sbtn" data-sdn="${esc(s.id)}" type="button" title="Move down"${
+          i === steps.length - 1 ? " disabled" : ""}>&darr;</button>
+        <button class="ct-sbtn" data-sed="${esc(s.id)}" type="button">Edit</button>
+      </span>` : ""}
+    </li>`;
+
+  const stepsPanel = `
+    <div class="cc-panel pb-sec"><div class="cc-panel-h"><h2>Contracting kit</h2>
+      <span class="sub">${isHub
+        ? (steps.length ? `${steps.length} steps &middot; agents see these on the intake form`
+                        : "What a new agent works through")
+        : `Kept on ${esc(parent ? parent.name : "the hub")}`}</span></div>
+      <div class="pad">
+      <p class="ct-kitnote">For agents who already hold a licence. Anyone not yet
+        licensed goes through licensing first and is turned away at the form.</p>
+      ${steps.length ? `<ol class="ct-steps">${steps.map(stepRow).join("")}</ol>`
+        : `<p class="muted">No steps yet.${isHub ? " Add the first one below." : ""}</p>`}
+      ${isHub ? `
+        <div class="ct-add" id="ctStepAdd">
+          <input id="ctNewStep" type="text" placeholder="Add a step — e.g. Register"/>
+          <button class="btn btn-ghost btn-sm" id="ctAddStep" type="button">Add</button>
+          <span class="ct-msg" id="ctStepMsg"></span>
+        </div>` : `
+        <div class="wt-actions" style="margin-top:14px">
+          <button class="btn btn-ghost btn-sm" id="ctEditSteps" type="button">Edit on ${esc(parent ? parent.name : "the hub")}</button>
+        </div>`}
+    </div></div>`;
+
   const hierHead = waiting.length
     ? `<span class="sub"><button class="ct-wait" id="ctWaiting" type="button">${
         waiting.length} waiting on you</button></span>`
@@ -2525,6 +2586,8 @@ function renderCarrier(carrierId, openNode){
     </div></div>
 
     <div id="ctNodePanel">${openNode ? ctNodeEditor(nodes.find(n => n.id === openNode), nodes) : ""}</div>
+
+    ${stepsPanel}
 
     ${carriersPanel}
 
@@ -2587,12 +2650,56 @@ function renderCarrier(carrierId, openNode){
     } catch (e) { ctSay(e.message, true); }
   };
 
-  const editKit = el("ctEditKit");
-  if (editKit) editKit.onclick = () => {
-    A.ctChart = null;
-    A.view = { name:"carrier", arg:parent.id };
-    render();
+  const toParent = () => { A.ctChart = null; A.view = { name:"carrier", arg:parent.id }; render(); };
+  const editKit = el("ctEditKit");     if (editKit)   editKit.onclick   = toParent;
+  const editSteps = el("ctEditSteps"); if (editSteps) editSteps.onclick = toParent;
+
+  /* ---- steps: add, reorder, edit ---- */
+  const stepSay = (m, bad) => {
+    const n = el("ctStepMsg"); if (!n) return;
+    n.textContent = m || "";
+    n.className = "ct-msg" + (m ? " on" : "") + (bad ? " bad" : "");
+    if (m && !bad) setTimeout(() => { if (el("ctStepMsg")) el("ctStepMsg").className = "ct-msg"; }, 2500);
   };
+
+  const addStep = el("ctAddStep");
+  if (addStep) addStep.onclick = async () => {
+    const title = (el("ctNewStep").value || "").trim();
+    if (!title) return stepSay("Give the step a name.", true);
+    try {
+      await ctWrite(supabase.from("contracting_steps").insert({
+        agency_id: c.agency_id, carrier_id: c.id, title,
+        sort: (steps.length ? Math.max(...steps.map(s => s.sort)) : 0) + 1,
+      }), "the step");
+      await load();
+    } catch (e) { stepSay(e.message, true); }
+  };
+
+  /* Swap the two sort values rather than renumbering the lot: fewer
+     writes, and the order survives two people editing at once. */
+  const swap = async (id, dir) => {
+    const i = steps.findIndex(s => s.id === id);
+    const j = i + dir;
+    if (i < 0 || j < 0 || j >= steps.length) return;
+    const a = steps[i], b = steps[j];
+    try {
+      await ctWrite(supabase.from("contracting_steps").update({ sort: b.sort, updated_at: new Date().toISOString() }).eq("id", a.id), "the order");
+      await ctWrite(supabase.from("contracting_steps").update({ sort: a.sort, updated_at: new Date().toISOString() }).eq("id", b.id), "the order");
+      await load();
+    } catch (e) { stepSay(e.message, true); }
+  };
+  root.querySelectorAll("[data-sup]").forEach(b => b.onclick = () => swap(b.dataset.sup, -1));
+  root.querySelectorAll("[data-sdn]").forEach(b => b.onclick = () => swap(b.dataset.sdn,  1));
+
+  root.querySelectorAll("[data-sed]").forEach(b => b.onclick = () => {
+    const s = steps.find(x => x.id === b.dataset.sed); if (!s) return;
+    const host = el("ctStepEdit") || (() => {
+      const d = document.createElement("div"); d.id = "ctStepEdit";
+      root.appendChild(d); return d;
+    })();
+    host.innerHTML = ctStepEditor(s);
+    wireStepEditor(c, s, host);
+  });
 
   el("ctSaveCarrier").onclick = async () => {
     try {
@@ -2648,6 +2755,74 @@ function renderCarrier(carrierId, openNode){
   };
 
   if (openNode) wireNodeEditor(c, nodes.find(n => n.id === openNode));
+}
+
+/* ---------------- one step of the kit ---------------- */
+function ctStepEditor(s){
+  return `<div class="ct-modal" id="ctStepModal">
+    <div class="ct-modal-bd" data-stclose></div>
+    <div class="ct-modal-card" role="dialog" aria-modal="true" aria-label="${esc(s.title)}">
+    <div class="cc-panel"><div class="cc-panel-h">
+      <h2>${esc(s.title)}</h2><span class="sub">Step of the contracting kit</span>
+      <button class="ct-x" type="button" data-stclose aria-label="Close">&times;</button>
+    </div><div class="pad">
+      <label for="st_title">Name of the step</label>
+      <input id="st_title" type="text" value="${esc(s.title)}"/>
+
+      <label for="st_url">Where it happens</label>
+      <input id="st_url" type="url" value="${esc(s.url || "")}" placeholder="https://…"/>
+      <span class="hint">Optional. Leave it empty for a step with no page of its own.</span>
+
+      <label for="st_body" style="margin-top:16px">What they do</label>
+      <textarea id="st_body" rows="9" placeholder="One point per line">${esc(s.body || "")}</textarea>
+      <span class="hint">One point per line. Any web address you type here
+        becomes a link, so you can list a few options on one line.</span>
+
+      <div class="wt-actions" style="margin-top:14px">
+        <button class="btn btn-primary btn-sm" id="stSave" type="button">Save</button>
+        <button class="btn btn-ghost btn-sm" id="stClose" type="button">Close</button>
+        <button class="btn btn-ghost btn-sm ct-del" id="stDel" type="button">Remove step</button>
+        <span class="ct-msg" id="stMsg"></span>
+      </div>
+    </div></div></div></div>`;
+}
+
+function wireStepEditor(c, s, host){
+  const shut = () => { host.innerHTML = ""; document.removeEventListener("keydown", onKey); };
+  const onKey = (e) => { if (e.key === "Escape") shut(); };
+  document.addEventListener("keydown", onKey);
+  host.querySelectorAll("[data-stclose]").forEach(b => b.onclick = shut);
+  el("stClose").onclick = shut;
+
+  const say = (m, bad) => {
+    const n = el("stMsg"); if (!n) return;
+    n.textContent = m || "";
+    n.className = "ct-msg" + (m ? " on" : "") + (bad ? " bad" : "");
+  };
+
+  el("stSave").onclick = async () => {
+    const title = (el("st_title").value || "").trim();
+    if (!title) return say("The step needs a name.", true);
+    try {
+      await ctWrite(supabase.from("contracting_steps").update({
+        title,
+        url:  el("st_url").value.trim()  || null,
+        body: el("st_body").value.replace(/\r/g, "").trim() || null,
+        updated_at: new Date().toISOString(),
+      }).eq("id", s.id), "the step");
+      shut();
+      await load();
+    } catch (e) { say(e.message, true); }
+  };
+
+  el("stDel").onclick = async () => {
+    if (!confirm(`Remove the step "${s.title}" from this kit?`)) return;
+    try {
+      await ctWrite(supabase.from("contracting_steps").delete().eq("id", s.id), "the removal");
+      shut();
+      await load();
+    } catch (e) { say(e.message, true); }
+  };
 }
 
 /* ---------------- one person's record ---------------- */

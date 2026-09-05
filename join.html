@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Libre+Franklin:wght@600;700;800&display=swap"/>
 <link rel="stylesheet" href="auth.css?v=5"/>
-<link rel="stylesheet" href="join.css?v=1"/>
+<link rel="stylesheet" href="join.css?v=2"/>
 <script src="config.js"></script>
 </head>
 <body>
@@ -33,6 +33,33 @@
         fresh one.</p>
     </div>
 
+    <!-- licence gate: contracting is for people who already hold one -->
+    <div class="card" id="gate" hidden>
+      <div class="pad">
+        <p class="jn-eyebrow" id="gagency"></p>
+        <h2 class="jn-title" id="gcarrier"></h2>
+        <p class="muted jn-lede">Contracting is the step after you&rsquo;re licensed.
+          Before we go on &mdash; do you already hold an active life licence?</p>
+        <div class="jn-gate">
+          <button class="btn btn-primary btn-block" id="gYes" type="button">
+            Yes, I&rsquo;m licensed</button>
+          <button class="btn btn-ghost btn-block" id="gNo" type="button">
+            Not yet</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- turned away, kindly -->
+    <div class="card pad" id="unlicensed" hidden>
+      <h2 style="font-size:1.25rem;margin-bottom:6px">Get licensed first</h2>
+      <p class="muted" style="margin-top:0">Contracting can&rsquo;t start until your
+        licence is active &mdash; the carriers verify it against the state database, so
+        there&rsquo;s nothing to submit yet.</p>
+      <p class="muted">Come back to this same link once your licence is issued.
+        It&rsquo;ll still work.</p>
+      <p class="hint"><a href="#" id="gBack">I do hold a licence &mdash; take me back</a></p>
+    </div>
+
     <!-- the form -->
     <div class="card" id="form" hidden>
       <div class="pad">
@@ -44,6 +71,14 @@
         <p id="kitline" hidden class="jn-kit">
           <a id="kitlink" href="#" target="_blank" rel="noopener">Open the contracting kit &rarr;</a>
         </p>
+
+        <!-- the kit, as steps -->
+        <section id="stepsWrap" hidden class="jn-steps">
+          <h3>What you&rsquo;ll work through</h3>
+          <p class="muted">Do these first, or alongside this form &mdash; whichever suits.
+            Your details below are what tells your agency you&rsquo;ve started.</p>
+          <ol id="steps"></ol>
+        </section>
 
         <div id="alert" class="alert"></div>
 
@@ -57,9 +92,19 @@
         <p class="hint">Spell it the way they do. If we can&rsquo;t match it we&rsquo;ll
           put you at the top of the list for your agency to place.</p>
 
-        <label for="f_level">Contract level</label>
-        <input id="f_level" type="text" maxlength="40" placeholder="e.g. 85%"/>
-        <p class="hint">Leave it blank if you haven&rsquo;t been told one.</p>
+        <div class="jn-two">
+          <div>
+            <label for="f_npn">Your NPN</label>
+            <input id="f_npn" type="text" maxlength="40" inputmode="numeric"
+                   placeholder="National Producer Number"/>
+          </div>
+          <div>
+            <label for="f_level">Contract level</label>
+            <input id="f_level" type="text" maxlength="40" placeholder="e.g. 85%"/>
+          </div>
+        </div>
+        <p class="hint">NPN is what the carriers verify you against. Leave the
+          contract level blank if you haven&rsquo;t been told one.</p>
 
         <div class="jn-two">
           <div>
@@ -111,6 +156,6 @@
 
   </div>
 </div>
-<script type="module" src="join.js?v=1"></script>
+<script type="module" src="join.js?v=2"></script>
 </body>
 </html>
