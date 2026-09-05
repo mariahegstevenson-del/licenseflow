@@ -90,7 +90,7 @@ table.tbl td{border-bottom-color:var(--line-2)}
    rather than stopping at the tab. The live tab is the white card that
    steps forward out of it, joining the content below; the others are
    lighter navy with a visible edge. */
-.cc-secbar{background:var(--accent);border-bottom:1px solid var(--accent-600)}
+.cc-secbar{background:var(--accent)}
 .cc-secbar[hidden]{display:none}
 .cc-secbar-in{display:flex;align-items:stretch;gap:10px;padding:11px 16px 0;
   max-width:1600px;margin:0 auto;overflow-x:auto}
@@ -133,9 +133,20 @@ table.tbl td{border-bottom-color:var(--line-2)}
   .cc-sec .s-name{font-size:1rem}
 }
 
-/* ---- the shell -------------------------------------------------- */
+/* ---- the shell --------------------------------------------------
+   The live tab and the page under it are one shape: the navy runs
+   along the top as the tab strip and then down both sides and across
+   the bottom, so the whole working area is framed in the agency's
+   colour and the tab you are in is the opening in that frame.
+------------------------------------------------------------------- */
+/* The frame has to reach the bottom of the window whatever is stacked
+   above it, so the page is a column and the body takes what is left
+   rather than guessing at a pixel height. */
+body{min-height:100vh;display:flex;flex-direction:column}
 .cc-body{display:grid;grid-template-columns:var(--nav-w,198px) minmax(0,1fr) 300px;
-  min-height:calc(100vh - 53px);background:var(--bg)}
+  flex:1 1 auto;min-height:0;background:var(--bg);
+  border:5px solid var(--accent);border-top:0;border-radius:0 0 16px 16px;
+  overflow:hidden}
 /* When access is refused there is no roster and no rail — one column. */
 body.cc-locked .cc-body{grid-template-columns:minmax(0,1fr)}
 body.cc-locked .cc-nav,body.cc-locked .cc-rail{display:none}
