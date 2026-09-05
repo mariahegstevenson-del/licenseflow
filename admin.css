@@ -617,8 +617,8 @@ body.nav-open .cc-nav{transform:none}
 .pv-page .step-card{max-width:620px;margin:0 auto}
 /* The preview is a picture of the agent's screen, so its form controls
    are inert -- but a LINK is the one thing an owner actually needs to
-   try. "Does the Kaplan button go where it should?" is the whole reason
-   for checking placement, and it was dead. Anything with an href works;
+   try. "Does the provider button go where it should?" is the whole
+   reason for checking placement, and it was dead. Anything with href works;
    everything else stays a picture. */
 .pv-page input,.pv-page button.btn,.pv-page span.btn{pointer-events:none}
 .pv-page .drop{pointer-events:none}
