@@ -2,7 +2,7 @@ import { supabase, isConfigured, requireSession, hardSignOut } from "./supabase.
 import { STATE_LIST, STATES, ceSlots, ceIsConfigured, ceBasketHTML, STUDY_TIPS, EXAM_BRING, resolvePlaybook,
          fillTokens } from "./states.js?v=28";
 import { resolveWalkthrough, factsFor, videoSource, isFile,
-         fmtDuration, clockTime, showsVideo, linkPreview } from "./walkthrough.js?v=7";
+         fmtDuration, clockTime, showsVideo, linkPreview } from "./walkthrough.js?v=8";
 import * as F from "./flow.js?v=16";
 import { loadTenant, renderUnknownAgency, applyTenantChrome, urlForAgency } from "./tenant.js?v=5";
 

@@ -2,7 +2,7 @@ import { supabase, isConfigured, requireSession, hardSignOut } from "./supabase.
 import { STATES, STATE_LIST, ceSlots, ceBasketHTML, STUDY_TIPS, EXAM_BRING, PLAYBOOK_SECTIONS, playbookDefaults,
          resolvePlaybook, COMPLETE_FIELDS, fillTokens } from "./states.js?v=28";
 import { WALKTHROUGH_REQS, resolveWalkthrough, vendorKeyFor, videoSource,
-         fmtDuration, RECORDING_STANDARD, showsVideo, linkPreview } from "./walkthrough.js?v=7";
+         fmtDuration, RECORDING_STANDARD, showsVideo, linkPreview } from "./walkthrough.js?v=8";
 import * as F from "./flow.js?v=16";
 import { loadTenant, renderUnknownAgency, applyTenantChrome, urlForAgency } from "./tenant.js?v=5";
 
@@ -1641,7 +1641,10 @@ function renderPlaybookAgent(code){
   const lic = A.pbLicense || "Life & Health";
 
   /* The agent's own components, so spacing and placement are the real
-     thing rather than an approximation. */
+     thing rather than an approximation. That includes the lookup button
+     on steps like NPN: the preview used to render only req.link, so
+     those steps showed a destination card with no way through -- the
+     preview claiming less than the real screen offers. */
   const screen =
     req.key === "__done" ? doneScreen(pbResolved(code)) :
     req.key === "__reg"  ? regScreen(code) :
@@ -1661,6 +1664,9 @@ function renderPlaybookAgent(code){
           ${req.link ? `<div class="link-row"><a class="btn btn-accent btn-lg" href="${esc(req.link)}"
               target="_blank" rel="noopener">Open ${esc(req.providerLabel || "the site")}</a></div>
               <div class="link-note">Opens in a new tab. When you're done there, come back and record it below.</div>` : ""}
+          ${req.lookupUrl ? `<div class="link-row"><a class="btn btn-accent btn-lg" href="${esc(req.lookupUrl)}"
+              target="_blank" rel="noopener">${esc(req.lookupLabel || "Look it up")}</a></div>
+              <div class="link-note">Opens the official lookup in a new tab.</div>` : ""}
           ${req.instructions ? `<details class="inst" style="margin-top:16px" open><summary>What to do there</summary>
               <ol>${req.instructions.map(i => `<li>${esc(i)}</li>`).join("")}</ol></details>` : ""}
           ${req.key === "continuing_education"

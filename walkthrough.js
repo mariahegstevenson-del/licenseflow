@@ -105,18 +105,31 @@ export function linkPreview(url, label){
   const name    = label || host;
   const initial = ((String(name).match(/[A-Za-z0-9]/) || ["?"])[0]).toUpperCase();
 
-  return `<div class="lp">
-    <div class="lp-bar" aria-hidden="true">
+  /* The site's own favicon, straight from the site -- no third-party
+     icon service in the middle. Plenty of hosts do not serve one, so the
+     lettermark sits underneath and the image removes itself on error
+     rather than leaving a broken-picture box. */
+  const icon = `https://${encodeURIComponent(host)}/favicon.ico`;
+
+  /* The whole card is the link. An agent should not have to find the
+     button underneath a thing that plainly looks clickable. */
+  return `<a class="lp" href="${lpEsc(url)}" target="_blank" rel="noopener noreferrer">
+    <span class="lp-bar" aria-hidden="true">
       <span class="lp-dot"></span><span class="lp-dot"></span><span class="lp-dot"></span>
       <span class="lp-url">${lpEsc(host)}</span>
-    </div>
-    <div class="lp-body">
-      <div class="lp-mark" aria-hidden="true">${lpEsc(initial)}</div>
-      <div class="lp-name">${lpEsc(name)}</div>
-      <div class="lp-host">${lpEsc(host)}${
-        path && path !== "" ? `<span class="lp-path">${lpEsc(path)}</span>` : ""}</div>
-    </div>
-  </div>`;
+    </span>
+    <span class="lp-body">
+      <span class="lp-mark" aria-hidden="true">
+        <img class="lp-fav" src="${lpEsc(icon)}" alt="" loading="lazy"
+             onerror="this.remove()"/>
+        <span class="lp-ini">${lpEsc(initial)}</span>
+      </span>
+      <span class="lp-name">${lpEsc(name)}</span>
+      <span class="lp-host">${lpEsc(host)}${
+        path && path !== "" ? `<span class="lp-path">${lpEsc(path)}</span>` : ""}</span>
+      <span class="lp-go">Open in a new tab &#8599;</span>
+    </span>
+  </a>`;
 }
 
 /* Vendor keys are stable identifiers, not display names. An agency may
