@@ -919,6 +919,12 @@ function renderTiles(){
   const alert = c.overdue > 0;
   const open  = A.tilesOpen === true;
 
+  /* Oldest first, so the top of the list is the thing that has been
+     waiting longest rather than whatever happened to arrive last. */
+  const pend = A.instances
+    .filter(i => i.status === "pending_review")
+    .sort((a, b) => (ts(a.updated_at) || 0) - (ts(b.updated_at) || 0));
+
   return `<div class="cc-summary">
     <button class="cc-sum${alert ? " alert" : ""}${open ? " open" : ""}"
       id="ccSum" type="button" aria-expanded="${open}">
@@ -932,6 +938,25 @@ function renderTiles(){
       </span>
       <span class="cc-sum-x">${open ? "&minus;" : "+"}</span>
     </button>
+
+    <!-- Opening this used to show four numbers, which tell you there is
+         work but not what it is. The work itself comes first now: one row
+         per submission, oldest at the top, and the row is the way in. -->
+    <div class="cc-todo" ${open ? "" : "hidden"}>
+      ${pend.length ? pend.map(i => {
+        const e = elapsed(ts(i.updated_at));
+        const late = e.hrs > OVERDUE_HOURS;
+        return `<button class="cc-todo-r${late ? " late" : ""}" type="button"
+            data-review="${esc(i.id)}">
+          <span class="cc-todo-who">${avatar(i.user_id)}<b>${esc(pname(i.user_id))}</b></span>
+          <span class="cc-todo-req">${esc(F.REQ_BY_KEY[i.requirement_key]?.label
+              || i.requirement_key)}</span>
+          <span class="cc-todo-ago${late ? " bad" : ""}">${esc(e.txt)}${
+              late ? " &middot; overdue" : ""}</span>
+          <span class="cc-todo-go">Review &rarr;</span>
+        </button>`;
+      }).join("") : `<p class="cc-todo-none">Nothing waiting on you right now.</p>`}
+    </div>
 
     <div class="cc-tiles" ${open ? "" : "hidden"}>
       <div class="cc-tile"><div class="l">Waiting on you</div>
