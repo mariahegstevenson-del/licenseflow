@@ -26,25 +26,40 @@
      Everything below is a token the rest of this sheet and
      styles.css already read, so the theme lives in one place.
      ------------------------------------------------------------ */
-  /* Pacific Ridgeway's four colours, straight off the brand guide:
-       NAVY  #082B63    GOLD  #D4A12B
-       WHITE #FFFFFF    GRAY  #F5F7FA
-     Everything else here is a shade of one of those four, mixed only
-     where a border or a hover state needs it. Nothing is a near-miss
-     of the brand colours themselves. */
-  --chrome:#061F49;  --chrome-2:#082B63;   /* the frame and tab strip */
-  --gold:#D4A12B; --gold-600:#B0831C; --gold-ink:#8A6413;
-  --gold-050:rgba(212,161,43,.14); --gold-200:rgba(212,161,43,.34);
-  --on-blue:#F5F7FA; --on-blue-2:#B3C4DD;  /* text that sits on the navy */
+  /* These are LICENSEFLOW's colours, not any agency's.
+
+     An earlier version of this block was Pacific Ridgeway's brand guide
+     pasted straight in, which meant the product itself wore a customer's
+     identity — including on the platform console, where no agency is
+     being served at all. The agent app never had that problem: it ships
+     LicenseFlow's palette and lets `html.themed` swap in the agency's,
+     and the console now works the same way. See the themed block below.
+
+     LicenseFlow: NAVY #0C3D82 · AZURE #1E5FB4 · WHITE #FFFFFF · GRAY #F4F7FA */
+  --chrome:#082C5F;  --chrome-2:#0C3D82;   /* the frame and tab strip */
+
+  /* --gold is the ACCENT ROLE, not the colour gold: whatever this
+     console points with. Unthemed that is LicenseFlow azure, so
+     --gold-on (the ink that sits on it) is white. A themed agency
+     usually lands on a light gold, where the ink has to go dark —
+     which is why the ink is a token and not a literal at each site. */
+  --gold:#1E5FB4; --gold-600:#0C3D82; --gold-ink:#0C3D82; --gold-on:#FFFFFF;
+  /* --gold-lit is the same role drawn straight ONTO the navy page: the
+     rule under a title, the cap on the live tab, the burger bars. An
+     agency gold is light and reads there as-is; LicenseFlow azure is
+     not, so unthemed it lifts to a tint that actually shows. */
+  --gold-lit:#8CB8F2; --gold-lit-2:#B6D3F8;
+  --gold-050:rgba(30,95,180,.10); --gold-200:rgba(30,95,180,.30);
+  --on-blue:#F4F7FA; --on-blue-2:#B7C8E0;  /* text that sits on the navy */
 
   /* The page is navy. Everything you read — cards, tiles, tables — is
      still white on top of it, because that is what a working screen
      needs to be. */
-  --bg:#082B63; --soft:#F5F7FA; --raised:#FFFFFF;
+  --bg:#0C3D82; --soft:#F4F7FA; --raised:#FFFFFF;
   --ink:#0A1A33; --ink-2:#16294A; --muted:#54667F; --faint:#61738C;
   --line:#DCE3EC; --line-2:#EDF1F6;
-  --accent:#0E3E86; --accent-600:#082B63; --accent-050:#EAF0F8;
-  --brand:#0E3E86; --brand-600:#082B63;
+  --accent:#0C3D82; --accent-600:#082C5F; --accent-050:#EAF0F8;
+  --brand:#0C3D82; --brand-600:#082C5F;
   --ok:#0F6F40; --ok-050:#ECF7F0;
   --warn:#8A5A00; --warn-050:#FDF6EA;
   --shadow:0 1px 2px rgba(6,18,35,.05);
@@ -58,6 +73,45 @@
   /* Figures share the body face; the numerals do the aligning. */
   --mono:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
   --num:tabular-nums;
+}
+
+/* ------------------------------------------------------------
+   AN AGENCY'S OWN COLOURS.
+
+   tenant.js resolves the subdomain, reads the agency's theme row and
+   writes --agency-gold / --agency-gold-ink / --agency-gold-050 and
+   --brand / --brand-600 onto :root as inline custom properties, then
+   marks the document `themed`. Everything below simply re-points the
+   console's role tokens at those, so an agency console is the agency's
+   and the platform console — which serves no agency — stays LicenseFlow's.
+
+   The 600 and 200 shades are mixed from whatever gold arrives rather
+   than listed, because the theme row carries one gold and a guessed
+   hover state for a colour we have not seen is worse than a derived
+   one. Literals come first as the fallback for anything without
+   color-mix; the mix overrides it where support exists.
+   ------------------------------------------------------------ */
+html.themed{
+  --gold:var(--agency-gold,#1E5FB4);
+  --gold-ink:var(--agency-gold-ink,#0C3D82);
+  --gold-600:#B0831C;
+  --gold-600:color-mix(in srgb, var(--gold) 84%, #000);
+  --gold-050:var(--agency-gold-050,rgba(30,95,180,.10));
+  --gold-200:rgba(30,95,180,.30);
+  --gold-200:color-mix(in srgb, var(--gold) 34%, transparent);
+
+  /* An agency gold is a light colour: dark ink on it, and light enough
+     already to draw straight onto the navy. */
+  --gold-on:#0A2036;
+  --gold-lit:var(--gold);
+  --gold-lit-2:var(--agency-gold,#8CB8F2);
+  --gold-lit-2:color-mix(in srgb, var(--gold) 74%, #FFF);
+
+  /* The page and the frame follow the agency's navy. */
+  --bg:var(--brand,#0C3D82);
+  --chrome-2:var(--brand,#0C3D82);
+  --chrome:#061F49;
+  --chrome:color-mix(in srgb, var(--brand) 78%, #000);
 }
 
 body{background:var(--bg);color:var(--ink)}
@@ -879,7 +933,7 @@ body.nav-open .cc-nav{transform:none}
   transition:transform .12s,box-shadow .12s,border-color .12s}
 .ct-bub:hover{transform:translateY(-1px);box-shadow:0 4px 14px rgba(12,61,130,.28)}
 .ct-bub:focus-visible{outline:2px solid var(--ink);outline-offset:3px}
-.ct-bub.on{border-color:var(--accent);box-shadow:0 0 0 3px rgba(212,161,43,.28)}
+.ct-bub.on{border-color:var(--accent);box-shadow:0 0 0 3px var(--gold-200)}
 .ct-bn{font-weight:650;font-size:.93rem;line-height:1.25;color:#fff;
   overflow-wrap:anywhere}
 .ct-bl{font-size:.86rem;color:rgba(255,255,255,.88);font-variant-numeric:tabular-nums}
@@ -913,7 +967,7 @@ body.nav-open .cc-nav{transform:none}
 
 /* search: matches ring, everyone else recedes so the eye lands on
    the match rather than hunting through a hundred identical boxes */
-.ct-bub.hit{border-color:var(--accent);box-shadow:0 0 0 3px rgba(212,161,43,.35)}
+.ct-bub.hit{border-color:var(--accent);box-shadow:0 0 0 3px var(--gold-200)}
 .ct-bub.dim{opacity:.42}
 .ct-bub.dim:hover{opacity:1}
 
@@ -1070,22 +1124,22 @@ body.nav-open .cc-nav{transform:none}
 .cc-rail{background:var(--panel);border-left-color:var(--line)}
 
 /* ---- gold, where the eye should go ------------------------------ */
-.cc-brand .mark{background:var(--gold);color:#0A2036}
+.cc-brand .mark{background:var(--gold);color:var(--gold-on)}
 .tag-agency{background:var(--gold-050);color:var(--gold-ink)}
-.cc-burger .b{background:var(--gold)}
+.cc-burger .b{background:var(--gold-lit)}
 .cc-burger:hover{background:rgba(255,255,255,.12)}
-.cc-burger:hover .b{background:#F0C05A}
+.cc-burger:hover .b{background:var(--gold-lit-2)}
 
 /* the tab strip: unopened tabs a shade up from the strip, the live one
    is the navy page showing through, lettered in gold */
 .cc-sec{background:rgba(255,255,255,.19);border-color:rgba(255,255,255,.36)}
 .cc-sec:hover{background:rgba(255,255,255,.3);border-color:rgba(255,255,255,.6)}
-.cc-sec .s-n{background:var(--gold);color:#0A2036}
+.cc-sec .s-n{background:var(--gold);color:var(--gold-on)}
 .cc-sec.on{background:var(--bg);border-color:var(--bg)}
 .cc-sec.on:hover{background:var(--bg);border-color:var(--bg)}
-.cc-sec.on .s-name{color:var(--gold)}
+.cc-sec.on .s-name{color:var(--gold-lit)}
 .cc-sec.on .s-sub{color:var(--on-blue-2)}
-.cc-sec.on .s-n{background:var(--gold);color:#0A2036}
+.cc-sec.on .s-n{background:var(--gold);color:var(--gold-on)}
 
 /* the menu: a white sheet, gold for the section it is filed under and
    for the screen you are on */
@@ -1106,11 +1160,11 @@ body.nav-open .cc-nav{transform:none}
 .cc-nav-sec .grp{padding-top:9px}
 
 /* gold on the things worth acting on */
-.btn-primary{background:var(--gold);border-color:var(--gold-600);color:#0A2036}
-.btn-primary:hover{background:var(--gold-600);border-color:var(--gold-600);color:#0A2036}
+.btn-primary{background:var(--gold);border-color:var(--gold-600);color:var(--gold-on)}
+.btn-primary:hover{background:var(--gold-600);border-color:var(--gold-600);color:var(--gold-on)}
 .cc-sum:hover{border-color:var(--gold)}
 .cc-tile .v.warn{color:var(--gold-ink)}
-.ct-sn{background:var(--gold);color:#0A2036}
+.ct-sn{background:var(--gold);color:var(--gold-on)}
 
 /* the bar across the very top: white, with the gold mark on it */
 .cc-top{background:#FFFFFF;border-bottom:1px solid var(--line);
@@ -1122,19 +1176,21 @@ body.nav-open .cc-nav{transform:none}
 .cc-agency{background:var(--panel-2);color:var(--ink-2);border-color:var(--line)}
 
 /* ============================================================
-   Polish, borrowed from Pacific Ridgeway's own material.
+   Polish.
 
-   Their flyers do three things over and over: a thin gold rule
-   under a heading, an uppercase letter-spaced eyebrow above it,
-   and navy panels with gold picking out the one thing that matters.
-   The console does the same, so the two look like one company.
+   Three moves, used everywhere: a thin accent rule under a heading,
+   an uppercase letter-spaced eyebrow above it, and navy panels with
+   the accent picking out the one thing that matters. They read in
+   whatever colour the accent role currently holds, so a console
+   looks like LicenseFlow on the platform domain and like the agency
+   on theirs.
    ============================================================ */
 
 /* the screen title, with the gold rule under it */
 .cc-main .cc-h{align-items:flex-start;padding-bottom:14px;margin-bottom:20px;
   border-bottom:1px solid rgba(255,255,255,.12);position:relative}
 .cc-main .cc-h::after{content:"";position:absolute;left:0;bottom:-1px;
-  width:56px;height:2px;background:var(--gold);border-radius:2px}
+  width:56px;height:2px;background:var(--gold-lit);border-radius:2px}
 .cc-main .cc-h h1{font-size:1.5rem;letter-spacing:-.028em;line-height:1.15}
 .cc-main .cc-h p{margin-top:5px;font-size:.88rem}
 
@@ -1164,7 +1220,7 @@ body.nav-open .cc-nav{transform:none}
   box-shadow:0 -3px 14px rgba(0,0,0,.34)}
 /* a gold cap along the top of the live tab, the way their rules read */
 .cc-sec.on::before{content:"";position:absolute;left:14px;right:14px;top:0;
-  height:3px;border-radius:0 0 2px 2px;background:var(--gold)}
+  height:3px;border-radius:0 0 2px 2px;background:var(--gold-lit)}
 .cc-sec{position:relative}
 
 /* the eyebrow above the agency name in the top bar */
@@ -1298,17 +1354,17 @@ body.nav-open .cc-nav{transform:none}
 .cc-main .pb-pt{color:var(--on-blue-2)}
 .cc-main .pb-pt:hover{background:rgba(255,255,255,.1);color:#fff}
 .cc-main .pb-pt.on{color:#fff;background:rgba(255,255,255,.13);
-  border-bottom-color:var(--gold)}
-.cc-main .pb-pt:focus-visible{outline-color:var(--gold)}
+  border-bottom-color:var(--gold-lit)}
+.cc-main .pb-pt:focus-visible{outline-color:var(--gold-lit)}
 
 /* the step chips above the preview */
 .cc-main .pv-chipwrap{background:var(--bg);border-bottom-color:rgba(255,255,255,.16)}
-.cc-main .pv-chip.on{background:var(--gold);border-color:var(--gold);color:#0A2036}
-.cc-main .pv-chip.on .pv-cn{background:rgba(10,32,54,.18);color:#0A2036}
+.cc-main .pv-chip.on{background:var(--gold);border-color:var(--gold);color:var(--gold-on)}
+.cc-main .pv-chip.on .pv-cn{background:rgba(10,32,54,.18);color:var(--gold-on)}
 .cc-main .pv-count{color:var(--on-blue-2)}
 .cc-main .pv-foot{color:var(--on-blue-2)}
 .cc-main .pv-move.is-off{color:rgba(255,255,255,.45)}
-.cc-main .pv-move.next{background:var(--gold);border-color:var(--gold-600);color:#0A2036}
+.cc-main .pv-move.next{background:var(--gold);border-color:var(--gold-600);color:var(--gold-on)}
 .cc-main .pv-move.next:hover{background:var(--gold-600)}
 .cc-main .pv-lead,.cc-main .wl-owner{color:var(--on-blue-2)}
 
@@ -1365,7 +1421,7 @@ body.nav-open .cc-nav{transform:none}
    keeps the colours it was designed with. */
 .cc-main .lf-tip p{color:var(--ink-2)}
 .cc-main .lf-tip p b{color:var(--ink)}
-.cc-main .lf-tip i{background:var(--gold)}
+.cc-main .lf-tip i{background:var(--gold-lit)}
 
 /* ============================================================
    WHAT IS WAITING, INSIDE THE ALERT
@@ -1444,7 +1500,7 @@ body.nav-open .cc-nav{transform:none}
 .cc-main .ct-bar i{width:15px;height:6px;border-radius:99px;background:var(--line);
   display:block}
 .cc-main .ct-bar i.done{background:var(--ok)}
-.cc-main .ct-bar i.now{background:var(--gold)}
+.cc-main .ct-bar i.now{background:var(--gold-lit)}
 
 @media (max-width:1100px){
   .cc-main .ct-roster-head{display:none}
@@ -1453,3 +1509,82 @@ body.nav-open .cc-nav{transform:none}
   .cc-main .ct-ro-iss{grid-column:1 / -1}
   .cc-main .ct-ro-go{grid-column:2;grid-row:1;justify-self:end}
 }
+
+/* ============================================================
+   THE LIGHT CONSOLE — LicenseFlow's own, and any agency without a theme
+
+   Everything above assumes the page ground is a dark brand navy,
+   because that is what an agency console looks like once tenant.js has
+   marked the document `themed`. The platform console serves no agency,
+   so it has no navy to wear: it is white paper with navy chrome, the
+   way the console was before agency theming existed.
+
+   Written as one `html:not(.themed)` layer rather than by unpicking the
+   dark rules above, so there is exactly one place to look when a light
+   console reads wrong, and an agency's console cannot be changed by
+   accident while fixing the platform's.
+   ============================================================ */
+html:not(.themed){
+  --bg:#F4F7FA;                          /* the page is paper */
+  --chrome:#FFFFFF; --chrome-2:#E4EBF3;  /* the frame and tab strip */
+  --on-blue:#0A1A33; --on-blue-2:#54667F;/* "on the page" ink is now dark */
+}
+
+/* the tab strip: a pale band, the live tab is the page showing through */
+html:not(.themed) .cc-secbar{background:linear-gradient(180deg,#FFFFFF,#EEF2F8);
+  border-bottom:1px solid var(--line)}
+html:not(.themed) .cc-sec{background:#E9EFF7;border-color:#D5DFEC}
+html:not(.themed) .cc-sec:hover{background:#DFE8F3;border-color:#C2D0E2}
+html:not(.themed) .cc-sec .s-name{color:var(--ink-2)}
+html:not(.themed) .cc-sec .s-sub{color:var(--muted)}
+html:not(.themed) .cc-sec.on{background:var(--bg);border-color:var(--bg);
+  box-shadow:0 -2px 10px rgba(6,18,35,.10)}
+html:not(.themed) .cc-sec.on .s-name{color:var(--accent)}
+html:not(.themed) .cc-sec.on .s-sub{color:var(--muted)}
+
+/* the gutter: burger and its badge sit on paper now */
+html:not(.themed) .cc-burger:hover{background:#E4EBF3}
+html:not(.themed) .cc-burger .b{background:var(--accent)}
+html:not(.themed) .cc-burger:hover .b{background:var(--brand-600)}
+html:not(.themed) .cc-navtog{background:#E9EFF7;color:var(--ink-2);
+  border:1px solid #D5DFEC}
+html:not(.themed) .cc-navtog:hover{background:#DFE8F3;border-color:#C2D0E2}
+html:not(.themed) .cc-nav-x{background:var(--panel-2);color:var(--muted)}
+html:not(.themed) .cc-nav-x:hover{background:#E4EBF3}
+
+/* THE INK. Undo the two-layer flip in one rule: on a white page the
+   main column keeps the ordinary dark tokens, and the restore list
+   further up simply re-states what is already true. */
+html:not(.themed) .cc-main{
+  --ink:#0A1A33; --ink-2:#16294A; --muted:#54667F; --faint:#61738C;
+  --line:#DCE3EC; --line-2:#EDF1F6; --line-3:#C9D4E2;
+  --soft:#F4F7FA; --panel-2:#F4F7FA; --accent-050:#EAF0F8;
+  color:var(--ink);
+}
+
+/* rules and borders that were drawn in white-on-navy */
+html:not(.themed) .cc-main .cc-h{border-bottom-color:var(--line)}
+html:not(.themed) .cc-main .pb-panes,
+html:not(.themed) .cc-main .wl-gh{border-bottom-color:var(--line)}
+html:not(.themed) .cc-main .pv-chipwrap{background:var(--bg);
+  border-bottom-color:var(--line)}
+html:not(.themed) .cc-main .pb-pt:hover{background:#E9EFF7;color:var(--ink)}
+html:not(.themed) .cc-main .pb-pt.on{background:#FFFFFF;color:var(--ink);
+  border-bottom-color:var(--accent)}
+html:not(.themed) .cc-main .pv-move.is-off{color:var(--faint)}
+html:not(.themed) .cc-main > .btn-ghost{background:#FFFFFF;
+  border-color:var(--line);color:var(--ink-2)}
+html:not(.themed) .cc-main > .btn-ghost:hover{background:#F4F7FA;
+  border-color:var(--line-3)}
+
+/* cards lifted off a dark ground with a heavy drop shadow; on paper
+   that reads as grime, so they go back to the product's own elevation */
+html:not(.themed) .cc-panel,
+html:not(.themed) .cc-summary .cc-sum,
+html:not(.themed) .cc-tiles,
+html:not(.themed) .ct-tile,
+html:not(.themed) .cc-rail{box-shadow:var(--shadow-2);
+  border-color:var(--line)}
+
+/* the org chart's own labels were written for the navy */
+html:not(.themed) .ct-bl{color:var(--muted)}

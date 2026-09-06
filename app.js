@@ -1147,7 +1147,7 @@ function celebrate(host){
   const css = getComputedStyle(document.documentElement);
   const pick = (name, fallback) => (css.getPropertyValue(name) || "").trim() || fallback;
   const COLORS = ["#12A05C", "#3ECC85", "#0F7A4A",
-    pick("--agency-gold", "#D4A12B"), pick("--brand", "#0C3D82"), "#FFFFFF"];
+    pick("--agency-gold", pick("--brand", "#0C3D82")), pick("--brand", "#0C3D82"), "#FFFFFF"];
 
   const cv = document.createElement("canvas");
   cv.className = "confetti";

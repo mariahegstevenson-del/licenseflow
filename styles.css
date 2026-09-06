@@ -1056,9 +1056,9 @@ html.scene-on .desig{background:rgba(255,255,255,.78);backdrop-filter:blur(3px)}
 .cart-foot{margin-top:12px}
 html.themed .cart-step::before{background:var(--agency-accent,var(--accent,#1E5FB4))}
 html.themed .cart-warn{
-  background:color-mix(in srgb,var(--agency-gold,#D4A12B) 9%,#fff);
-  border-color:color-mix(in srgb,var(--agency-gold,#D4A12B) 38%,#fff);
-  color:var(--agency-gold-ink,#7A5A0C)
+  background:color-mix(in srgb,var(--agency-gold,var(--brand,#0C3D82)) 9%,#fff);
+  border-color:color-mix(in srgb,var(--agency-gold,var(--brand,#0C3D82)) 38%,#fff);
+  color:var(--agency-gold-ink,var(--brand-600,#082C5F))
 }
 
 .ce-guide{list-style:none;margin:10px 0 0;padding:0;display:flex;flex-direction:column;gap:10px}
@@ -1079,12 +1079,12 @@ html.themed .cart-warn{
 .ceg-row p{margin:0;font-size:.9rem;line-height:1.55;color:var(--muted,#51637A)}
 .ceg-foot{margin-top:10px}
 html.themed .ceg-row.is-req{
-  border-color:color-mix(in srgb,var(--agency-gold,#D4A12B) 42%,#fff);
-  background:linear-gradient(180deg,color-mix(in srgb,var(--agency-gold,#D4A12B) 7%,#fff) 0%,#fff 60%)
+  border-color:color-mix(in srgb,var(--agency-gold,var(--brand,#0C3D82)) 42%,#fff);
+  background:linear-gradient(180deg,color-mix(in srgb,var(--agency-gold,var(--brand,#0C3D82)) 7%,#fff) 0%,#fff 60%)
 }
 html.themed .ceg-tag.req{
-  background:color-mix(in srgb,var(--agency-gold,#D4A12B) 20%,#fff);
-  color:var(--agency-gold-ink,#7A5A0C)
+  background:color-mix(in srgb,var(--agency-gold,var(--brand,#0C3D82)) 20%,#fff);
+  color:var(--agency-gold-ink,var(--brand-600,#082C5F))
 }
 
 /* The exam's name in the vendor's own catalog. Called out separately
@@ -1093,8 +1093,8 @@ html.themed .ceg-tag.req{
 .syscard.exam-name{border-color:#E3D3AE;background:linear-gradient(180deg,#FEFBF4,#fff 70%)}
 .syscard.exam-name strong{font-size:1.02rem;letter-spacing:-.01em}
 html.themed .syscard.exam-name{
-  border-color:color-mix(in srgb,var(--agency-gold,#D4A12B) 45%,#fff);
-  background:linear-gradient(180deg,color-mix(in srgb,var(--agency-gold,#D4A12B) 8%,#fff),#fff 70%)
+  border-color:color-mix(in srgb,var(--agency-gold,var(--brand,#0C3D82)) 45%,#fff);
+  background:linear-gradient(180deg,color-mix(in srgb,var(--agency-gold,var(--brand,#0C3D82)) 8%,#fff),#fff 70%)
 }
 
 /* Progress, told honestly in two parts. The outer fill is everything the
@@ -1131,7 +1131,7 @@ html.themed .progress.dual > b{background:var(--brand)}
 .facts-hint{margin:5px 0 0;font-size:.8rem;color:#A32019;line-height:1.45}
 .facts-use{max-width:620px;margin:0 auto 18px;font-size:.92rem;color:var(--muted,#51637A);
   text-align:center}
-html.themed .facts{border-color:color-mix(in srgb,var(--agency-gold,#D4A12B) 34%,#fff)}
+html.themed .facts{border-color:color-mix(in srgb,var(--agency-gold,var(--brand,#0C3D82)) 34%,#fff)}
 
 /* the walkthrough itself */
 /* The player, its title, its controls and its notes are one object.
