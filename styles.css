@@ -1174,3 +1174,42 @@ html.themed .facts{border-color:color-mix(in srgb,var(--agency-gold,#D4A12B) 34%
   border-radius:10px}
 
 .wtb-foot{margin:11px 0 0;font-size:.82rem;color:var(--faint,#5E7089);text-align:center}
+
+/* ============================================================
+   THE DESTINATION CARD
+
+   Shown on a step that carries no recording, in place of the video.
+   Fingerprints, licence number, NPN and E&O are a link and a field,
+   and without this they were a heading floating in white space.
+
+   It is not a screenshot and does not pretend to be one. Embedding
+   the real page is not an option -- every destination we send agents
+   to sets a header refusing to be framed -- so this shows only what
+   can be stated as fact: whose site it is, the host, and the path.
+   ============================================================ */
+.lp{max-width:620px;margin:6px auto 18px;border:1px solid var(--line);
+  border-radius:14px;overflow:hidden;background:#fff;
+  box-shadow:0 1px 2px rgba(6,18,35,.05),0 12px 30px -18px rgba(6,18,35,.32)}
+.lp-bar{display:flex;align-items:center;gap:6px;padding:9px 13px;
+  background:var(--soft);border-bottom:1px solid var(--line)}
+.lp-dot{width:9px;height:9px;border-radius:50%;background:#C2CBD8;flex:0 0 9px}
+.lp-url{margin-left:9px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+  font-size:.72rem;color:var(--faint);background:#fff;border:1px solid var(--line-2);
+  border-radius:99px;padding:3px 11px;overflow:hidden;text-overflow:ellipsis;
+  white-space:nowrap;max-width:100%}
+.lp-body{padding:30px 24px 32px;text-align:center;
+  background:linear-gradient(180deg,#fff,var(--soft))}
+.lp-mark{width:56px;height:56px;margin:0 auto 14px;border-radius:15px;
+  display:grid;place-items:center;font-family:"Libre Franklin",Inter,sans-serif;
+  font-weight:800;font-size:1.6rem;line-height:1;color:#fff;background:var(--accent);
+  box-shadow:0 6px 18px -6px rgba(12,61,130,.55)}
+.lp-name{font-family:"Libre Franklin",Inter,sans-serif;font-weight:700;
+  font-size:1.16rem;letter-spacing:-.02em;line-height:1.25;color:var(--ink)}
+.lp-host{margin-top:5px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+  font-size:.8rem;color:var(--muted);overflow-wrap:anywhere}
+.lp-path{color:var(--faint)}
+@media(max-width:560px){.lp-body{padding:24px 16px 26px}}
+
+/* The agency's own gold does the pointing where a theme is applied. */
+html.themed .lp-mark{background:var(--agency-gold,var(--accent));
+  color:var(--agency-gold-on,#fff)}

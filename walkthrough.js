@@ -68,6 +68,57 @@ export const NO_STEP_VIDEO = new Set(["license_number", "npn", "eo"]);
 export const showsVideo = (key) =>
   WALKTHROUGH_REQS.some((r) => r.key === key) && !NO_STEP_VIDEO.has(key);
 
+/* ------------------------------------------------------------------
+   THE DESTINATION CARD
+
+   A step with no recording used to be a title, a link and a lot of
+   white space. This fills it with the one thing an agent wants to know
+   before clicking: where they are about to be sent.
+
+   The obvious version of this is an iframe of the real page. It does
+   not work -- every destination we send people to (NIPR, the state
+   departments, the testing vendors) sets a header refusing to be
+   framed, so an embed renders a blank box. Checked on all four of
+   Alabama's, and all four refuse.
+
+   So this shows what is verifiably true and nothing more: whose site
+   it is, the host, the path, and a way in. It never invents a picture
+   of somebody else's page.
+------------------------------------------------------------------- */
+const lpEsc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) =>
+  ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", "\"":"&quot;", "'":"&#39;" }[c]));
+
+export function linkPreview(url, label){
+  if (!url) return "";
+  let host = "", path = "";
+  try {
+    const u = new URL(url);
+    if (!/^https?:$/.test(u.protocol)) return "";
+    host = u.hostname.replace(/^www\./, "");
+    path = decodeURI(u.pathname + u.search).replace(/\/$/, "");
+  } catch (_) {
+    host = String(url).replace(/^https?:\/\//, "").split("/")[0];
+  }
+  if (!host) return "";
+  if (path.length > 58) path = path.slice(0, 57) + "…";
+
+  const name    = label || host;
+  const initial = ((String(name).match(/[A-Za-z0-9]/) || ["?"])[0]).toUpperCase();
+
+  return `<div class="lp">
+    <div class="lp-bar" aria-hidden="true">
+      <span class="lp-dot"></span><span class="lp-dot"></span><span class="lp-dot"></span>
+      <span class="lp-url">${lpEsc(host)}</span>
+    </div>
+    <div class="lp-body">
+      <div class="lp-mark" aria-hidden="true">${lpEsc(initial)}</div>
+      <div class="lp-name">${lpEsc(name)}</div>
+      <div class="lp-host">${lpEsc(host)}${
+        path && path !== "" ? `<span class="lp-path">${lpEsc(path)}</span>` : ""}</div>
+    </div>
+  </div>`;
+}
+
 /* Vendor keys are stable identifiers, not display names. An agency may
    call Pearson VUE whatever it likes in its own guide without detaching
    the recording from the twenty-seven states that use it. */

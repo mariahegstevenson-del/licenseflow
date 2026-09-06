@@ -2,7 +2,7 @@ import { supabase, isConfigured, requireSession, hardSignOut } from "./supabase.
 import { STATES, STATE_LIST, ceSlots, ceBasketHTML, STUDY_TIPS, EXAM_BRING, PLAYBOOK_SECTIONS, playbookDefaults,
          resolvePlaybook, COMPLETE_FIELDS, fillTokens } from "./states.js?v=28";
 import { WALKTHROUGH_REQS, resolveWalkthrough, vendorKeyFor, videoSource,
-         fmtDuration, RECORDING_STANDARD, showsVideo } from "./walkthrough.js?v=6";
+         fmtDuration, RECORDING_STANDARD, showsVideo, linkPreview } from "./walkthrough.js?v=7";
 import * as F from "./flow.js?v=16";
 import { loadTenant, renderUnknownAgency, applyTenantChrome, urlForAgency } from "./tenant.js?v=5";
 
@@ -1657,10 +1657,11 @@ function renderPlaybookAgent(code){
               req.key === "exam" ? "Scheduled through" : "Your provider"}</span><strong>${esc(req.providerLabel)}</strong></div>` : ""}
           ${req.key === "exam" && req.examName
             ? `<div class="syscard exam-name"><span class="sys-k">Search for this exam</span><strong>${esc(req.examName)}</strong></div>` : ""}
+          ${!showsVideo(req.key) ? linkPreview(req.link || req.lookupUrl, req.providerLabel) : ""}
           ${req.link ? `<div class="link-row"><a class="btn btn-accent btn-lg" href="${esc(req.link)}"
               target="_blank" rel="noopener">Open ${esc(req.providerLabel || "the site")}</a></div>
               <div class="link-note">Opens in a new tab. When you're done there, come back and record it below.</div>` : ""}
-          ${req.instructions ? `<details class="inst" style="margin-top:16px" open><summary>Step-by-step instructions</summary>
+          ${req.instructions ? `<details class="inst" style="margin-top:16px" open><summary>What to do there</summary>
               <ol>${req.instructions.map(i => `<li>${esc(i)}</li>`).join("")}</ol></details>` : ""}
           ${req.key === "continuing_education"
             ? ceBasketHTML(code, lic, r) : ""}

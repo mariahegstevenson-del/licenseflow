@@ -2,7 +2,7 @@ import { supabase, isConfigured, requireSession, hardSignOut } from "./supabase.
 import { STATE_LIST, STATES, ceSlots, ceIsConfigured, ceBasketHTML, STUDY_TIPS, EXAM_BRING, resolvePlaybook,
          fillTokens } from "./states.js?v=28";
 import { resolveWalkthrough, factsFor, videoSource, isFile,
-         fmtDuration, clockTime, showsVideo } from "./walkthrough.js?v=6";
+         fmtDuration, clockTime, showsVideo, linkPreview } from "./walkthrough.js?v=7";
 import * as F from "./flow.js?v=16";
 import { loadTenant, renderUnknownAgency, applyTenantChrome, urlForAgency } from "./tenant.js?v=5";
 
@@ -1347,9 +1347,10 @@ function renderStep(key) {
       ${factsPanel(r.key)}
       ${videoBlock(r.key, r.help?r.help.title:"Watch")}
       ${r.render==="action" && r.providerLabel ? `<div class="syscard"><span class="sys-k">Your provider</span><strong>${esc(r.providerLabel)}</strong></div>` : ""}
+      ${!showsVideo(r.key) ? linkPreview(r.link || r.lookupUrl, r.providerLabel) : ""}
       ${r.link ? `<div class="link-row"><span class="cta" id="ctaLink"><a class="btn btn-accent btn-lg" id="stepLink" href="${esc(r.link)}" target="_blank" rel="noopener">${esc(openLabel(r,""))}</a></span></div><div class="link-note">Opens in a new tab. When you're done there, come back and record it below.</div>` : ""}
       ${r.lookupUrl ? `<div class="link-row"><a class="btn btn-accent btn-lg" href="${esc(r.lookupUrl)}" target="_blank" rel="noopener">${esc(r.lookupLabel||"Look it up")}</a></div><div class="link-note">Opens the official lookup in a new tab.</div>` : ""}
-      ${r.instructions ? `<details class="inst" style="margin-top:16px"><summary>Step-by-step instructions</summary><ol>${r.instructions.map(i=>`<li>${linkify(i)}</li>`).join("")}</ol></details>` : ""}
+      ${r.instructions ? `<details class="inst" style="margin-top:16px"${showsVideo(r.key) ? "" : " open"}><summary>What to do there</summary><ol>${r.instructions.map(i=>`<li>${linkify(i)}</li>`).join("")}</ol></details>` : ""}
       <div class="form-block">
         <h3 style="margin:22px 0 6px;font-size:1.02rem">${r.render==="eo"?"Upload your certificate":"Record what you did"}</h3>
         ${(r.fields||[]).map(f => field(f, meta)).join("")}
