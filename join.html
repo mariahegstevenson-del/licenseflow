@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Libre+Franklin:wght@600;700;800&display=swap"/>
 <link rel="stylesheet" href="auth.css?v=5"/>
-<link rel="stylesheet" href="join.css?v=2"/>
+<link rel="stylesheet" href="join.css?v=3"/>
 <script src="config.js"></script>
 </head>
 <body>
@@ -68,17 +68,11 @@
         <p class="muted jn-lede" id="note">Fill this in and your agency will see you
           in their hierarchy. They&rsquo;ll confirm your details before anything is final.</p>
 
-        <p id="kitline" hidden class="jn-kit">
-          <a id="kitlink" href="#" target="_blank" rel="noopener">Open the contracting kit &rarr;</a>
-        </p>
-
-        <!-- the kit, as steps -->
-        <section id="stepsWrap" hidden class="jn-steps">
-          <h3>What you&rsquo;ll work through</h3>
-          <p class="muted">Do these first, or alongside this form &mdash; whichever suits.
-            Your details below are what tells your agency you&rsquo;ve started.</p>
-          <ol id="steps"></ol>
-        </section>
+        <!-- Nothing from the admin console appears here. A recruit gets
+             this form and nothing else: the kit, its steps and the kit
+             link are the agency's own working material. The database
+             agrees -- anon cannot call the steps function at all, and the
+             lookup no longer returns the kit link. -->
 
         <div id="alert" class="alert"></div>
 
@@ -156,6 +150,6 @@
 
   </div>
 </div>
-<script type="module" src="join.js?v=2"></script>
+<script type="module" src="join.js?v=3"></script>
 </body>
 </html>

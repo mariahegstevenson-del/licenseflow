@@ -10,7 +10,9 @@
 
      ct_intake_look    given a token, returns the carrier and agency
                        name and nothing else. Never the hierarchy,
-                       never a person, never a document.
+                       never a person, never a document, and never the
+                       contracting kit -- that is the agency's own
+                       working material and stays on their console.
      ct_intake_submit  writes one pending row. The submitter cannot
                        choose an agency, cannot set a status, and
                        cannot touch anyone else's record.
@@ -67,41 +69,15 @@ async function start(){
   el("gcarrier").textContent = title;
 
   if (carrier.invite_note) el("note").textContent = carrier.invite_note;
-  if (carrier.kit_url) {
-    el("kitlink").href = carrier.kit_url;
-    el("kitline").hidden = false;
-  }
 
-  await loadSteps();
   show("gate");
 }
 
-/* ---------------- the kit ---------------- */
-const linkify = (line) => esc(line).replace(/https?:\/\/[^\s<]+/g, (u) => {
-  const label = u.replace(/^https?:\/\//, "");
-  return `<a href="${u}" target="_blank" rel="noopener">${
-    label.length > 40 ? label.slice(0, 40) + "…" : label}</a>`;
-});
-
+/* esc() is still needed for anything this page writes into the DOM. */
 function esc(s){
   return String(s == null ? "" : s)
     .replace(/&/g, "&amp;").replace(/</g, "&lt;")
     .replace(/>/g, "&gt;").replace(/"/g, "&quot;");
-}
-
-async function loadSteps(){
-  const { data, error } = await supabase.rpc("ct_intake_steps", { p_token: token });
-  if (error || !data || !data.length) return;
-  el("steps").innerHTML = data.map((s) => `
-    <li>
-      <div class="jn-sh">
-        <strong>${esc(s.title)}</strong>
-        ${s.url ? `<a href="${esc(s.url)}" target="_blank" rel="noopener">Open &#8599;</a>` : ""}
-      </div>
-      ${s.body ? `<ul>${String(s.body).split("\n").map(l => l.trim()).filter(Boolean)
-        .map(l => `<li>${linkify(l)}</li>`).join("")}</ul>` : ""}
-    </li>`).join("");
-  el("stepsWrap").hidden = false;
 }
 
 /* ---------------- the licence gate ---------------- */

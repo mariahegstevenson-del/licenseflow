@@ -15,32 +15,9 @@
 .jn-title{font-family:"Libre Franklin",Inter,sans-serif;font-weight:800;
   font-size:1.5rem;line-height:1.2;margin:4px 0 8px;color:var(--ink)}
 .jn-lede{margin-top:0}
-.jn-kit{margin:14px 0 0;padding:11px 14px;background:var(--pri05);
-  border:1px solid #CFE0F2;border-radius:10px;font-size:.9rem}
-.jn-kit a{font-weight:600}
-
-.req{float:right;font-weight:500;font-size:.76rem;color:var(--faint);
-  text-transform:uppercase;letter-spacing:.04em}
-
 /* the licence gate */
 .jn-gate{display:grid;gap:10px;margin-top:20px}
 .jn-gate .btn{margin:0}
-
-/* the kit, as steps a recruit reads before filling anything in */
-.jn-steps{margin:22px 0 4px;padding:18px 18px 6px;background:var(--sub);
-  border:1px solid var(--line);border-radius:12px}
-.jn-steps h3{font-family:"Libre Franklin",Inter,sans-serif;font-size:1rem;
-  margin:0 0 4px;color:var(--ink)}
-.jn-steps > .muted{font-size:.86rem;margin:0 0 14px}
-.jn-steps ol{margin:0;padding-left:22px;display:grid;gap:16px}
-.jn-steps ol > li{padding-left:2px}
-.jn-steps ol > li::marker{font-weight:700;color:var(--pri)}
-.jn-sh{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
-.jn-sh strong{font-size:.97rem;color:var(--ink)}
-.jn-sh a{font-size:.83rem;font-weight:600;white-space:nowrap}
-.jn-steps ol ul{margin:7px 0 0;padding-left:17px;display:grid;gap:4px}
-.jn-steps ol ul li{font-size:.87rem;color:var(--mut);line-height:1.5}
-.jn-steps ol ul a{overflow-wrap:anywhere}
 
 /* email and phone share a row on anything but a small phone */
 .jn-two{display:grid;grid-template-columns:1fr 1fr;gap:0 14px}
