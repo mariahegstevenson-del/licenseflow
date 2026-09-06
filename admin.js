@@ -83,6 +83,9 @@ const within = (t, from, to) => t != null && t >= from && t < to;
      answer and the tabs never appear. */
   A.only = A.platform ? (A.tenant?.agency?.id || null) : (A.agency?.id || null);
 
+  /* Whatever screen the address names, before anything is drawn. */
+  readRoute();
+
   await load();
 })();
 
@@ -689,6 +692,73 @@ function renderRail(){
    a view left the previous screen sitting there, which reads to the person
    using it as "I clicked and nothing happened" -- the hardest kind of
    fault to report and the hardest to diagnose from a description. */
+/* ============================================================
+   THE ADDRESS BAR IS THE STATE
+
+   Refreshing dropped you back on the overview. Checking one change on
+   the Alabama preview meant clicking Licensing, State guide, Alabama,
+   "What the agent sees" and the step again -- five clicks for every
+   reload, which is most of a working session.
+
+   Every screen now writes itself into the address, and the address is
+   read back on load. Refresh keeps you where you were, Back and Forward
+   move between screens, and a screen can be sent to somebody as a link.
+
+   Only the keys below are read, and each is checked before use, so a
+   stale or hand-edited address opens the overview rather than a
+   half-built screen.
+   ============================================================ */
+function routeHash(){
+  const p = new URLSearchParams();
+  const v = A.view || {};
+  if (v.name && v.name !== "overview")                p.set("v", v.name);
+  if (v.arg)                                          p.set("a", v.arg);
+  if (v.node)                                         p.set("n", v.node);
+  if (A.pbPane    && A.pbPane !== "steps")            p.set("pane", A.pbPane);
+  if (A.pbStep)                                       p.set("step", A.pbStep);
+  if (A.pbLicense && A.pbLicense !== "Life & Health") p.set("lic",  A.pbLicense);
+  if (A.platform  && A.only)                          p.set("only", A.only);
+  const s = p.toString();
+  return s ? "#" + s : "";
+}
+
+/* The first write replaces, so Back still leaves the console rather
+   than landing on a blank address. Every write after that pushes, so
+   Back walks the screens you actually visited. */
+let routeStarted = false;
+function writeRoute(){
+  const want = routeHash();
+  if (want === (location.hash || "")) { routeStarted = true; return; }
+  const url = location.pathname + location.search + want;
+  try {
+    if (routeStarted) history.pushState(null, "", url);
+    else              history.replaceState(null, "", url);
+  } catch (_) { /* a locked-down browser can refuse; the screen still works */ }
+  routeStarted = true;
+}
+
+function readRoute(){
+  const p = new URLSearchParams((location.hash || "").replace(/^#/, ""));
+  A.view = { name: p.get("v") || "overview" };
+  const a = p.get("a"); if (a) A.view.arg  = a;
+  const n = p.get("n"); if (n) A.view.node = n;
+
+  const pane = p.get("pane");
+  if (pane === "steps" || pane === "agent" || pane === "edit") A.pbPane = pane;
+
+  const step = p.get("step"); if (step) A.pbStep = step;
+
+  const lic = p.get("lic");
+  if (lic === "Life" || lic === "Life & Health") A.pbLicense = lic;
+
+  /* Only staff may point the console at another agency, and the database
+     refuses the rows regardless -- this just stops the tab strip showing
+     a selection that means nothing. */
+  const only = p.get("only"); if (only && A.platform) A.only = only;
+}
+
+window.addEventListener("popstate", () => { readRoute(); render(); });
+
 function render(){
   try { return renderView(); }
   catch (e) {
@@ -711,6 +781,13 @@ function renderView(){
      screen this account cannot save from. */
   if (!A.platform && PLATFORM_VIEWS.has(A.view.name)) A.view = { name:"overview" };
   if (!showContracting() && CONTRACTING_VIEWS.has(A.view.name)) A.view = { name:"overview" };
+  /* A view name that is not one of ours -- a stale bookmark, a typo in
+     the address -- opens the overview, and the address is corrected to
+     say so rather than claiming a screen that isn't showing. */
+  if (!VIEW_SEC[A.view.name]) A.view = { name:"overview" };
+  /* After the guards, so the address never records a screen this
+     account was just bounced off. */
+  writeRoute();
   renderTabs(); renderSections(); renderNav(); renderRail();
   /* Re-bound on every render, because the panel is rebuilt each time. */
   setTimeout(wireNotices, 0);
