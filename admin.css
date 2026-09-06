@@ -1401,3 +1401,55 @@ body.nav-open .cc-nav{transform:none}
   .cc-main .cc-todo-req{grid-column:1 / -1}
   .cc-main .cc-todo-go{grid-column:2;text-align:right}
 }
+
+/* ============================================================
+   CONTRACTED AGENTS
+
+   The chart says who sits under whom. This says who is contracted,
+   at what comp, and what is stuck — the question a coordinator asks
+   all day. Four segments rather than a percentage, because these are
+   discrete states a carrier moves somebody through.
+   ============================================================ */
+.cc-main .ct-roster-head,
+.cc-main .ct-ro{display:grid;
+  grid-template-columns:minmax(0,1.3fr) 96px 190px 150px minmax(0,1fr) auto;
+  gap:14px;align-items:center}
+.cc-main .ct-roster-head{padding:0 14px 8px;font-size:.7rem;font-weight:700;
+  letter-spacing:.08em;text-transform:uppercase;color:var(--faint)}
+.cc-main .ct-roster{background:var(--panel);border:1px solid var(--line);
+  border-radius:12px;overflow:hidden}
+.cc-main .ct-ro{width:100%;text-align:left;font:inherit;color:var(--ink);
+  background:none;border:0;border-bottom:1px solid var(--line-2);
+  padding:12px 14px;cursor:pointer;transition:background .12s}
+.cc-main .ct-ro:last-child{border-bottom:0}
+.cc-main .ct-ro:hover{background:var(--accent-050)}
+.cc-main .ct-ro:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+.cc-main .ct-ro.bad{box-shadow:inset 3px 0 0 var(--crit)}
+.cc-main .ct-ro-who{font-weight:650;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cc-main .ct-ro-comp{font-variant-numeric:tabular-nums;font-weight:650;white-space:nowrap}
+.cc-main .ct-ro-comp em,.cc-main .ct-ro-wn em{font-style:normal;font-weight:400;color:var(--faint)}
+.cc-main .ct-ro-wn{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.82rem}
+.cc-main .ct-ro-bar{display:flex;align-items:center;gap:9px}
+.cc-main .ct-ro-bar em{font-style:normal;font-size:.78rem;color:var(--muted);white-space:nowrap}
+.cc-main .ct-ro-iss .flag{font-style:normal;font-size:.78rem;color:var(--crit);
+  background:var(--crit-bg);border-radius:99px;padding:2px 9px;
+  display:inline-block;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* the four-segment bar */
+.cc-main .ct-ro-go{font-size:.83rem;font-weight:650;color:var(--accent);
+  border:1px solid var(--line);border-radius:8px;padding:5px 12px;white-space:nowrap}
+.cc-main .ct-ro:hover .ct-ro-go{border-color:var(--accent);background:#fff}
+
+.cc-main .ct-bar{display:inline-flex;gap:3px;flex:0 0 auto}
+.cc-main .ct-bar i{width:15px;height:6px;border-radius:99px;background:var(--line);
+  display:block}
+.cc-main .ct-bar i.done{background:var(--ok)}
+.cc-main .ct-bar i.now{background:var(--gold)}
+
+@media (max-width:1100px){
+  .cc-main .ct-roster-head{display:none}
+  .cc-main .ct-ro{grid-template-columns:minmax(0,1fr) auto;gap:6px 12px}
+  .cc-main .ct-ro-bar{grid-column:1 / -1}
+  .cc-main .ct-ro-iss{grid-column:1 / -1}
+  .cc-main .ct-ro-go{grid-column:2;grid-row:1;justify-self:end}
+}

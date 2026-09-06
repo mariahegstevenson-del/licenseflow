@@ -2892,6 +2892,79 @@ function ctWireChart(c, nodes, openNode){
 }
 
 /* ---------------- one hub or carrier ---------------- */
+/* ============================================================
+   WHO IS CONTRACTED, AND HOW FAR ALONG
+
+   The chart answers "who sits under whom". It does not answer the
+   question a coordinator actually asks all day: who is contracted with
+   this carrier, at what comp, and what is stuck. That is this panel.
+
+   Four stages, in the order they happen. The bar is four segments
+   rather than a percentage because these are discrete states a carrier
+   moves someone through, not a continuum.
+   ============================================================ */
+const CT_STAGES = [
+  { k:"requested", label:"Requested", hint:"paperwork sent to the carrier" },
+  { k:"pending",   label:"Pending",   hint:"carrier is working it" },
+  { k:"approved",  label:"Approved",  hint:"carrier said yes" },
+  { k:"writing",   label:"Writing number", hint:"issued — they can sell" },
+];
+const ctStageIndex = (n) => {
+  const i = CT_STAGES.findIndex(s => s.k === (n.stage || "requested"));
+  return i < 0 ? 0 : i;
+};
+
+function ctStageBar(n){
+  const at = ctStageIndex(n);
+  return `<span class="ct-bar" role="img"
+      aria-label="${esc(CT_STAGES[at].label)}, step ${at + 1} of ${CT_STAGES.length}">
+    ${CT_STAGES.map((s, i) => `<i class="${i < at ? "done" : i === at ? "now" : ""}"
+        title="${esc(s.label)} — ${esc(s.hint)}"></i>`).join("")}
+  </span>`;
+}
+
+function ctRoster(c, nodes){
+  /* Anyone still awaiting intake approval is not contracted yet, so they
+     belong in the waiting count above, not in this list. */
+  const live = nodes.filter(n => n.status !== "pending").slice()
+    .sort((a, b) => ctStageIndex(a) - ctStageIndex(b) || a.name.localeCompare(b.name));
+  const issues = live.filter(n => n.issue && n.issue.trim());
+
+  if (!live.length) return `
+    <div class="cc-panel pb-sec"><div class="cc-panel-h"><h2>Contracted agents</h2></div>
+      <div class="pad"><p class="muted" style="margin:0">Nobody contracted with
+        ${esc(c.name)} yet.</p></div></div>`;
+
+  const row = (n) => {
+    const at = ctStageIndex(n);
+    const bad = n.issue && n.issue.trim();
+    return `<button class="ct-ro${bad ? " bad" : ""}" data-node="${esc(n.id)}" type="button">
+      <span class="ct-ro-who">${esc(n.name)}</span>
+      <span class="ct-ro-comp">${n.contract_level
+        ? esc(n.contract_level) : `<em>not set</em>`}</span>
+      <span class="ct-ro-bar">${ctStageBar(n)}
+        <em>${esc(CT_STAGES[at].label)}</em></span>
+      <span class="ct-ro-wn">${n.writing_number
+        ? esc(n.writing_number) : `<em>&mdash;</em>`}</span>
+      <span class="ct-ro-iss">${bad
+        ? `<em class="flag" title="${esc(n.issue)}">${esc(n.issue)}</em>` : ""}</span>
+      <span class="ct-ro-go">Edit</span>
+    </button>`;
+  };
+
+  return `
+    <div class="cc-panel pb-sec"><div class="cc-panel-h"><h2>Contracted agents</h2>
+      <span class="sub">${live.length} ${live.length === 1 ? "person" : "people"}${
+        issues.length ? ` &middot; ${issues.length} with an issue` : ""}</span></div>
+      <div class="pad">
+        <div class="ct-roster-head" aria-hidden="true">
+          <span>Agent</span><span>Comp</span><span>Progress</span>
+          <span>Writing number</span><span>Issue</span><span></span>
+        </div>
+        <div class="ct-roster">${live.map(row).join("")}</div>
+      </div></div>`;
+}
+
 function renderCarrier(carrierId, openNode){
   const c = (A.ctCarriers || []).find(x => x.id === carrierId);
   if (!c) { A.view = { name:"contracting" }; return render(); }
@@ -3049,6 +3122,8 @@ function renderCarrier(carrierId, openNode){
       </details>
     </div></div>
 
+    ${ctRoster(c, nodes)}
+
     <div id="ctNodePanel">${openNode ? ctNodeEditor(nodes.find(n => n.id === openNode), nodes) : ""}</div>
 
     ${stepsPanel}
@@ -3112,6 +3187,11 @@ function renderCarrier(carrierId, openNode){
     b.onclick = () => { A.ctChart = null; A.view = { name:"carrier", arg:b.dataset.carrier }; render(); });
 
   if (nodes.length) ctWireChart(c, nodes, openNode);
+
+  /* The roster sits outside the chart pane, so its rows need their own
+     binding — the chart's handler is scoped to the chart. */
+  document.querySelectorAll(".ct-roster [data-node]").forEach(b =>
+    b.onclick = () => { A.view = { name:"carrier", arg:c.id, node:b.dataset.node }; render(); });
 
   const addKid = el("ctAddKid");
   if (addKid) addKid.onclick = async () => {
@@ -3503,6 +3583,21 @@ function ctNodeEditor(n, nodes){
     <label for="ct_init">Contracting initiated</label>
     <input id="ct_init" type="date" value="${esc(n.initiated_on || "")}"/>
 
+    <label for="ct_stage">Where the carrier has got to</label>
+    <select id="ct_stage">
+      ${CT_STAGES.map(st => `<option value="${st.k}"${
+        (n.stage || "requested") === st.k ? " selected" : ""}>${esc(st.label)} — ${esc(st.hint)}</option>`).join("")}
+    </select>
+
+    <label for="ct_wn">Writing number</label>
+    <input id="ct_wn" type="text" value="${esc(n.writing_number || "")}"
+      placeholder="Once the carrier issues it"/>
+
+    <label for="ct_issue">Issue</label>
+    <input id="ct_issue" type="text" value="${esc(n.issue || "")}"
+      placeholder="Leave empty unless something is stuck"/>
+    <span class="hint">Anything in here flags the row red on the carrier page.</span>
+
     <label for="ct_user">Also an agent in the portal</label>
     <select id="ct_user">
       <option value="">Not linked</option>
@@ -3536,6 +3631,9 @@ function wireNodeEditor(c, n){
         parent_id:      el("ct_parent").value || null,
         contract_level: el("ct_level").value.trim() || null,
         initiated_on:   el("ct_init").value || null,
+        stage:          el("ct_stage")?.value || "requested",
+        writing_number: el("ct_wn")?.value.trim() || null,
+        issue:          el("ct_issue")?.value.trim() || null,
         user_id:        el("ct_user").value || null,
         notes:          el("ct_notes").value.trim() || null,
         updated_at:     new Date().toISOString(),
@@ -3614,6 +3712,9 @@ function wireNodeEditor(c, n){
         parent_id:      el("ct_parent").value || null,
         contract_level: el("ct_level").value.trim() || null,
         initiated_on:   el("ct_init").value || null,
+        stage:          el("ct_stage")?.value || "requested",
+        writing_number: el("ct_wn")?.value.trim() || null,
+        issue:          el("ct_issue")?.value.trim() || null,
         user_id:        el("ct_user").value || null,
         notes:          el("ct_notes").value.trim() || null,
         updated_at:     new Date().toISOString(),
