@@ -70,6 +70,37 @@ function scene() {
   </svg>`;
 }
 
+/* ------------------------------------------------------------
+   An agency's own photograph.
+
+   theme.hero_image names a file this deployment ships, never a URL --
+   the theme is a database row, and a row that could put any address
+   inside a CSS url() is a row that could load a tracker, or worse,
+   onto a customer's front page. The pattern below is the whole
+   allowlist: a file under /brand, named in plain characters. Anything
+   else falls through to the drawn scene, which is a real page rather
+   than a broken one.
+   ------------------------------------------------------------ */
+const HERO_FILE = /^\/brand\/[A-Za-z0-9][A-Za-z0-9._-]{0,60}\.(jpe?g|png|webp)$/;
+
+function heroPhoto(t) {
+  const v = t && typeof t.hero_image === "string" ? t.hero_image.trim() : "";
+  return HERO_FILE.test(v) ? v : "";
+}
+
+/* The gold-over-navy sweep the agency's print material uses to hand off
+   from a picture to a page. Drawn rather than baked into the photograph
+   so it stays crisp at any width and follows the agency's colours. */
+function swoosh() {
+  return `
+  <svg class="ah-sweep" viewBox="0 0 1200 460" preserveAspectRatio="none" aria-hidden="true">
+    <path d="M0,398 C300,352 620,434 900,386 C1040,362 1130,366 1200,348 L1200,368
+             C1130,386 1040,382 900,408 C620,456 300,372 0,418 Z" class="sw-gold"/>
+    <path d="M0,418 C300,372 620,454 900,406 C1040,382 1130,386 1200,368 L1200,460 L0,460 Z"
+          class="sw-navy"/>
+  </svg>`;
+}
+
 function markGlyph() {
   return `<svg width="17" height="12" viewBox="0 0 17 12" aria-hidden="true" focusable="false">
     <path d="M1 11 L5.6 3.2 Q6 2.6 6.5 3.2 L9.2 7 L11.3 4.4 Q11.7 3.9 12.1 4.4 L16 11 Z"
@@ -132,8 +163,11 @@ function render(agency) {
     </nav>
   </header>
 
-  <div class="ah-hero${t.scene ? "" : " ah-plain"}">
-    ${t.scene ? scene() + '<div class="ah-scrim"></div>' : ""}
+  <div class="ah-hero${heroPhoto(t) ? " ah-photo" : t.scene ? "" : " ah-plain"}">
+    ${heroPhoto(t)
+      ? `<div class="ah-shot" style="background-image:url(&quot;${heroPhoto(t)}&quot;)"></div>
+         <div class="ah-scrim shot"></div>${swoosh()}`
+      : t.scene ? scene() + '<div class="ah-scrim"></div>' : ""}
     <div class="ah-in">
       <p class="ah-kicker">Licensing Portal</p>
       <h1>${esc(t.hero_title || "Everything your license needs,")}

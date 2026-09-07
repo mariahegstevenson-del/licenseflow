@@ -55,6 +55,35 @@ html.themed .ah-tag{background:var(--ag-gold-0);color:var(--ag-gold-i);border-co
 .ah-hero{position:relative;overflow:hidden;background:var(--brand-600,#082C5F);min-height:460px;
   display:flex;align-items:center}
 .ah-scene{position:absolute;inset:0;width:100%;height:100%;display:block}
+
+/* ---- an agency's own photograph ----------------------------------
+   The picture bleeds off the right and is masked into the navy rather
+   than butting against it, so there is no vertical seam where the
+   image ends. The scrim then does the reading work: everything under
+   the words stays dark enough for white type at any window width. */
+.ah-hero.ah-photo{background:#04122C}
+.ah-shot{position:absolute;inset:0 0 0 30%;background-repeat:no-repeat;
+  background-position:right top;background-size:cover;
+  -webkit-mask-image:linear-gradient(100deg,transparent 0%,rgba(0,0,0,.30) 16%,#000 44%);
+  mask-image:linear-gradient(100deg,transparent 0%,rgba(0,0,0,.30) 16%,#000 44%)}
+.ah-scrim.shot{background:
+  linear-gradient(101deg,rgba(3,13,32,.97) 0%,rgba(4,17,42,.93) 26%,rgba(5,22,54,.68) 46%,
+    rgba(6,28,66,.28) 64%,rgba(6,32,74,.06) 80%,rgba(6,34,79,0) 92%),
+  radial-gradient(115% 85% at 76% 34%,rgba(255,238,200,.14),transparent 60%),
+  radial-gradient(140% 120% at 50% 50%,transparent 55%,rgba(2,9,24,.42) 100%)}
+.ah-sweep{position:absolute;inset:0;width:100%;height:100%;display:block;z-index:1}
+.ah-sweep .sw-gold{fill:var(--ag-gold)}
+.ah-sweep .sw-navy{fill:var(--ag-600)}
+.ah-hero.ah-photo .ah-in{padding-bottom:104px}
+.ah-hero.ah-photo h1{text-shadow:0 1px 20px rgba(2,9,24,.55)}
+/* On a narrow window the picture would sit behind the words. Drop it to
+   a band across the top instead of fighting the text for the same space. */
+@media (max-width:820px){
+  .ah-shot{inset:0 0 46% 0;-webkit-mask-image:none;mask-image:none}
+  .ah-scrim.shot{background:linear-gradient(180deg,rgba(3,13,32,.62) 0%,rgba(4,17,42,.86) 44%,
+    rgba(4,17,42,.97) 60%,#04122C 74%)}
+  .ah-hero.ah-photo .ah-in{padding-top:220px}
+}
 .ah-scrim{position:absolute;inset:0;background:linear-gradient(100deg,
   rgba(4,17,42,.92) 0%, rgba(5,20,48,.74) 32%, rgba(6,28,66,.30) 58%,
   rgba(6,34,79,.06) 78%, transparent 92%)}
